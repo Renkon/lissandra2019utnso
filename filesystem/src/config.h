@@ -1,12 +1,13 @@
 #ifndef CONFIG2_H_
 #define CONFIG2_H_
+#define FSCFG "filesystem.cfg"
 
 #include "filesystem.h"
 #include "commons/config.h"
 #include <sys/inotify.h>
 #include <unistd.h>
 #include <string.h>
-#define FSCFG "filesystem.cfg"
+#include <stdlib.h>
 
 void init_config(void*);
 void update_config();

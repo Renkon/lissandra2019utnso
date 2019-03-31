@@ -5,7 +5,7 @@
 
 typedef struct {
 	int port;
-	char mount_point[512];
+	char* mount_point;
 	int delay;
 	int max_value_size;
 	int dump_time;
