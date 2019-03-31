@@ -66,6 +66,7 @@ void check_config() {
 		if (length > 0) {
 			while (offset < length) {
 				struct inotify_event *event = (struct inotify_event *) &buffer[offset];
+				// Si el archivo modificado es el de configuracion (por el nombre)
 				if (event->len && strcmp(event->name, FSCFG) == 0) {
 					update_config();
 				}

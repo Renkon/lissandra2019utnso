@@ -11,6 +11,7 @@ int main(void) {
 		return 1;
 	}
 
+	// Creo un hilo que se encarga de lo relacionado a configuracion
 	if (pthread_create(&config_thread, NULL, (void*) init_config, NULL)){
 		log_error(g_logger, "No se pudo inicializar el hilo de configuracion");
 		return 1;
