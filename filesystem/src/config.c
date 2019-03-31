@@ -20,7 +20,6 @@ void init_config(void* unused) {
 
 	config_destroy(config);
 
-	log_info(g_logger, "%s", g_config.mount_point);
 	log_info(g_logger, "Se cargo satisfactoriamente la configuracion");
 
 	check_config();
@@ -28,16 +27,20 @@ void init_config(void* unused) {
 
 void update_config() {
 	t_config* config = config_create(FSCFG);
+	char* new_mount_point;
+	int new_delay;
+	int new_max_value_size;
+	int new_dump_time;
 
 	if (!validate_config(config)) {
 		log_warning(g_logger, "El archivo de configuracion quedo invalidado. Ignorando nuevos valores");
 		return;
 	}
 
-	char* new_mount_point = config_get_string_value(config, "PUNTO_MONTAJE");
-	int new_delay = config_get_int_value(config, "RETARDO");
-	int new_max_value_size = config_get_int_value(config, "TAMAÑO_VALUE");
-	int new_dump_time = config_get_int_value(config, "TIEMPO_DUMP");
+	new_mount_point = config_get_string_value(config, "PUNTO_MONTAJE");
+	new_delay = config_get_int_value(config, "RETARDO");
+	new_max_value_size = config_get_int_value(config, "TAMAÑO_VALUE");
+	new_dump_time = config_get_int_value(config, "TIEMPO_DUMP");
 
 	if (strcmp(new_mount_point, g_config.mount_point) != 0) {
 		g_config.mount_point = realloc(g_config.mount_point, strlen(new_mount_point));
