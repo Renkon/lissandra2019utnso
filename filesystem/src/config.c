@@ -68,7 +68,7 @@ void check_config() {
 
 	file_fd = inotify_add_watch(inotify_fd, ".", IN_CLOSE_WRITE);
 
-	for (;;) {
+	while (1) {
 		int length = read(inotify_fd, buffer, EVENT_BUF_LEN);
 		int offset = 0;
 
