@@ -1,7 +1,8 @@
 #ifndef FILESYSTEM_H_
 #define FILESYSTEM_H_
+#define FSCFG "filesystem.cfg"
 
-#include "commons/log.h"
+#include "generic_config.h"
 
 typedef struct {
 	int port;
@@ -12,7 +13,10 @@ typedef struct {
 } fsconfig_t;
 
 fsconfig_t g_config;
+extern char* g_config_keys[];
 t_log* g_logger;
+
+config_args_t* build_config_args();
 
 
 #endif /* FILESYSTEM_H_ */
