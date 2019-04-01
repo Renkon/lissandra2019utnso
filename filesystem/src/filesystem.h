@@ -14,9 +14,7 @@ typedef struct {
 
 fsconfig_t g_config;
 extern char* g_config_keys[];
+extern int g_config_keys_size;
 t_log* g_logger;
-
-config_args_t* build_config_args();
-
 
 #endif /* FILESYSTEM_H_ */

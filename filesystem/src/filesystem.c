@@ -3,10 +3,12 @@
 
 // Las keys de configuracion
 char* g_config_keys[] = { "PUERTO_ESCUCHA", "PUNTO_MONTAJE", "RETARDO", "TAMAÑO_VALUE", "TIEMPO_DUMP" };
+int g_config_keys_size = 5;
 
 int main(void) {
 	g_logger = log_create("filesystem.log", "Filesystem", true, LOG_LEVEL_TRACE);
-	config_args_t* config_thread_args = build_config_args();
+
+	config_args_t* config_thread_args = build_config_args(g_config_keys, g_config_keys_size, FSCFG, g_logger, initialize_fs_config, update_fs_config);
 	pthread_t config_thread;
 
 	if (g_logger == NULL) {
@@ -23,19 +25,4 @@ int main(void) {
 	pthread_join(config_thread, NULL);
 	log_destroy(g_logger);
 	return 0;
-}
-
-config_args_t* build_config_args() {
-	int config_size = 5;
-
-	config_args_t* config_args = malloc(sizeof(config_args_t));
-
-	config_args->config_keys = g_config_keys;
-	config_args->config_file = FSCFG;
-	config_args->config_size = config_size;
-	config_args->logger = g_logger;
-	config_args->callback_created = initialize_fs_config;
-	config_args->callback_updated = update_fs_config;
-
-	return config_args;
 }

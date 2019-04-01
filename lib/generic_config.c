@@ -98,3 +98,17 @@ bool validate_config_properties(t_config* config, char** config_keys, int config
 
 	return true;
 }
+
+config_args_t* build_config_args(char** config_keys, int config_size, char* file, t_log* logger, void (*created)(t_config*), void (*updated)(t_config*)) {
+	config_args_t* config_args = malloc(sizeof(config_args_t));
+
+	config_args->config_keys = config_keys;
+	config_args->config_file = file;
+	config_args->config_size = config_size;
+	config_args->logger = logger;
+	config_args->callback_created = created;
+	config_args->callback_updated = updated;
+
+	return config_args;
+}
+

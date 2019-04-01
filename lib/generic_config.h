@@ -23,5 +23,6 @@ void update_config(char* config_file, void (*callback)(t_config*), char** config
 void check_config(char* config_file, void (*callback)(t_config*), char** config_keys, int config_size, t_log* logger);
 bool validate_config(t_config* config, char** config_keys, int config_size, t_log* logger);
 bool validate_config_properties(t_config* config, char** config_keys, int config_size, t_log* logger);
+config_args_t* build_config_args(char** config_keys, int config_size, char* file, t_log* logger, void (*created)(t_config*), void (*updated)(t_config*));
 
 #endif /* GENERIC_CONFIG_H_ */
