@@ -1,6 +1,4 @@
 #include "config.h"
-#define EVENT_SIZE    ( sizeof (struct inotify_event) )
-#define EVENT_BUF_LEN ( 1024 * ( EVENT_SIZE + 16 ) )
 
 void initialize_fs_config(t_config* config) {
 	char* mount_point = config_get_string_value(config, "PUNTO_MONTAJE");

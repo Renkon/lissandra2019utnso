@@ -1,5 +1,7 @@
 #ifndef GENERIC_CONFIG_H_
 #define GENERIC_CONFIG_H_
+#define EVENT_SIZE    ( sizeof (struct inotify_event) )
+#define EVENT_BUF_LEN ( 1024 * ( EVENT_SIZE + 16 ) )
 
 #include "commons/config.h"
 #include "commons/log.h"
