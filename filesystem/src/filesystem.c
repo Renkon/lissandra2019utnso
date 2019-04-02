@@ -1,4 +1,3 @@
-#include <pthread.h>
 #include "config.h"
 
 // Las keys de configuracion

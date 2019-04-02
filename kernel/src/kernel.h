@@ -13,15 +13,12 @@ typedef struct {
 	int quantum;
 	int multiprocessing;
 	int metadata_refresh;
-	int sleep_ejecution;
+	int execution_delay;
 } knconfig_t;
 
 knconfig_t g_config;
 extern char* g_config_keys[];
 extern int g_config_keys_size;
 t_log* g_logger;
-
-
-
 
 #endif /* KERNEL_H_ */
