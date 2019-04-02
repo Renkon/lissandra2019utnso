@@ -1,27 +1,33 @@
 #include "generic_config.h"
+
 #define EVENT_SIZE    ( sizeof (struct inotify_event) )
 #define EVENT_BUF_LEN ( 1024 * ( EVENT_SIZE + 16 ) )
 
-void pre_init_config(config_args_t* args) {
-	init_config(args->config_file, args->callback_created, args->callback_updated, args->config_keys, args->config_size, args->logger);
-
-	// Esto no se deberia ejecutar, pero eventualmente, si stoppeamos el bucle infinito, deberia liberar la memoria
-	free(args);
-}
-
-void init_config(char* config_file, void (*callback_created)(t_config*), void (*callback_updated)(t_config*), char** config_keys, int config_size, t_log* logger) {
+bool init_config(char* config_file, void (*callback_created)(t_config*), void (*callback_updated)(t_config*), char** config_keys, int config_size, t_log* logger) {
 	t_config* config = config_create(config_file);
+	config_args_t* thread_args;
+	pthread_t config_thread;
 
 	if (!validate_config(config, config_keys, config_size, logger))
-		return;
+		return false;
 
 	callback_created(config);
 
 	config_destroy(config);
 
+	thread_args = build_config_args(config_keys, config_size, config_file, logger, callback_updated);
+
+	if (pthread_create(&config_thread, NULL, (void*) pre_check_config, (void*) thread_args)) {
+			log_error(logger, "No se pudo inicializar el hilo de configuracion");
+			return false;
+	}
+
 	log_info(logger, "Se cargo satisfactoriamente la configuracion");
 
-	check_config(config_file, callback_updated, config_keys, config_size, logger);
+	// Esto es para que no cierre por ahora el thread
+	pthread_join(config_thread, NULL);
+
+	return true;
 }
 
 void update_config(char* config_file, void (*callback)(t_config*), char** config_keys, int config_size, t_log* logger) {
@@ -35,6 +41,13 @@ void update_config(char* config_file, void (*callback)(t_config*), char** config
 	callback(config);
 
 	config_destroy(config);
+}
+
+void pre_check_config(config_args_t* args) {
+	check_config(args->config_file, args->callback_updated, args->config_keys, args->config_size, args->logger);
+
+	// Esto no se deberia ejecutar, pero eventualmente, si stoppeamos el bucle infinito, deberia liberar la memoria
+	free(args);
 }
 
 void check_config(char* config_file, void (*callback)(t_config*), char** config_keys, int config_size, t_log* logger) {
@@ -99,14 +112,13 @@ bool validate_config_properties(t_config* config, char** config_keys, int config
 	return true;
 }
 
-config_args_t* build_config_args(char** config_keys, int config_size, char* file, t_log* logger, void (*created)(t_config*), void (*updated)(t_config*)) {
+config_args_t* build_config_args(char** config_keys, int config_size, char* file, t_log* logger, void (*updated)(t_config*)) {
 	config_args_t* config_args = malloc(sizeof(config_args_t));
 
 	config_args->config_keys = config_keys;
 	config_args->config_file = file;
 	config_args->config_size = config_size;
 	config_args->logger = logger;
-	config_args->callback_created = created;
 	config_args->callback_updated = updated;
 
 	return config_args;
