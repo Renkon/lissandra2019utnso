@@ -18,7 +18,8 @@ void update_fs_config(t_config* config) {
 	int new_dump_time = config_get_int_value(config, "TIEMPO_DUMP");
 
 	if (strcmp(new_mount_point, g_config.mount_point) != 0) {
-		g_config.mount_point = realloc(g_config.mount_point, strlen(new_mount_point));
+		free(g_config.mount_point);
+		g_config.mount_point = malloc(strlen(new_mount_point));
 		log_info(g_logger, "Nuevo valor de PUNTO_MONTAJE detectado -> %s", strcpy(g_config.mount_point, new_mount_point));
 	}
 	if (new_delay != g_config.delay)
