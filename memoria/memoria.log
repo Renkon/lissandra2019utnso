@@ -1,0 +1,107 @@
+[ERROR] 15:14:36:639 Memoria/(8739:8739): No esta definida la propiedad PUERTO
+[ERROR] 15:14:36:639 Memoria/(8739:8739): El archivo de configuracion no tiene todas las propiedades
+[ERROR] 15:17:46:100 Memoria/(8865:8865): No esta definida la propiedad PUERTO
+[ERROR] 15:17:47:105 Memoria/(8865:8865): El archivo de configuracion no tiene todas las propiedades
+[ERROR] 15:18:49:745 Memoria/(8901:8901): No esta definida la propiedad PUERTO
+[ERROR] 15:18:49:746 Memoria/(8901:8901): El archivo de configuracion no tiene todas las propiedades
+[ERROR] 15:25:52:551 Memoria/(9200:9200): No esta definida la propiedad PUERTO
+[ERROR] 15:25:52:592 Memoria/(9200:9200): El archivo de configuracion no tiene todas las propiedades
+[ERROR] 15:26:41:34 Memoria/(9256:9256): No esta definida la propiedad PUERTO
+[ERROR] 15:26:41:36 Memoria/(9256:9256): El archivo de configuracion no tiene todas las propiedades
+[INFO] 15:27:14:382 Memoria/(9290:9290): Se cargo satisfactoriamente la configuracion
+[INFO] 15:27:37:392 Memoria/(9290:9296): Nuevo valor de RETARDO_FS detectado -> 601
+[INFO] 15:27:37:399 Memoria/(9290:9296): Nuevo valor de TAM_MEM detectado -> 2049
+[INFO] 15:27:37:402 Memoria/(9290:9296): Nuevo valor de RETARDO_JOURNAL detectado -> 60001
+[INFO] 15:27:37:402 Memoria/(9290:9296): Nuevo valor de RETARDO_GOSSIPING detectado -> 30001
+[INFO] 15:27:37:403 Memoria/(9290:9296): Nuevo valor de MEMORY_NUMBER detectado -> 2
+[ERROR] 15:27:42:780 Memoria/(9290:9296): No esta definida la propiedad PUERTO
+[ERROR] 15:27:42:781 Memoria/(9290:9296): El archivo de configuracion no tiene todas las propiedades
+[WARNING] 15:27:42:781 Memoria/(9290:9296): El archivo de configuracion quedo invalidado. Ignorando nuevos valores
+[INFO] 15:27:42:782 Memoria/(9290:9296): Nuevo valor de MEMORY_NUMBER detectado -> 3
+[ERROR] 15:28:01:44 Memoria/(9290:9296): No esta definida la propiedad PUERTO
+[ERROR] 15:28:01:45 Memoria/(9290:9296): El archivo de configuracion no tiene todas las propiedades
+[WARNING] 15:28:01:45 Memoria/(9290:9296): El archivo de configuracion quedo invalidado. Ignorando nuevos valores
+[ERROR] 15:28:06:254 Memoria/(9290:9296): No esta definida la propiedad PUERTO
+[ERROR] 15:28:06:257 Memoria/(9290:9296): El archivo de configuracion no tiene todas las propiedades
+[WARNING] 15:28:06:259 Memoria/(9290:9296): El archivo de configuracion quedo invalidado. Ignorando nuevos valores
+[INFO] 15:28:06:259 Memoria/(9290:9296): Nuevo valor de MEMORY_NUMBER detectado -> 2
+[INFO] 15:28:35:89 Memoria/(9391:9391): Se cargo satisfactoriamente la configuracion
+[INFO] 15:28:43:952 Memoria/(9391:9397): Nuevo valor de RETARDO_MEM detectado -> 601
+[INFO] 15:28:43:952 Memoria/(9290:9296): Nuevo valor de RETARDO_MEM detectado -> 601
+[INFO] 15:28:58:636 Memoria/(9391:9397): Nuevo valor de RETARDO_MEM detectado -> 602
+[INFO] 15:28:58:636 Memoria/(9290:9296): Nuevo valor de RETARDO_MEM detectado -> 602
+[INFO] 15:29:03:277 Memoria/(9391:9397): Nuevo valor de RETARDO_JOURNAL detectado -> 60000
+[INFO] 15:29:03:283 Memoria/(9290:9296): Nuevo valor de RETARDO_JOURNAL detectado -> 60000
+[INFO] 15:29:31:850 Memoria/(9471:9471): Se cargo satisfactoriamente la configuracion
+[INFO] 15:29:53:494 Memoria/(9471:9476): Nuevo valor de MEMORY_NUMBER detectado -> 3
+[INFO] 15:29:53:494 Memoria/(9391:9397): Nuevo valor de MEMORY_NUMBER detectado -> 3
+[INFO] 15:29:53:494 Memoria/(9290:9296): Nuevo valor de MEMORY_NUMBER detectado -> 3
+[INFO] 15:34:38:218 Memoria/(9582:9582): Se cargo satisfactoriamente la configuracion
+[INFO] 15:34:44:896 Memoria/(9471:9476): Nuevo valor de MEMORY_NUMBER detectado -> 4
+[INFO] 15:34:44:897 Memoria/(9391:9397): Nuevo valor de MEMORY_NUMBER detectado -> 4
+[INFO] 15:34:44:897 Memoria/(9582:9587): Nuevo valor de MEMORY_NUMBER detectado -> 4
+[INFO] 15:34:44:897 Memoria/(9290:9296): Nuevo valor de MEMORY_NUMBER detectado -> 4
+[INFO] 15:34:51:425 Memoria/(9471:9476): Nuevo valor de MEMORY_NUMBER detectado -> 6
+[INFO] 15:34:51:425 Memoria/(9391:9397): Nuevo valor de MEMORY_NUMBER detectado -> 6
+[INFO] 15:34:51:426 Memoria/(9290:9296): Nuevo valor de MEMORY_NUMBER detectado -> 6
+[INFO] 15:34:51:435 Memoria/(9582:9587): Nuevo valor de MEMORY_NUMBER detectado -> 6
+[ERROR] 15:34:56:567 Memoria/(9471:9476): No esta definida la propiedad PUERTO
+[ERROR] 15:34:56:568 Memoria/(9582:9587): No esta definida la propiedad PUERTO
+[ERROR] 15:34:56:568 Memoria/(9290:9296): No esta definida la propiedad PUERTO
+[ERROR] 15:34:56:569 Memoria/(9290:9296): El archivo de configuracion no tiene todas las propiedades
+[ERROR] 15:34:56:569 Memoria/(9582:9587): El archivo de configuracion no tiene todas las propiedades
+[ERROR] 15:34:56:569 Memoria/(9471:9476): El archivo de configuracion no tiene todas las propiedades
+[WARNING] 15:34:56:573 Memoria/(9290:9296): El archivo de configuracion quedo invalidado. Ignorando nuevos valores
+[WARNING] 15:34:56:573 Memoria/(9471:9476): El archivo de configuracion quedo invalidado. Ignorando nuevos valores
+[INFO] 15:34:56:579 Memoria/(9290:9296): Nuevo valor de MEMORY_NUMBER detectado -> 7
+[INFO] 15:34:56:579 Memoria/(9471:9476): Nuevo valor de MEMORY_NUMBER detectado -> 7
+[ERROR] 15:34:56:582 Memoria/(9391:9397): No esta definida la propiedad PUERTO
+[ERROR] 15:34:56:582 Memoria/(9391:9397): El archivo de configuracion no tiene todas las propiedades
+[WARNING] 15:34:56:582 Memoria/(9391:9397): El archivo de configuracion quedo invalidado. Ignorando nuevos valores
+[INFO] 15:34:56:582 Memoria/(9391:9397): Nuevo valor de MEMORY_NUMBER detectado -> 7
+[WARNING] 15:34:56:583 Memoria/(9582:9587): El archivo de configuracion quedo invalidado. Ignorando nuevos valores
+[INFO] 15:34:56:584 Memoria/(9582:9587): Nuevo valor de MEMORY_NUMBER detectado -> 7
+[INFO] 15:35:00:499 Memoria/(9471:9476): Nuevo valor de MEMORY_NUMBER detectado -> 8
+[INFO] 15:35:00:500 Memoria/(9391:9397): Nuevo valor de MEMORY_NUMBER detectado -> 8
+[INFO] 15:35:00:500 Memoria/(9582:9587): Nuevo valor de MEMORY_NUMBER detectado -> 8
+[INFO] 15:35:00:500 Memoria/(9290:9296): Nuevo valor de MEMORY_NUMBER detectado -> 8
+[INFO] 15:35:04:35 Memoria/(9471:9476): Nuevo valor de MEMORY_NUMBER detectado -> 9
+[INFO] 15:35:04:35 Memoria/(9391:9397): Nuevo valor de MEMORY_NUMBER detectado -> 9
+[INFO] 15:35:04:35 Memoria/(9582:9587): Nuevo valor de MEMORY_NUMBER detectado -> 9
+[INFO] 15:35:04:35 Memoria/(9290:9296): Nuevo valor de MEMORY_NUMBER detectado -> 9
+[INFO] 15:35:06:917 Memoria/(9471:9476): Nuevo valor de MEMORY_NUMBER detectado -> 10
+[INFO] 15:35:06:918 Memoria/(9391:9397): Nuevo valor de MEMORY_NUMBER detectado -> 10
+[INFO] 15:35:06:918 Memoria/(9582:9587): Nuevo valor de MEMORY_NUMBER detectado -> 10
+[INFO] 15:35:06:918 Memoria/(9290:9296): Nuevo valor de MEMORY_NUMBER detectado -> 10
+[INFO] 15:35:10:475 Memoria/(9471:9476): Nuevo valor de RETARDO_GOSSIPING detectado -> 30000
+[INFO] 15:35:10:475 Memoria/(9391:9397): Nuevo valor de RETARDO_GOSSIPING detectado -> 30000
+[INFO] 15:35:10:475 Memoria/(9582:9587): Nuevo valor de RETARDO_GOSSIPING detectado -> 30000
+[INFO] 15:35:10:476 Memoria/(9290:9296): Nuevo valor de RETARDO_GOSSIPING detectado -> 30000
+[INFO] 15:35:14:333 Memoria/(9471:9476): Nuevo valor de RETARDO_JOURNAL detectado -> 60001
+[INFO] 15:35:14:333 Memoria/(9391:9397): Nuevo valor de RETARDO_JOURNAL detectado -> 60001
+[INFO] 15:35:14:333 Memoria/(9582:9587): Nuevo valor de RETARDO_JOURNAL detectado -> 60001
+[INFO] 15:35:14:333 Memoria/(9290:9296): Nuevo valor de RETARDO_JOURNAL detectado -> 60001
+[INFO] 15:35:21:59 Memoria/(9471:9476): Nuevo valor de RETARDO_JOURNAL detectado -> 60002
+[INFO] 15:35:21:60 Memoria/(9391:9397): Nuevo valor de RETARDO_JOURNAL detectado -> 60002
+[INFO] 15:35:21:60 Memoria/(9582:9587): Nuevo valor de RETARDO_JOURNAL detectado -> 60002
+[INFO] 15:35:21:60 Memoria/(9290:9296): Nuevo valor de RETARDO_JOURNAL detectado -> 60002
+[INFO] 15:35:25:888 Memoria/(9471:9476): Nuevo valor de TAM_MEM detectado -> 2050
+[INFO] 15:35:25:888 Memoria/(9391:9397): Nuevo valor de TAM_MEM detectado -> 2050
+[INFO] 15:35:25:888 Memoria/(9582:9587): Nuevo valor de TAM_MEM detectado -> 2050
+[INFO] 15:35:25:888 Memoria/(9290:9296): Nuevo valor de TAM_MEM detectado -> 2050
+[INFO] 15:35:28:512 Memoria/(9471:9476): Nuevo valor de TAM_MEM detectado -> 2051
+[INFO] 15:35:28:512 Memoria/(9391:9397): Nuevo valor de TAM_MEM detectado -> 2051
+[INFO] 15:35:28:512 Memoria/(9582:9587): Nuevo valor de TAM_MEM detectado -> 2051
+[INFO] 15:35:28:512 Memoria/(9290:9296): Nuevo valor de TAM_MEM detectado -> 2051
+[INFO] 15:35:30:638 Memoria/(9471:9476): Nuevo valor de TAM_MEM detectado -> 2050
+[INFO] 15:35:30:638 Memoria/(9391:9397): Nuevo valor de TAM_MEM detectado -> 2050
+[INFO] 15:35:30:638 Memoria/(9582:9587): Nuevo valor de TAM_MEM detectado -> 2050
+[INFO] 15:35:30:639 Memoria/(9290:9296): Nuevo valor de TAM_MEM detectado -> 2050
+[INFO] 15:35:37:279 Memoria/(9471:9476): Nuevo valor de RETARDO_FS detectado -> 600
+[INFO] 15:35:37:279 Memoria/(9391:9397): Nuevo valor de RETARDO_FS detectado -> 600
+[INFO] 15:35:37:280 Memoria/(9582:9587): Nuevo valor de RETARDO_FS detectado -> 600
+[INFO] 15:35:37:280 Memoria/(9290:9296): Nuevo valor de RETARDO_FS detectado -> 600
+[INFO] 15:35:40:436 Memoria/(9471:9476): Nuevo valor de RETARDO_MEM detectado -> 600
+[INFO] 15:35:40:436 Memoria/(9391:9397): Nuevo valor de RETARDO_MEM detectado -> 600
+[INFO] 15:35:40:436 Memoria/(9582:9587): Nuevo valor de RETARDO_MEM detectado -> 600
+[INFO] 15:35:40:436 Memoria/(9290:9296): Nuevo valor de RETARDO_MEM detectado -> 600
