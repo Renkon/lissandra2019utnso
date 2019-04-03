@@ -2,7 +2,7 @@
 
 void initialize_memory_config(t_config* config) {
 	g_config.port = init_int_config_value("PUERTO", config, g_logger);
-	init_str_config_value(&g_config.filesystem_ip, "IP_FS", config, g_logger);
+	g_config.filesystem_ip = init_str_config_value("IP_FS", config, g_logger);
 	g_config.filesystem_port = init_int_config_value("PUERTO_FS", config, g_logger);
 	g_config.seed_ips = init_str_array_config_value("IP_SEEDS", config, g_logger);
 	g_config.seed_ports = init_int_array_config_value("PUERTO_SEEDS", config, g_logger);

@@ -1,29 +1,17 @@
 #include "config.h"
 
 void initialize_kernel_config(t_config* config) {
-	char* memory_ip = config_get_string_value(config, "IP_MEMORIA");
-	g_config.memory_ip = malloc(strlen(memory_ip));
-	strcpy(g_config.memory_ip, memory_ip);
-
-	g_config.memory_port = config_get_int_value(config, "PUERTO_MEMORIA");
-	g_config.quantum = config_get_int_value(config, "QUANTUM");
-	g_config.multiprocessing = config_get_int_value(config, "MULTIPROCESAMIENTO");
-	g_config.metadata_refresh = config_get_int_value(config, "METADATA_REFRESH");
-	g_config.execution_delay = config_get_int_value(config, "SLEEP_EJECUCION");
+	g_config.memory_ip = init_str_config_value("IP_MEMORIA", config, g_logger);
+	g_config.memory_port = init_int_config_value("PUERTO_MEMORIA", config, g_logger);
+	g_config.quantum = init_int_config_value("QUANTUM", config, g_logger);
+	g_config.multiprocessing = init_int_config_value("MULTIPROCESAMIENTO", config, g_logger);
+	g_config.metadata_refresh = init_int_config_value("METADATA_REFRESH", config, g_logger);
+	g_config.execution_delay = init_int_config_value("SLEEP_EJECUCION", config, g_logger);
 }
 
 void update_kernel_config(t_config* config) {
-	int new_quantum = config_get_int_value(config, "QUANTUM");
-	int new_multiprocessing = config_get_int_value(config, "MULTIPROCESAMIENTO");
-	int new_metadata_refresh = config_get_int_value(config, "METADATA_REFRESH");
-	int new_execution_delay = config_get_int_value(config, "SLEEP_EJECUCION");
-
-	if (new_quantum != g_config.quantum)
-		log_info(g_logger, "Nuevo valor de QUANTUM detectado -> %i", g_config.quantum = new_quantum);
-	if (new_multiprocessing != g_config.multiprocessing)
-		log_info(g_logger, "Nuevo valor de MULTIPROCESAMIENTO detectado -> %i", g_config.multiprocessing = new_multiprocessing);
-	if (new_metadata_refresh != g_config.metadata_refresh)
-		log_info(g_logger, "Nuevo valor de METADATA_REFRESH detectado -> %i", g_config.metadata_refresh =  new_metadata_refresh);
-	if (new_execution_delay != g_config.execution_delay)
-		log_info(g_logger, "Nuevo valor de SLEEP_EJECUTION detectado -> %i", g_config.execution_delay =  new_execution_delay);
+	g_config.quantum = update_int_config_value(g_config.quantum, "QUANTUM", config, g_logger);
+	g_config.multiprocessing = update_int_config_value(g_config.multiprocessing, "MULTIPROCESAMIENTO", config, g_logger);
+	g_config.metadata_refresh = update_int_config_value(g_config.metadata_refresh, "METADATA_REFRESH", config, g_logger);
+	g_config.execution_delay = update_int_config_value(g_config.execution_delay, "SLEEP_EJECUCION", config, g_logger);
 }

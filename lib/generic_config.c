@@ -124,3 +124,66 @@ config_args_t* build_config_args(char** config_keys, int config_size, char* file
 	return config_args;
 }
 
+int init_int_config_value(char* key, t_config* config, t_log* logger) {
+	int value = config_get_int_value(config, key);
+
+	log_info(logger, "Se obtuvo el valor de propiedad %s. Valor -> %i", key, value);
+
+	return value;
+}
+
+int update_int_config_value(int current_value, char* key, t_config* config, t_log* logger) {
+	int new_value = config_get_int_value(config, key);
+
+	if (new_value != current_value) {
+		log_info(logger, "Nuevo valor de %s detectado -> %i", key, new_value);
+	}
+
+	return new_value;
+}
+
+char* init_str_config_value(char* key, t_config* config, t_log* logger) {
+	char* value = config_get_string_value(config, key);
+	char* destination = malloc(strlen(value));
+
+	log_info(logger, "Se obtuvo el valor de propiedad %s. Valor -> %s", key, strcpy(destination, value));
+
+	return destination;
+}
+
+char* update_str_config_value(char* old_value, char* key, t_config* config, t_log* logger) {
+	char* new_value = config_get_string_value(config, key);
+	char* ret_value = old_value;
+
+	if (strcmp(old_value, new_value) != 0) {
+		free(old_value);
+		ret_value = malloc(strlen(new_value));
+		log_info(logger, "Nuevo valor de %s detectado -> %s", key, strcpy(ret_value, new_value));
+	}
+
+	return ret_value;
+}
+
+t_list* init_str_array_config_value(char* key, t_config* config, t_log* logger) {
+	t_list* values = list_create();
+	char** value = config_get_array_value(config, key);
+	int currentValue = 0;
+
+	log_info(logger, "Se obtuvo el valor de propiedad %s. Valor tipo lista", key);
+
+	while (*value != NULL) {
+		list_add(values, *value);
+		log_info(logger, "Valor %s[%i] -> %s", key, currentValue++, *value);
+		value++;
+	}
+
+	return values;
+}
+
+t_list* init_int_array_config_value(char* key, t_config* config, t_log* logger) {
+	t_list* str_values = init_str_array_config_value(key, config, logger);
+	t_list* values = list_map(str_values, (void*) atol);
+	list_destroy(str_values);
+	return values;
+}
+
