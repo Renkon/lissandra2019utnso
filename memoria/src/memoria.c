@@ -16,7 +16,7 @@ int main(void) {
 		return 1;
 	}
 
-	init_config(MEMCFG, initialize_mem_config, update_mem_config, g_config_keys, g_config_keys_size, g_logger);
+	init_config(MEMCFG, initialize_memory_config, update_memory_config, g_config_keys, g_config_keys_size, g_logger);
 
 	log_destroy(g_logger);
 	return 0;

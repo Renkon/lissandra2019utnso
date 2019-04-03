@@ -1,49 +1,25 @@
 #include "config.h"
 
-void initialize_mem_config(t_config* config) {
-	g_config.port = config_get_int_value(config, "PUERTO");
-
-	char* fs_ip = config_get_string_value(config, "IP_FS");
-	g_config.fs_ip = malloc(strlen(fs_ip));
-	strcpy(g_config.fs_ip, fs_ip);
-
-	g_config.fs_port = config_get_int_value(config, "PUERTO_FS");
-
-	char** ip_seeds = config_get_array_value(config,"IP_SEEDS");
-	g_config.ip_seeds = malloc(sizeof(ip_seeds));
-	g_config.ip_seeds = config_get_array_value(config,"IP_SEEDS");
-
-	int** ports_seeds = config_get_array_value(config,"PUERTO_SEEDS");
-	g_config.ports_seeds = malloc(sizeof(ports_seeds));
-	g_config.ports_seeds = config_get_array_value(config,"PUERTO_SEEDS");
-
-	g_config.memory_ret = config_get_int_value(config, "RETARDO_MEM");
-	g_config.fs_ret = config_get_int_value(config, "RETARDO_FS");
-	g_config.memory_size = config_get_int_value(config, "TAM_MEM");
-	g_config.journal_ret = config_get_int_value(config, "RETARDO_JOURNAL");
-	g_config.gossiping_ret = config_get_int_value(config, "RETARDO_GOSSIPING");
-	g_config.memory_number = config_get_int_value(config, "MEMORY_NUMBER");
+void initialize_memory_config(t_config* config) {
+	g_config.port = init_int_config_value("PUERTO", config, g_logger);
+	init_str_config_value(&g_config.filesystem_ip, "IP_FS", config, g_logger);
+	g_config.filesystem_port = init_int_config_value("PUERTO_FS", config, g_logger);
+	g_config.seed_ips = init_str_array_config_value("IP_SEEDS", config, g_logger);
+	g_config.seed_ports = init_int_array_config_value("PUERTO_SEEDS", config, g_logger);
+	g_config.memory_delay = init_int_config_value("RETARDO_MEM", config, g_logger);
+	g_config.filesystem_delay = init_int_config_value("RETARDO_FS", config, g_logger);
+	g_config.memory_size = init_int_config_value("TAM_MEM", config, g_logger);
+	g_config.journal_delay = init_int_config_value("RETARDO_JOURNAL", config, g_logger);
+	g_config.gossip_delay = init_int_config_value("RETARDO_GOSSIPING", config, g_logger);
+	g_config.memory_number = init_int_config_value("MEMORY_NUMBER", config, g_logger);
 }
 
-void update_mem_config(t_config* config) {
-	int new_memory_ret = config_get_int_value(config, "RETARDO_MEM");
-	int new_fs_ret = config_get_int_value(config, "RETARDO_FS");
-	int new_memory_size = config_get_int_value(config, "TAM_MEM");
-	int new_journal_ret = config_get_int_value(config, "RETARDO_JOURNAL");
-	int new_gossiping_ret = config_get_int_value(config, "RETARDO_GOSSIPING");
-	int new_memory_number = config_get_int_value(config, "MEMORY_NUMBER");
-
-	if (new_memory_ret != g_config.memory_ret)
-		log_info(g_logger, "Nuevo valor de RETARDO_MEM detectado -> %i", g_config.memory_ret = new_memory_ret);
-	if (new_fs_ret != g_config.fs_ret)
-		log_info(g_logger, "Nuevo valor de RETARDO_FS detectado -> %i", g_config.fs_ret = new_fs_ret);
-	if (new_memory_size != g_config.memory_size)
-		log_info(g_logger, "Nuevo valor de TAM_MEM detectado -> %i", g_config.memory_size = new_memory_size);
-	if (new_journal_ret!= g_config.journal_ret)
-			log_info(g_logger, "Nuevo valor de RETARDO_JOURNAL detectado -> %i", g_config.journal_ret = new_journal_ret);
-	if (new_gossiping_ret != g_config.gossiping_ret)
-			log_info(g_logger, "Nuevo valor de RETARDO_GOSSIPING detectado -> %i", g_config.gossiping_ret = new_gossiping_ret);
-	if (new_memory_number != g_config.memory_number)
-			log_info(g_logger, "Nuevo valor de MEMORY_NUMBER detectado -> %i", g_config.memory_number = new_memory_number);
+void update_memory_config(t_config* config) {
+	g_config.memory_delay = update_int_config_value(g_config.memory_delay, "RETARDO_MEM", config, g_logger);
+	g_config.filesystem_delay = update_int_config_value(g_config.filesystem_delay, "RETARDO_FS", config, g_logger);
+	g_config.memory_size = update_int_config_value(g_config.memory_size, "TAM_MEM", config, g_logger);
+	g_config.journal_delay = update_int_config_value(g_config.journal_delay, "RETARDO_JOURNAL", config, g_logger);
+	g_config.gossip_delay = update_int_config_value(g_config.gossip_delay, "RETARDO_GOSSIPING", config, g_logger);
+	g_config.memory_number = update_int_config_value(g_config.memory_number, "MEMORY_NUMBER", config, g_logger);
 }
 

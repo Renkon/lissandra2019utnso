@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-void initialize_mem_config(t_config* config);
-void update_mem_config(t_config* config);
+void initialize_memory_config(t_config* config);
+void update_memory_config(t_config* config);
 
 #endif /* CONFIG3_H_ */

@@ -7,24 +7,21 @@
 
 typedef struct {
 	int port;
-	char* fs_ip;
-	int fs_port;
-	char** ip_seeds;
-	int** ports_seeds;
-	int memory_ret;
-	int fs_ret;
+	char* filesystem_ip;
+	int filesystem_port;
+	t_list* seed_ips;
+	t_list* seed_ports;
+	int memory_delay;
+	int filesystem_delay;
 	int memory_size;
-	int journal_ret;
-	int gossiping_ret;
+	int journal_delay;
+	int gossip_delay;
 	int memory_number;
-
-
 } memconfig_t;
 
 memconfig_t g_config;
 extern char* g_config_keys[];
 extern int g_config_keys_size;
 t_log* g_logger;
-
 
 #endif /* MEMORIA_H_ */
