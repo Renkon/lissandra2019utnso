@@ -3,6 +3,8 @@
 #define KERNEL_H_
 #define KNCFG "kernel.cfg"
 
+#include "config.h"
+#include "generic_console.h"
 #include "generic_config.h"
 #include "commons/config.h"
 #include "commons/log.h"

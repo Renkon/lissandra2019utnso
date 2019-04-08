@@ -4,6 +4,8 @@
 #define MEMCFG "memoria.cfg"
 
 #include "generic_config.h"
+#include "generic_console.h"
+#include "config.h"
 
 typedef struct {
 	int port;

@@ -24,9 +24,6 @@ bool init_config(char* config_file, void (*callback_created)(t_config*), void (*
 
 	log_info(logger, "Se cargo satisfactoriamente la configuracion");
 
-	// Esto es para que no cierre por ahora el thread
-	pthread_join(config_thread, NULL);
-
 	return true;
 }
 
@@ -44,6 +41,8 @@ void update_config(char* config_file, void (*callback)(t_config*), char** config
 }
 
 void pre_check_config(config_args_t* args) {
+	pthread_detach(pthread_self());
+
 	check_config(args->config_file, args->callback_updated, args->config_keys, args->config_size, args->logger);
 
 	// Esto no se deberia ejecutar, pero eventualmente, si stoppeamos el bucle infinito, deberia liberar la memoria
@@ -144,7 +143,7 @@ int update_int_config_value(int current_value, char* key, t_config* config, t_lo
 
 char* init_str_config_value(char* key, t_config* config, t_log* logger) {
 	char* value = config_get_string_value(config, key);
-	char* destination = malloc(strlen(value));
+	char* destination = malloc(strlen(value) + 1);
 
 	log_info(logger, "Se obtuvo el valor de propiedad %s. Valor -> %s", key, strcpy(destination, value));
 
@@ -157,7 +156,7 @@ char* update_str_config_value(char* old_value, char* key, t_config* config, t_lo
 
 	if (strcmp(old_value, new_value) != 0) {
 		free(old_value);
-		ret_value = malloc(strlen(new_value));
+		ret_value = malloc(strlen(new_value) + 1);
 		log_info(logger, "Nuevo valor de %s detectado -> %s", key, strcpy(ret_value, new_value));
 	}
 

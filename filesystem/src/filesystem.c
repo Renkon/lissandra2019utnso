@@ -1,4 +1,4 @@
-#include "config.h"
+#include "filesystem.h"
 
 // Las keys de configuracion
 char* g_config_keys[] = { "PUERTO_ESCUCHA", "PUNTO_MONTAJE", "RETARDO", "TAMAÑO_VALUE", "TIEMPO_DUMP" };
@@ -14,7 +14,7 @@ int main(void) {
 	}
 
 	init_config(FSCFG, initialize_fs_config, update_fs_config, g_config_keys, g_config_keys_size, g_logger);
-
+	init_console("Papito codeo en Assembler - Filesystem v1.0", "filesystem>", FILESYSTEM, g_logger);
 	log_destroy(g_logger);
 	return 0;
 }

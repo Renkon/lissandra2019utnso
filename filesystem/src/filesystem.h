@@ -2,6 +2,8 @@
 #define FILESYSTEM_H_
 #define FSCFG "filesystem.cfg"
 
+#include "config.h"
+#include "generic_console.h"
 #include "generic_config.h"
 
 typedef struct {
