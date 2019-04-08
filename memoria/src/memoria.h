@@ -24,6 +24,5 @@ typedef struct {
 memconfig_t g_config;
 extern char* g_config_keys[];
 extern int g_config_keys_size;
-t_log* g_logger;
 
 #endif /* MEMORIA_H_ */

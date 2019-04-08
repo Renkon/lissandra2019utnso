@@ -6,8 +6,7 @@
 #include "config.h"
 #include "generic_console.h"
 #include "generic_config.h"
-#include "commons/config.h"
-#include "commons/log.h"
+#include "generic_logger.h"
 
 typedef struct {
 	char* memory_ip;
@@ -21,6 +20,5 @@ typedef struct {
 knconfig_t g_config;
 extern char* g_config_keys[];
 extern int g_config_keys_size;
-t_log* g_logger;
 
 #endif /* KERNEL_H_ */

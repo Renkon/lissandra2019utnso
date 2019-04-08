@@ -1,6 +1,6 @@
 #include "generic_console.h"
 
-void init_console(char* init_str, char* prefix, process_t type, t_log* logger) {
+void init_console(char* init_str, char* prefix, process_t type) {
 	char* user_input = NULL;
 	operation_t operation = INVALID;
 
@@ -13,7 +13,7 @@ void init_console(char* init_str, char* prefix, process_t type, t_log* logger) {
 		operation = get_operation(user_input, type);
 
 		if (operation == INVALID || !operation_allowed(operation, type) || !validate_input(operation, user_input)) {
-			log_error(logger, "Se solicito una operacion invalida: \"%s\"", user_input);
+			log_e("Se solicito una operacion invalida: \"%s\"", user_input);
 			puts("Operacion invalida. Revise su input");
 		} else {
 
