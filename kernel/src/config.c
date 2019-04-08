@@ -11,7 +11,6 @@ void initialize_kernel_config(t_config* config) {
 
 void update_kernel_config(t_config* config) {
 	g_config.quantum = update_int_config_value(g_config.quantum, "QUANTUM", config, g_logger);
-	g_config.multiprocessing = update_int_config_value(g_config.multiprocessing, "MULTIPROCESAMIENTO", config, g_logger);
 	g_config.metadata_refresh = update_int_config_value(g_config.metadata_refresh, "METADATA_REFRESH", config, g_logger);
 	g_config.execution_delay = update_int_config_value(g_config.execution_delay, "SLEEP_EJECUCION", config, g_logger);
 }
