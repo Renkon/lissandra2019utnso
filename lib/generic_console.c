@@ -28,7 +28,11 @@ void init_console(char* init_str, char* prefix, process_t type, callbacks_t* cal
 // En base al token inicial devuelve el tipo de operacion
 operation_t get_operation(char* input, process_t process_type) {
 	operation_t operation_type;
-	char** tokens = string_split(input, " ");
+	int tokens_size;
+	char** tokens = string_split_ignore_quotes(input, " ", &tokens_size);
+
+	if (tokens_size == 0)
+		return INVALID;
 
 	if (string_equals_ignore_case(tokens[0], "SELECT"))
 		operation_type = SELECT;
@@ -42,13 +46,15 @@ operation_t get_operation(char* input, process_t process_type) {
 		operation_type = DROP;
 	else if (string_equals_ignore_case(tokens[0], "JOURNAL"))
 		operation_type = JOURNAL;
-	else if (string_equals_ignore_case(tokens[0], "ADD") && string_equals_ignore_case(tokens[1], "MEMORY"))
+	else if (tokens_size > 1 && string_equals_ignore_case(tokens[0], "ADD") && string_equals_ignore_case(tokens[1], "MEMORY"))
 		operation_type = ADD;
 	else if (string_equals_ignore_case(tokens[0], "RUN"))
 		operation_type = RUN;
 	else
 		operation_type = INVALID;
 
+	for (int i = 0; i < tokens_size; i++)
+		free(tokens[i]);
 	free(tokens);
 
 	return operation_type;
