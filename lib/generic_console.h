@@ -5,27 +5,11 @@
 #include <stdbool.h>
 #include <readline/readline.h>
 #include "generic_logger.h"
+#include "stdint.h"
+#include "types.h"
 #include "commons/string.h"
 #include "commons/log.h"
 #include "utils/string.h"
-
-typedef enum {
-	INVALID,
-	SELECT,
-	INSERT,
-	CREATE,
-	DESCRIBE,
-	DROP, // hasta aca puede el fs
-	JOURNAL, // hasta aca puede la memoria
-	ADD,
-	RUN // y hasta aca puede el kernel
-} operation_t;
-
-typedef enum {
-	KERNEL,
-	FILESYSTEM,
-	MEMORY
-} process_t;
 
 void init_console(char* init_str, char* prefix, process_t type);
 operation_t get_operation(char* input, process_t type);
