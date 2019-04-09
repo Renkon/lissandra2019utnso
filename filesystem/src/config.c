@@ -9,8 +9,6 @@ void initialize_fs_config(t_config* config) {
 }
 
 void update_fs_config(t_config* config) {
-	g_config.mount_point = update_str_config_value(g_config.mount_point, "PUNTO_MONTAJE", config);
 	g_config.delay = update_int_config_value(g_config.delay, "RETARDO", config);
-	g_config.max_value_size = update_int_config_value(g_config.max_value_size, "TAMAÑO_VALUE", config);
 	g_config.dump_time = update_int_config_value(g_config.dump_time, "TIEMPO_DUMP", config);
 }
