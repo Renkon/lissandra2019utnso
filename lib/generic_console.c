@@ -1,6 +1,6 @@
 #include "generic_console.h"
 
-void init_console(char* init_str, char* prefix, process_t type) {
+void init_console(char* init_str, char* prefix, process_t type, callbacks_t* callbacks) {
 	char* user_input = NULL;
 	operation_t operation = INVALID;
 
@@ -16,7 +16,7 @@ void init_console(char* init_str, char* prefix, process_t type) {
 			log_e("Se solicito una operacion invalida: \"%s\"", user_input);
 			puts("Operacion invalida. Revise su input");
 		} else {
-
+			process_input(operation, user_input, callbacks);
 		}
 
 		free(user_input);
@@ -58,7 +58,7 @@ bool operation_allowed(operation_t operation, process_t process) {
 	if (process == FILESYSTEM)
 		return operation <= DROP;
 	if (process == MEMORY)
-		return operation <= ADD;
+		return operation <= JOURNAL;
 
 	// El kernel acepta todos
 	return true;
@@ -116,7 +116,7 @@ bool validate_select(int tokens_size, char** tokens) {
 
 	// Valido que la key sea un uint16_t (si no que explote)
 	value = strtol(tokens[2], &end_str, 10);
-	if (end_str[0] != '\0' || value < 0 || value > 65535)
+	if (end_str[0] != '\0' || value < 0 || value > UINT16_MAX)
 		return false;
 
 	return true;
@@ -133,7 +133,7 @@ bool validate_insert(int tokens_size, char** tokens) {
 
 	// Valido que la key sea un uint16_t (si no que explote)
 	value_key = strtol(tokens[2], &end_str, 10);
-		if (end_str[0] != '\0' || value_key < 0 || value_key > 65535)
+		if (end_str[0] != '\0' || value_key < 0 || value_key > UINT16_MAX)
 			return false;
 
 	if (tokens_size == 5) { // Valido el timestamp
@@ -152,6 +152,11 @@ bool validate_create(int tokens_size, char** tokens) {
 
 	// CREATE [NOMBRE_TABLA] [CRIT_CONSISTENCIA] [PARTICIONES] [TIEMPO_COMPACTACION]
 	if (tokens_size != 5)
+		return false;
+
+	if (!string_equals_ignore_case(tokens[2], "SC") &&
+		!string_equals_ignore_case(tokens[2], "SHC") &&
+		!string_equals_ignore_case(tokens[2], "EC"))
 		return false;
 
 	value_partitions = strtol(tokens[3], &end_str, 10);
@@ -192,11 +197,137 @@ bool validate_add(int tokens_size, char** tokens) {
 	if (end_str[0] != '\0' || value < 0)
 		return false;
 
-	return string_equals_ignore_case(tokens[3], "TO");
+	if (!string_equals_ignore_case(tokens[3], "TO"))
+		return false;
 
+	return string_equals_ignore_case(tokens[4], "SC") ||
+		string_equals_ignore_case(tokens[4], "SHC") ||
+		string_equals_ignore_case(tokens[4], "EC");
 }
 
 bool validate_run(int tokens_size, char** tokens) {
 	// RUN [ARCHIVO]
 	return tokens_size == 2;
+}
+
+void process_input(operation_t operation, char* user_input, callbacks_t* callbacks) {
+	int tokens_size;
+	char** tokens = string_split_ignore_quotes(user_input, " ", &tokens_size);
+	select_input_t* select_input;
+	insert_input_t* insert_input;
+	create_input_t* create_input;
+	describe_input_t* describe_input;
+	drop_input_t* drop_input;
+	add_input_t* add_input;
+	run_input_t* run_input;
+
+	switch (operation) {
+		case SELECT:
+			select_input = malloc(sizeof(select_input_t));
+
+			select_input->table_name = malloc(strlen(tokens[1]) + 1);
+			select_input->table_name = memcpy(select_input->table_name, tokens[1], strlen(tokens[1]) + 1);
+			select_input->key = string_to_uint16(tokens[2]);
+
+			callbacks->select(select_input);
+		break;
+		case INSERT:
+			insert_input = malloc(sizeof(insert_input_t));
+
+			insert_input->table_name = malloc(strlen(tokens[1]) + 1);
+			insert_input->table_name = memcpy(insert_input->table_name, tokens[1], strlen(tokens[1]) + 1);
+			insert_input->key = string_to_uint16(tokens[2]);
+			insert_input->value = malloc(strlen(tokens[3]) + 1);
+			insert_input->value = memcpy(insert_input->value, tokens[3], strlen(tokens[3]) + 1);
+			if (tokens_size == 5)
+				insert_input->timestamp = string_to_long(tokens[4]);
+			else
+				insert_input->timestamp = -1;
+
+			callbacks->insert(insert_input);
+		break;
+		case CREATE:
+			create_input = malloc(sizeof(create_input_t));
+
+			create_input->table_name = malloc(strlen(tokens[1]) + 1);
+			create_input->table_name = memcpy(create_input->table_name, tokens[1], strlen(tokens[1]) + 1);
+			if (string_equals_ignore_case(tokens[2], "SC"))
+				create_input->consistency = STRONG_CONSISTENCY;
+			else if (string_equals_ignore_case(tokens[2], "SHC"))
+				create_input->consistency = STRONG_HASH_CONSISTENCY;
+			else
+				create_input->consistency = EVENTUAL_CONSISTENCY;
+			create_input->partitions = string_to_int(tokens[3]);
+			create_input->compaction_time = string_to_long(tokens[4]);
+
+			callbacks->create(create_input);
+		break;
+		case DESCRIBE:
+			describe_input = malloc(sizeof(describe_input_t));
+			if (tokens_size == 2) {
+				describe_input->table_name = malloc(strlen(tokens[1]) + 1);
+				describe_input->table_name = memcpy(describe_input->table_name, tokens[1], strlen(tokens[1]) + 1);
+			} else {
+				describe_input->table_name = string_new();
+			}
+
+			callbacks->describe(describe_input);
+		break;
+		case DROP:
+			drop_input = malloc(sizeof(drop_input_t));
+
+			drop_input->table_name = malloc(strlen(tokens[1]) + 1);
+			drop_input->table_name = memcpy(drop_input->table_name, tokens[1], strlen(tokens[1]) + 1);
+
+			callbacks->drop(drop_input);
+		break;
+		case JOURNAL:
+			callbacks->journal();
+		break;
+		case ADD:
+			add_input = malloc(sizeof(add_input_t));
+
+			add_input->memory_number = string_to_int(tokens[2]);
+			if (string_equals_ignore_case(tokens[4], "SC"))
+				add_input->consistency = STRONG_CONSISTENCY;
+			else if (string_equals_ignore_case(tokens[4], "SHC"))
+				add_input->consistency = STRONG_HASH_CONSISTENCY;
+			else
+				add_input->consistency = EVENTUAL_CONSISTENCY;
+
+			callbacks->add(add_input);
+		break;
+		case RUN:
+			run_input = malloc(sizeof(run_input_t));
+
+			run_input->path = malloc(strlen(tokens[1]) + 1);
+			run_input->path = memcpy(run_input->path, tokens[1], strlen(tokens[1]) + 1);
+
+			callbacks->run(run_input);
+		break;
+		// Esto no pasa nunca (pero evito un warning del eclipse)
+		default:
+		break;
+	}
+
+	for (int i = 0; i < tokens_size; i++) {
+		free(tokens[i]);
+	}
+	free(tokens);
+}
+
+callbacks_t* build_callbacks(void (*select)(select_input_t*), void (*insert)(insert_input_t*), void (*create)(create_input_t*),
+		void (*describe)(describe_input_t*), void (*drop)(drop_input_t*), void (*journal)(), void (*add)(add_input_t*), void (*run)(run_input_t*)){
+	callbacks_t* callbacks = malloc(sizeof(callbacks_t));
+
+	callbacks->select = select;
+	callbacks->insert = insert;
+	callbacks->create = create;
+	callbacks->describe = describe;
+	callbacks->drop = drop;
+	callbacks->journal = journal;
+	callbacks->add = add;
+	callbacks->run = run;
+
+	return callbacks;
 }

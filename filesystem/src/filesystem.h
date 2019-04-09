@@ -5,6 +5,7 @@
 #include "config.h"
 #include "generic_console.h"
 #include "generic_config.h"
+#include "core/operations.h"
 
 typedef struct {
 	int port;
@@ -17,5 +18,7 @@ typedef struct {
 fsconfig_t g_config;
 extern char* g_config_keys[];
 extern int g_config_keys_size;
+
+callbacks_t* get_callbacks();
 
 #endif /* FILESYSTEM_H_ */

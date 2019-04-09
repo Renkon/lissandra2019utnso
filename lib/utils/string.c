@@ -34,3 +34,16 @@ char** string_split_ignore_quotes(char* input, char* delimiter, int* size) {
 
 	return return_tokens;
 }
+
+uint16_t string_to_uint16(char* str) {
+	return (uint16_t) string_to_long(str);
+}
+
+int string_to_int(char* str) {
+	return (int) string_to_long(str);
+}
+
+long string_to_long(char* str) {
+	return strtol(str, NULL, 10);
+}
+

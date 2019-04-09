@@ -11,7 +11,12 @@ int main(void) {
 		return 1;
 
 	init_config(MEMCFG, initialize_memory_config, update_memory_config, g_config_keys, g_config_keys_size);
-	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY);
+	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY, get_callbacks());
 	destroy_logger();
 	return 0;
+}
+
+callbacks_t* get_callbacks() {
+	return build_callbacks(process_select, process_insert, process_create, process_describe,
+			process_drop, process_journal, NULL, NULL);
 }
