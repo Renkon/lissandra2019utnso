@@ -236,6 +236,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			select_input->key = string_to_uint16(tokens[2]);
 
 			callbacks->select(select_input);
+			free(select_input);
 		break;
 		case INSERT:
 			insert_input = malloc(sizeof(insert_input_t));
@@ -251,6 +252,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 				insert_input->timestamp = -1;
 
 			callbacks->insert(insert_input);
+			free(insert_input);
 		break;
 		case CREATE:
 			create_input = malloc(sizeof(create_input_t));
@@ -267,6 +269,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			create_input->compaction_time = string_to_long(tokens[4]);
 
 			callbacks->create(create_input);
+			free(create_input);
 		break;
 		case DESCRIBE:
 			describe_input = malloc(sizeof(describe_input_t));
@@ -278,6 +281,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			}
 
 			callbacks->describe(describe_input);
+			free(describe_input);
 		break;
 		case DROP:
 			drop_input = malloc(sizeof(drop_input_t));
@@ -286,6 +290,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			drop_input->table_name = memcpy(drop_input->table_name, tokens[1], strlen(tokens[1]) + 1);
 
 			callbacks->drop(drop_input);
+			free(drop_input);
 		break;
 		case JOURNAL:
 			callbacks->journal();
@@ -302,6 +307,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 				add_input->consistency = EVENTUAL_CONSISTENCY;
 
 			callbacks->add(add_input);
+			free(add_input);
 		break;
 		case RUN:
 			run_input = malloc(sizeof(run_input_t));
@@ -310,6 +316,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			run_input->path = memcpy(run_input->path, tokens[1], strlen(tokens[1]) + 1);
 
 			callbacks->run(run_input);
+			free(run_input);
 		break;
 		// Esto no pasa nunca (pero evito un warning del eclipse)
 		default:

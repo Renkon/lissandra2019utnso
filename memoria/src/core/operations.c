@@ -1,6 +1,5 @@
 #include "operations.h"
 
-// TODO: eventualmente hay que hacer free de todos los input
 void process_select(select_input_t* input) {
 	log_i("mm select args: %s %u", input->table_name, (unsigned int)input->key);
 }
