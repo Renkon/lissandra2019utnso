@@ -5,6 +5,7 @@
 
 #include "generic_config.h"
 #include "generic_console.h"
+#include "generic_connection.h"
 #include "config.h"
 #include "core/operations.h"
 

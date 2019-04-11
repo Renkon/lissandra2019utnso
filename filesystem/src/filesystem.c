@@ -9,6 +9,7 @@ int main(void) {
 		return 1;
 
 	init_config(FSCFG, initialize_fs_config, update_fs_config, g_config_keys, g_config_keys_size);
+	init_server(g_config.port);
 	init_console("Papito codeo en Assembler - Filesystem v1.0", "filesystem>", FILESYSTEM, get_callbacks());
 	destroy_logger();
 	return 0;

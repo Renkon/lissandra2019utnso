@@ -5,6 +5,7 @@
 #include "config.h"
 #include "generic_console.h"
 #include "generic_config.h"
+#include "generic_connection.h"
 #include "core/operations.h"
 
 typedef struct {
