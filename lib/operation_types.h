@@ -1,5 +1,5 @@
-#ifndef TYPES_H_
-#define TYPES_H_
+#ifndef OPERATION_TYPES_H_
+#define OPERATION_TYPES_H_
 
 #include <stdint.h>
 
@@ -25,44 +25,46 @@ typedef enum {
 	STRONG_CONSISTENCY,
 	STRONG_HASH_CONSISTENCY,
 	EVENTUAL_CONSISTENCY
-} consistency_t;
+}__attribute__((packed)) consistency_t;
 
 typedef struct {
 	char* table_name;
 	uint16_t key;
-} select_input_t;
+}__attribute__((packed)) select_input_t;
 
 typedef struct {
 	char* table_name;
 	uint16_t key;
 	char* value;
 	long timestamp;
-} insert_input_t;
+}__attribute__((packed)) insert_input_t;
 
 typedef struct {
 	char* table_name;
 	consistency_t consistency;
 	int partitions;
 	long compaction_time;
-} create_input_t;
+}__attribute__((packed)) create_input_t;
 
 typedef struct {
 	char* table_name; // opcional
-} describe_input_t;
+}__attribute__((packed)) describe_input_t;
 
 typedef struct {
 	char* table_name;
-} drop_input_t;
+}__attribute__((packed)) drop_input_t;
 
 // journal no requiere struct
 
 typedef struct {
 	int memory_number;
 	consistency_t consistency;
-} add_input_t;
+}__attribute__((packed)) add_input_t;
 
 typedef struct {
 	char* path;
-} run_input_t;
+}__attribute__((packed)) run_input_t;
 
-#endif /* TYPES_H_ */
+char* get_process_name(process_t process);
+
+#endif /* OPERATION_TYPES_H_ */

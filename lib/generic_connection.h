@@ -1,7 +1,6 @@
 #ifndef GENERIC_CONNECTION_H_
 #define GENERIC_CONNECTION_H_
 #define LISTEN_QUEUE 5
-#define BUFFER_SIZE 1024
 
 #include <stdlib.h>
 #include <string.h>
@@ -11,13 +10,22 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include "generic_logger.h"
+#include "operation_types.h"
+#include "network_types.h"
+
+typedef struct {
+	int port;
+	process_t process;
+} conn_thread_args_t;
 
 typedef struct {
 	int socket;
-	char* buffer;
-} conn_thread_args_t;
+	process_t process;
+} conn_args_t;
 
-bool init_server(int listen_port);
-bool setup_server(int listen_port);
+bool init_server(int listen_port, process_t process);
+bool setup_server(void* args);
+void handle_request(void* args);
+bool valid_source(process_t me, process_t client);
 
 #endif /* GENERIC_CONNECTION_H_ */

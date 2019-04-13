@@ -1,7 +1,7 @@
 #include "kernel.h"
 
 // Las keys de configuracion... pero ahora del kernel
-char* g_config_keys[] = { "IP_MEMORIA", "PUERTO_MEMORIA", "QUANTUM", "MULTIPROCESAMIENTO", "METADATA_REFRESH","SLEEP_EJECUCION" };
+char* g_config_keys[] = { "IP_MEMORIA", "PUERTO_MEMORIA", "QUANTUM", "MULTIPROCESAMIENTO", "METADATA_REFRESH", "SLEEP_EJECUCION" };
 int g_config_keys_size = 6;
 
 int main(void) {

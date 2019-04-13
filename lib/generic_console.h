@@ -5,9 +5,10 @@
 #include <stdbool.h>
 #include <readline/readline.h>
 #include "generic_logger.h"
-#include "types.h"
 #include "commons/string.h"
 #include "commons/log.h"
+
+#include "operation_types.h"
 #include "utils/string.h"
 
 typedef struct {

@@ -1,9 +1,12 @@
 #include "generic_connection.h"
 
-bool init_server(int listen_port) {
+bool init_server(int listen_port, process_t process) {
 	pthread_t connection_thread;
+	conn_thread_args_t* conn_args = malloc(sizeof(conn_thread_args_t));
+	conn_args->port = listen_port;
+	conn_args->process = process;
 
-	if (pthread_create(&connection_thread, NULL, (void*) setup_server, (void*) listen_port)) {
+	if (pthread_create(&connection_thread, NULL, (void*) setup_server, (void*) conn_args)) {
 		log_e("No se pudo inicializar el hilo principal de conexiones");
 		return false;
 	}
@@ -11,12 +14,12 @@ bool init_server(int listen_port) {
 	return true;
 }
 
-bool setup_server(int listen_port) {
+bool setup_server(void* args) {
 	struct sockaddr_in address;
+	int listen_port = ((conn_thread_args_t*) args)->port;
 	int opt = 1;
 	int address_length = sizeof(address);
 	int server_fd, accepted_socket;
-	char* buffer[BUFFER_SIZE];
 
 	// Me detacheo porque me considero independiente :3
 	pthread_detach(pthread_self());
@@ -52,13 +55,21 @@ bool setup_server(int listen_port) {
 
 	// Paso 5, entro en un bucle infinito escuchando conexiones
 	while (true) {
-		if ((accepted_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &address_length)) < 0)
+		pthread_t pthread_id;
+		conn_args_t* connection_args;
+
+		if ((accepted_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &address_length)) < 0) {
 			log_e("No se pudo aceptar una solicitud realizada al servidor. Ignorando solicitud...");
+			continue;
+		}
 
+		connection_args = malloc(sizeof(conn_args_t));
+		connection_args->process = ((conn_thread_args_t*) args)->process;
+		connection_args->socket = accepted_socket;
 
-		while (recv(accepted_socket, buffer, BUFFER_SIZE, 0)) {
-			log_t("%s", buffer);
-			memset(buffer, 0, BUFFER_SIZE);
+		if (pthread_create(&pthread_id, NULL, (void*) handle_request, (void*) connection_args)) {
+			log_e("No se pudo iniciar un hilo para la conexion con el socket %i", accepted_socket);
+			free(connection_args);
 		}
 
 		if (close(accepted_socket))
@@ -69,4 +80,77 @@ bool setup_server(int listen_port) {
 	close(server_fd);
 
 	return true;
+}
+
+void handle_request(void* args) {
+	conn_args_t* connection_args = (conn_args_t*) args;
+	header_t* header_recv = malloc(sizeof(header_t));
+	header_t* header_send = malloc(sizeof(header_t));
+	packet_t* packet = malloc(sizeof(packet_t));
+	void* buffer;
+	void* response;
+	int bytes_to_read, bytes_read, current_bytes_read;
+
+	header_recv->keep_alive = true; // seteo el keep alive para que entre en el while inicial
+	header_send->process = connection_args->process;
+
+	while (header_recv->keep_alive) {
+		// Paso 1: recibimos el header
+		recv(connection_args->socket, header_recv, sizeof(header_t), 0);
+
+		// Valido que sea un solicitor valido
+		if (!valid_source(connection_args->process, header_recv->process)) {
+			log_w("El proceso %s intento comunicarse conmigo. Rechazo handshake", get_process_name(header_recv->process));
+			break;
+		}
+
+		if (header_recv->operation == HANDSHAKE_NET) {
+			header_send->content_length = 0;
+			header_send->keep_alive = true;
+			header_send->operation = HANDSHAKE_NET;
+
+			log_t("Se recibio un handshake request de %s. Aceptando handshake");
+			send(connection_args->socket, header_send, sizeof(header_t), 0);
+		} else {
+			// Ya tenemos el header, solo nos falta el socket.
+			bytes_to_read = header_recv->content_length;
+			bytes_read = 0;
+			buffer = malloc(bytes_to_read);
+
+			while (bytes_to_read > 0) {
+				current_bytes_read = recv(connection_args->socket, buffer + bytes_read, bytes_to_read, 0);
+				bytes_to_read -= current_bytes_read;
+				bytes_read += current_bytes_read;
+			}
+
+			// TODO: agregar logica de recepcion del buffer
+			// aca se procesa todo... y se obtiene un body
+			response = "respuesta rancia";
+			header_send->operation = HANDSHAKE_NET; // temporal hasta ver que operaciones definimos
+			header_send->content_length = sizeof(strlen(response) + 1);
+			header_send->keep_alive = header_recv->keep_alive;
+
+			packet->header = *header_send;
+			packet->content = response;
+
+			send(connection_args->socket, packet, sizeof(header_t) + header_send->content_length, 0);
+
+			free(buffer);
+		}
+	}
+
+	free(packet);
+	free(header_recv);
+	free(header_send);
+	free(args);
+}
+
+bool valid_source(process_t me, process_t client) {
+	if (me == KERNEL)
+		return false;
+	if (me == MEMORY)
+		return client == KERNEL;
+	if (me == FILESYSTEM)
+		return client == MEMORY;
+	return false;
 }
