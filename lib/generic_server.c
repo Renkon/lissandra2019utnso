@@ -84,7 +84,7 @@ void handle_request(void* args) {
 	conn_args_t* connection_args = (conn_args_t*) args;
 	header_t* header_recv = malloc(sizeof(header_t));
 	header_t* header_send = malloc(sizeof(header_t));
-	packet_t* packet = malloc(sizeof(packet_t));
+	packet_t* packet;
 	void* buffer;
 	void* response;
 
@@ -127,6 +127,7 @@ void handle_request(void* args) {
 			header_send->content_length = strlen(response) + 1;
 			header_send->keep_alive = header_recv->keep_alive;
 
+			packet = malloc(sizeof(packet_t) + header_recv->content_length);
 			packet->header = *header_send;
 			packet->content = response;
 

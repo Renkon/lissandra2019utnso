@@ -1,6 +1,6 @@
 #include "generic_client.h"
 
-int setup_connection(process_t process, char* ip, int port, header_t* header_send, header_t* header_recv, packet_t* packet) {
+int setup_connection(process_t process, char* ip, int port, header_t* header_send, header_t* header_recv) {
 	int connection_socket;
 	struct sockaddr_in serv_addr;
 
@@ -57,18 +57,24 @@ void do_simple_request(process_t process, char* ip, int port, socket_operation_t
 	void* buffer;
 	header_t* header_send = malloc(sizeof(header_t));
 	header_t* header_recv = malloc(sizeof(header_t));
-	packet_t* packet = malloc(sizeof(packet_t));
+	packet_t* packet;
 
-	if ((socket = setup_connection(process, ip, port, header_send, header_recv, packet)) < 0) {
-		release_request_resources(header_send, header_recv, packet);
+	if ((socket = setup_connection(process, ip, port, header_send, header_recv)) < 0) {
+		free(header_recv);
+		free(header_send);
 		return;
 	}
 
 	header_send->content_length = content_length;
 	header_send->keep_alive = false;
 	header_send->operation = operation;
+
+	packet = malloc(sizeof(packet_t));
+
 	packet->header = *header_send;
 	packet->content = content;
+
+	log_t("Enviando %s", content);
 
 	send(socket, packet, sizeof(header_t) + content_length, 0);
 
@@ -82,17 +88,13 @@ void do_simple_request(process_t process, char* ip, int port, socket_operation_t
 
 	log_t("Se recibio un paquete con contenido: %s", buffer);
 
-	release_request_resources(header_send, header_recv, packet);
-
 	kill_connection(socket);
 
 	callback(buffer);
-	free(buffer);
-}
 
-void release_request_resources(header_t* header1, header_t* header2, packet_t* packet) {
-	free(header1);
-	free(header2);
+	free(buffer);
 	free(packet);
+	free(header_recv);
+	free(header_send);
 }
 
