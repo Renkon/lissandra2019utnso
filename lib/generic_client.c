@@ -37,7 +37,7 @@ int setup_connection(process_t process, char* ip, int port, header_t* header_sen
 	send(connection_socket, header_send, sizeof(header_t), 0);
 
 	// Paso 5: recibimos el handshake y procedemos con la solicitud
-	int pepe = recv2(connection_socket, header_recv, sizeof(header_t));
+	recv2(connection_socket, header_recv, sizeof(header_t));
 
 	if (header_recv->operation != HANDSHAKE_OUT) {
 		log_w("El servidor no respondio el handshake. Se cancela la solicitud");
@@ -53,7 +53,7 @@ void kill_connection(int socket) {
 }
 
 void do_simple_request(process_t process, char* ip, int port, socket_operation_t operation, void* content, int content_length, void (*callback)(void*)) {
-	int socket, bytes_to_read, bytes_read, current_bytes_read;
+	int socket;
 	void* buffer;
 	header_t* header_send = malloc(sizeof(header_t));
 	header_t* header_recv = malloc(sizeof(header_t));
@@ -70,22 +70,15 @@ void do_simple_request(process_t process, char* ip, int port, socket_operation_t
 	packet->header = *header_send;
 	packet->content = content;
 
-	send(socket, header_send, sizeof(header_t) + content_length, 0);
+	send(socket, packet, sizeof(header_t) + content_length, 0);
 
 	// Recibimos lo que necesitamos
 	// Primero el header
 	recv2(socket, header_recv, sizeof(header_t));
 
-	// Setupeo variables utiles
-	bytes_to_read = header_recv->content_length;
-	bytes_read = 0;
-	buffer = malloc(bytes_to_read);
-
-	while (bytes_to_read > 0) {
-		current_bytes_read = recv(socket, buffer + bytes_read, bytes_to_read, 0);
-		bytes_to_read -= current_bytes_read;
-		bytes_read += current_bytes_read;
-	}
+	// Configuroel buffer y leo
+	buffer = malloc(header_recv->content_length);
+	recv2(socket, buffer, header_recv->content_length);
 
 	log_t("Se recibio un paquete con contenido: %s", buffer);
 

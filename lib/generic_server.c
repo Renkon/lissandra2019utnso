@@ -71,9 +71,6 @@ bool setup_server(void* args) {
 			log_e("No se pudo iniciar un hilo para la conexion con el socket %i", accepted_socket);
 			free(connection_args);
 		}
-
-		if (close(accepted_socket))
-			log_e("No se pudo cerrar el socket %i", accepted_socket);
 	}
 
 	// Paso 6: se cierra el socket, aunque esto no deberia pasar nunca
@@ -83,6 +80,7 @@ bool setup_server(void* args) {
 }
 
 void handle_request(void* args) {
+	int received_bytes = 1;
 	conn_args_t* connection_args = (conn_args_t*) args;
 	header_t* header_recv = malloc(sizeof(header_t));
 	header_t* header_send = malloc(sizeof(header_t));
@@ -95,9 +93,9 @@ void handle_request(void* args) {
 	header_recv->keep_alive = true; // seteo el keep alive para que entre en el while inicial
 	header_send->process = connection_args->process;
 
-	while (header_recv->keep_alive) {
+	while (header_recv->keep_alive && received_bytes > 0) {
 		// Paso 1: recibimos el header
-		int pepe = recv2(connection_args->socket, header_recv, sizeof(header_t));
+		received_bytes = recv2(connection_args->socket, header_recv, sizeof(header_t));
 
 		// Valido que sea un solicitor valido
 		if (!valid_source(connection_args->process, header_recv->process)) {
@@ -111,20 +109,22 @@ void handle_request(void* args) {
 			header_send->keep_alive = true;
 			header_send->operation = HANDSHAKE_OUT;
 
+			send(connection_args->socket, header_send, sizeof(header_t), 0);
+
 			log_t("Se recibio un handshake request de %s. Aceptando handshake", get_process_name(header_recv->process));
 		} else { // Paso 3: procesamos la request
 			// Ya tenemos el header, solo nos falta el socket.
 			buffer = malloc(header_recv->content_length);
 
-			recv2(connection_args->socket, buffer, header_recv->content_length);
+			received_bytes = recv2(connection_args->socket, buffer, header_recv->content_length);
 
-			log_t("Se recibio un paquete con contenido: %s", buffer);
+			log_t("Se recibio un paquete con contenido: %s", (char*) buffer);
 
 			// TODO: agregar logica de recepcion del buffer
 			// aca se procesa todo... y se obtiene un body
-			response = "respuesta rancia";
+			response = buffer;
 			header_send->operation = header_recv->operation + 1;
-			header_send->content_length = sizeof(strlen(response) + 1);
+			header_send->content_length = strlen(response) + 1;
 			header_send->keep_alive = header_recv->keep_alive;
 
 			packet->header = *header_send;
@@ -134,6 +134,8 @@ void handle_request(void* args) {
 			send(connection_args->socket, packet, sizeof(header_t) + header_send->content_length, 0);
 
 			free(buffer);
+
+			close(connection_args->socket);
 		}
 	}
 
