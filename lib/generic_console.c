@@ -66,8 +66,7 @@ bool operation_allowed(operation_t operation, process_t process) {
 	if (process == MEMORY)
 		return operation <= JOURNAL;
 
-	// El kernel acepta todos
-	return true;
+	return process == KERNEL;
 }
 
 bool validate_input(operation_t operation, char* input) {

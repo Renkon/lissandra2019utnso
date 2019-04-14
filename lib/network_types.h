@@ -6,16 +6,26 @@
 
 // Tipos de operaciones posibles a transmitir por red
 typedef enum {
-	HANDSHAKE_NET,
-	SELECT_NET,
-	INSERT_NET,
-	CREATE_NET,
-	DESCRIBE_NET,
-	DROP_NET,
-	JOURNAL_NET,
-	ADD_NET,
-	RUN_NET,
-	GOSSIP_NET
+	HANDSHAKE_IN,
+	HANDSHAKE_OUT,
+	SELECT_IN,
+	SELECT_OUT,
+	INSERT_IN,
+	INSERT_OUT,
+	CREATE_IN,
+	CREATE_OUT,
+	DESCRIBE_IN,
+	DESCRIBE_OUT,
+	DROP_IN,
+	DROP_OUT,
+	JOURNAL_IN,
+	JOURNAL_OUT,
+	ADD_IN,
+	ADD_OUT,
+	RUN_IN,
+	RUN_OUT,
+	GOSSIP_IN,
+	GOSSIP_OUT
 } socket_operation_t;
 
 typedef struct {

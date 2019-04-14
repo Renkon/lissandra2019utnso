@@ -16,6 +16,7 @@ typedef enum {
 } operation_t;
 
 typedef enum {
+	UNKNOWN,
 	KERNEL,
 	FILESYSTEM,
 	MEMORY
