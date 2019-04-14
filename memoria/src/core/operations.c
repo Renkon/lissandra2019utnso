@@ -2,6 +2,7 @@
 
 void process_select(select_input_t* input) {
 	log_i("mm select args: %s %u", input->table_name, (unsigned int)input->key);
+	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, string_new(), 1, select_callback);
 }
 
 void process_insert(insert_input_t* input) {
@@ -22,4 +23,8 @@ void process_drop(drop_input_t* input) {
 
 void process_journal() {
 	log_i("mm journal args none");
+}
+
+void select_callback(void* response) {
+	log_i("Recibi respuesta del servidor!");
 }
