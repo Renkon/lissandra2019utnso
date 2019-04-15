@@ -1,8 +1,9 @@
 #include "generic_client.h"
 
-int setup_connection(process_t process, char* ip, int port, header_t* header_send, header_t* header_recv) {
+int setup_connection(process_t process, char* ip, int port) {
 	int connection_socket;
 	struct sockaddr_in serv_addr;
+	packet_t* packet;
 
 	// Paso 1: creo el socket
 	if ((connection_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -27,24 +28,26 @@ int setup_connection(process_t process, char* ip, int port, header_t* header_sen
 		return -3;
 	}
 
-	// Paso 4: hacemos el handshake
-	header_send->content_length = 0;
-	header_send->keep_alive = true;
-	header_send->operation = HANDSHAKE_IN;
-	header_send->process = process;
+	packet = malloc(sizeof(packet_t));
+	build_packet(packet, process, HANDSHAKE_IN, true, 0, NULL);
 
+	// Paso 4: hacemos el handshake
 	log_t("Solicitando handshake a %s:%i", ip, port);
-	send(connection_socket, header_send, sizeof(header_t), 0);
+	send2(connection_socket, packet);
 
 	// Paso 5: recibimos el handshake y procedemos con la solicitud
-	recv2(connection_socket, header_recv, sizeof(header_t));
+	recv3(connection_socket, packet);
 
-	if (header_recv->operation != HANDSHAKE_OUT) {
+	if (packet->header.operation != HANDSHAKE_OUT) {
 		log_w("El servidor no respondio el handshake. Se cancela la solicitud");
+		free_packet(packet);
 		return -4;
 	}
 
 	log_t("Se realizo el handshake satisfactoriamente");
+
+	free_packet(packet);
+
 	return connection_socket;
 }
 
@@ -54,47 +57,27 @@ void kill_connection(int socket) {
 
 void do_simple_request(process_t process, char* ip, int port, socket_operation_t operation, void* content, int content_length, void (*callback)(void*)) {
 	int socket;
-	void* buffer;
-	header_t* header_send = malloc(sizeof(header_t));
-	header_t* header_recv = malloc(sizeof(header_t));
 	packet_t* packet;
 
-	if ((socket = setup_connection(process, ip, port, header_send, header_recv)) < 0) {
-		free(header_recv);
-		free(header_send);
+	if ((socket = setup_connection(process, ip, port)) < 0) {
 		return;
 	}
 
-	header_send->content_length = content_length;
-	header_send->keep_alive = false;
-	header_send->operation = operation;
-
 	packet = malloc(sizeof(packet_t));
+	build_packet(packet, process, operation, false, content_length, content);
 
-	packet->header = *header_send;
-	packet->content = content;
+	send2(socket, packet);
 
-	log_t("Enviando %s", content);
+	// Recibimos el paquete de respuesta del servidor
+	if (recv3(socket, packet) <= 0) { // Si me devuelve 0 o menos, fallo el recv.
+		free_packet(packet);
+		log_w("El servidor cerro la conexion. Se cancela la request");
+		return;
+	}
 
-	send(socket, packet, sizeof(header_t) + content_length, 0);
-
-	// Recibimos lo que necesitamos
-	// Primero el header
-	recv2(socket, header_recv, sizeof(header_t));
-
-	// Configuroel buffer y leo
-	buffer = malloc(header_recv->content_length);
-	recv2(socket, buffer, header_recv->content_length);
-
-	log_t("Se recibio un paquete con contenido: %s", buffer);
+	callback(packet->content);
 
 	kill_connection(socket);
-
-	callback(buffer);
-
-	free(buffer);
-	free(packet);
-	free(header_recv);
-	free(header_send);
+	free_packet(packet);
 }
 

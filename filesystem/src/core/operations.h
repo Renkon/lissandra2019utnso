@@ -1,7 +1,7 @@
 #ifndef CORE_OPERATIONS2_H_
 #define CORE_OPERATIONS2_H_
 
-#include <operation_types.h>
+#include "utils/operation_types.h"
 #include "generic_logger.h"
 
 void process_select(select_input_t* input);

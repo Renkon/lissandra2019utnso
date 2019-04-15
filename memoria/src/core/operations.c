@@ -27,5 +27,5 @@ void process_journal() {
 }
 
 void select_callback(void* response) {
-	log_i("Recibi respuesta del servidor!!");
+	log_i("Recibi respuesta del servidor: %s", (char*) response);
 }

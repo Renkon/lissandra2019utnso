@@ -11,8 +11,8 @@
 #include <unistd.h>
 #include "generic_logger.h"
 #include "utils/network.h"
-#include "operation_types.h"
-#include "network_types.h"
+#include "utils/operation_types.h"
+#include "utils/network_types.h"
 
 typedef struct {
 	int port;

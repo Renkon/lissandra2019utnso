@@ -82,67 +82,50 @@ bool setup_server(void* args) {
 void handle_request(void* args) {
 	int received_bytes = 1;
 	conn_args_t* connection_args = (conn_args_t*) args;
-	header_t* header_recv = malloc(sizeof(header_t));
-	header_t* header_send = malloc(sizeof(header_t));
-	packet_t* packet;
-	void* buffer;
+	packet_t* packet = malloc(sizeof(packet_t));
 	void* response;
 
 	pthread_detach(pthread_self());
 
-	header_recv->keep_alive = true; // seteo el keep alive para que entre en el while inicial
-	header_send->process = connection_args->process;
+	// Seteamos para que entre al principio
+	packet->header.keep_alive = true;
 
-	while (header_recv->keep_alive && received_bytes > 0) {
-		// Paso 1: recibimos el header
-		received_bytes = recv2(connection_args->socket, header_recv, sizeof(header_t));
+	while (packet->header.keep_alive && received_bytes > 0) {
+		// Paso 1: leemos el paquete
+		received_bytes = recv3(connection_args->socket, packet);
 
-		// Valido que sea un solicitor valido
-		if (!valid_source(connection_args->process, header_recv->process)) {
-			log_w("El proceso %s intento comunicarse conmigo. Rechazo handshake", get_process_name(header_recv->process));
+		if (!valid_source(connection_args->process, packet->header.process)) {
+			log_w("El proceso %s intento comunicarse conmigo. Rechazo solicitud", get_process_name(packet->header.process));
 			break;
 		}
 
-		// Paso 2: validamos si es handshake, si es, simplemente devolvemos
-		if (header_recv->operation == HANDSHAKE_IN) {
-			header_send->content_length = 0;
-			header_send->keep_alive = true;
-			header_send->operation = HANDSHAKE_OUT;
+		// Paso 2: revisamos si es handshake o no
+		if (packet->header.operation == HANDSHAKE_IN) {
+			build_packet(packet, connection_args->process, HANDSHAKE_OUT, true, 0, NULL);
+			log_t("Recibi solicitud de handshake de %s", get_process_name(packet->header.process));
+			send2(connection_args->socket, packet);
+		} else { // Esto seria una peticion normal
+			char* dummy_response = " y he sido respondida";
 
-			send(connection_args->socket, header_send, sizeof(header_t), 0);
-
-			log_t("Se recibio un handshake request de %s. Aceptando handshake", get_process_name(header_recv->process));
-		} else { // Paso 3: procesamos la request
-			// Ya tenemos el header, solo nos falta el socket.
-			buffer = malloc(header_recv->content_length);
-
-			received_bytes = recv2(connection_args->socket, buffer, header_recv->content_length);
-
-			log_t("Se recibio un paquete con contenido: %s", (char*) buffer);
+			log_t("Recibi request de %s. Body: %s", get_process_name(packet->header.process), (char*) packet->content);
 
 			// TODO: agregar logica de recepcion del buffer
 			// aca se procesa todo... y se obtiene un body
-			response = buffer;
-			header_send->operation = header_recv->operation + 1;
-			header_send->content_length = strlen(response) + 1;
-			header_send->keep_alive = header_recv->keep_alive;
+			response = malloc(packet->header.content_length + strlen(dummy_response));
+			memcpy(response, packet->content, packet->header.content_length);
+			strcat(response, dummy_response);
 
-			packet = malloc(sizeof(packet_t) + header_recv->content_length);
-			packet->header = *header_send;
-			packet->content = response;
+			build_packet(packet, connection_args->process, packet->header.operation + 1, packet->header.keep_alive,
+					packet->header.content_length + strlen(dummy_response), response);
 
-			// Enviamos la respuesta
-			send(connection_args->socket, packet, sizeof(header_t) + header_send->content_length, 0);
+			send2(connection_args->socket, packet);
 
-			free(buffer);
-
-			close(connection_args->socket);
+			free(response);
 		}
 	}
 
-	free(packet);
-	free(header_recv);
-	free(header_send);
+	close(connection_args->socket);
+	free_packet(packet);
 	free(args);
 }
 
