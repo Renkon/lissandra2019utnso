@@ -20,6 +20,7 @@ typedef struct {
 	void (*journal)();
 	void (*add)(add_input_t*);
 	void (*run)(run_input_t*);
+	void (*metrics)();
 } callbacks_t;
 
 void init_console(char* init_str, char* prefix, process_t type, callbacks_t* callbacks);
@@ -34,8 +35,9 @@ bool validate_drop(int tokens_size, char** tokens);
 bool validate_journal(int tokens_size, char** tokens);
 bool validate_add(int tokens_size, char** tokens);
 bool validate_run(int tokens_size, char** tokens);
+bool validate_metrics(int tokens_size, char** tokens);
 void process_input(operation_t operation, char* user_input, callbacks_t* callbacks);
-callbacks_t* build_callbacks(void (*select)(select_input_t*), void (*insert)(insert_input_t*), void (*create)(create_input_t*),
-		void (*describe)(describe_input_t*), void (*drop)(drop_input_t*), void (*journal)(), void (*add)(add_input_t*), void (*run)(run_input_t*));
+callbacks_t* build_callbacks(void (*select)(select_input_t*), void (*insert)(insert_input_t*), void (*create)(create_input_t*), void (*describe)(describe_input_t*),
+		void (*drop)(drop_input_t*), void (*journal)(), void (*add)(add_input_t*), void (*run)(run_input_t*), void (*metrics)());
 
 #endif /* GENERIC_CONSOLE_H_ */

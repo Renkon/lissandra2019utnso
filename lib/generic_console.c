@@ -50,6 +50,8 @@ operation_t get_operation(char* input, process_t process_type) {
 		operation_type = ADD;
 	else if (string_equals_ignore_case(tokens[0], "RUN"))
 		operation_type = RUN;
+	else if (string_equals_ignore_case(tokens[0], "METRICS"))
+		operation_type = METRICS;
 	else
 		operation_type = INVALID;
 
@@ -99,6 +101,9 @@ bool validate_input(operation_t operation, char* input) {
 		case RUN:
 			result = validate_run(tokens_size, tokens);
 		break;
+		case METRICS:
+			result = validate_metrics(tokens_size, tokens);
+		break;
 		// Esto no pasa nunca (pero evito un warning del eclipse)
 		default:
 		break;
@@ -138,8 +143,8 @@ bool validate_insert(int tokens_size, char** tokens) {
 
 	// Valido que la key sea un uint16_t (si no que explote)
 	value_key = strtol(tokens[2], &end_str, 10);
-		if (end_str[0] != '\0' || value_key < 0 || value_key > UINT16_MAX)
-			return false;
+	if (end_str[0] != '\0' || value_key < 0 || value_key > UINT16_MAX)
+		return false;
 
 	if (tokens_size == 5) { // Valido el timestamp
 		value_timestamp = strtol(tokens[4], &end_str, 10);
@@ -170,7 +175,7 @@ bool validate_create(int tokens_size, char** tokens) {
 
 	value_compaction = strtol(tokens[4], &end_str, 10);
 	if (end_str[0] != '\0' || value_compaction < 0)
-			return false;
+		return false;
 
 	return true;
 }
@@ -213,6 +218,11 @@ bool validate_add(int tokens_size, char** tokens) {
 bool validate_run(int tokens_size, char** tokens) {
 	// RUN [ARCHIVO]
 	return tokens_size == 2;
+}
+
+bool validate_metrics(int tokens_size, char** tokens) {
+	// METRICS
+	return tokens_size == 1;
 }
 
 void process_input(operation_t operation, char* user_input, callbacks_t* callbacks) {
@@ -317,6 +327,9 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			callbacks->run(run_input);
 			free(run_input);
 		break;
+		case METRICS:
+			callbacks->metrics();
+		break;
 		// Esto no pasa nunca (pero evito un warning del eclipse)
 		default:
 		break;
@@ -328,8 +341,8 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 	free(tokens);
 }
 
-callbacks_t* build_callbacks(void (*select)(select_input_t*), void (*insert)(insert_input_t*), void (*create)(create_input_t*),
-		void (*describe)(describe_input_t*), void (*drop)(drop_input_t*), void (*journal)(), void (*add)(add_input_t*), void (*run)(run_input_t*)){
+callbacks_t* build_callbacks(void (*select)(select_input_t*), void (*insert)(insert_input_t*), void (*create)(create_input_t*), void (*describe)(describe_input_t*),
+		void (*drop)(drop_input_t*), void (*journal)(), void (*add)(add_input_t*), void (*run)(run_input_t*), void (*metrics)()){
 	callbacks_t* callbacks = malloc(sizeof(callbacks_t));
 
 	callbacks->select = select;
@@ -340,6 +353,7 @@ callbacks_t* build_callbacks(void (*select)(select_input_t*), void (*insert)(ins
 	callbacks->journal = journal;
 	callbacks->add = add;
 	callbacks->run = run;
+	callbacks->metrics = metrics;
 
 	return callbacks;
 }

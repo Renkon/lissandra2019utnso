@@ -12,7 +12,8 @@ typedef enum {
 	DROP, // hasta aca puede el fs
 	JOURNAL, // hasta aca puede la memoria
 	ADD,
-	RUN // y hasta aca puede el kernel
+	RUN,
+	METRICS // y hasta aca puede el kernel
 } operation_t;
 
 typedef enum {
@@ -65,6 +66,8 @@ typedef struct {
 typedef struct {
 	char* path;
 }__attribute__((packed)) run_input_t;
+
+// metrics no requiere struct
 
 char* get_process_name(process_t process);
 

@@ -15,5 +15,5 @@ int main(void) {
 
 callbacks_t* get_callbacks() {
 	return build_callbacks(process_select, process_insert, process_create, process_describe,
-			process_drop, process_journal, process_add, process_run);
+			process_drop, process_journal, process_add, process_run, process_metrics);
 }

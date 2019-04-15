@@ -14,6 +14,7 @@ void process_drop(drop_input_t* input);
 void process_journal();
 void process_add(add_input_t* input);
 void process_run(run_input_t* input);
+void process_metrics();
 void select_callback(void* response);
 
 #endif /* CORE_OPERATIONS_H_ */

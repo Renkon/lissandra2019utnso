@@ -34,6 +34,10 @@ void process_run(run_input_t* input) {
 	log_i("kn run %s", input->path);
 }
 
+void process_metrics() {
+	log_i("kn metrics args none");
+}
+
 void select_callback(void* response) {
 	log_i("Recibi respuesta del servidor: %s", (char*) response);
 }
