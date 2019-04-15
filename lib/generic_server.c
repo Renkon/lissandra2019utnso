@@ -101,8 +101,8 @@ void handle_request(void* args) {
 
 		// Paso 2: revisamos si es handshake o no
 		if (packet->header.operation == HANDSHAKE_IN) {
-			build_packet(packet, connection_args->process, HANDSHAKE_OUT, true, 0, NULL);
 			log_t("Recibi solicitud de handshake de %s", get_process_name(packet->header.process));
+			build_packet(packet, connection_args->process, HANDSHAKE_OUT, true, 0, NULL);
 			send2(connection_args->socket, packet);
 		} else { // Esto seria una peticion normal
 			char* dummy_response = " y he sido respondida";
