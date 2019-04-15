@@ -92,7 +92,7 @@ void handle_request(void* args) {
 
 	while (packet->header.keep_alive && received_bytes > 0) {
 		// Paso 1: leemos el paquete
-		received_bytes = recv3(connection_args->socket, packet);
+		received_bytes = recv2(connection_args->socket, packet);
 
 		if (!valid_source(connection_args->process, packet->header.process)) {
 			log_w("El proceso %s intento comunicarse conmigo. Rechazo solicitud", get_process_name(packet->header.process));

@@ -36,7 +36,7 @@ int setup_connection(process_t process, char* ip, int port) {
 	send2(connection_socket, packet);
 
 	// Paso 5: recibimos el handshake y procedemos con la solicitud
-	recv3(connection_socket, packet);
+	recv2(connection_socket, packet);
 
 	if (packet->header.operation != HANDSHAKE_OUT) {
 		log_w("El servidor no respondio el handshake. Se cancela la solicitud");
@@ -69,7 +69,7 @@ void do_simple_request(process_t process, char* ip, int port, socket_operation_t
 	send2(socket, packet);
 
 	// Recibimos el paquete de respuesta del servidor
-	if (recv3(socket, packet) <= 0) { // Si me devuelve 0 o menos, fallo el recv.
+	if (recv2(socket, packet) <= 0) { // Si me devuelve 0 o menos, fallo el recv.
 		free_packet(packet);
 		log_w("El servidor cerro la conexion. Se cancela la request");
 		return;

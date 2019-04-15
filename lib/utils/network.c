@@ -1,6 +1,6 @@
 #include "network.h"
 
-int recv2(int socket, void* buffer, int bytes_to_read) {
+int __recv(int socket, void* buffer, int bytes_to_read) {
 	int bytes_read = 0;
 	int current_bytes_read;
 
@@ -17,15 +17,15 @@ int recv2(int socket, void* buffer, int bytes_to_read) {
 	return bytes_read;
 }
 
-int recv3(int socket, packet_t* packet) {
+int recv2(int socket, packet_t* packet) {
 	int bytes_read;
 
-	if ((bytes_read = recv2(socket, &packet->header, sizeof(header_t))) <= 0)
+	if ((bytes_read = __recv(socket, &packet->header, sizeof(header_t))) <= 0)
 		return bytes_read; // que no lea basura si no trae bien la data
 
 	if (packet->header.content_length > 0) {
 		packet->content = realloc(packet->content, packet->header.content_length);
-		bytes_read += recv2(socket, packet->content, packet->header.content_length);
+		bytes_read += __recv(socket, packet->content, packet->header.content_length);
 	}
 
 	return bytes_read;
