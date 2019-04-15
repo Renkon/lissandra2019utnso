@@ -56,15 +56,35 @@ void kill_connection(int socket) {
 }
 
 void do_simple_request(process_t process, char* ip, int port, socket_operation_t operation, void* content, int content_length, void (*callback)(void*)) {
+	pthread_t thread;
+	client_conn_args_t* args = malloc(sizeof(client_conn_args_t));
+	args->process = process;
+	args->ip = ip;
+	args->port = port;
+	args->operation = operation;
+	args->content = content;
+	args->content_length = content_length;
+	args->callback = callback;
+
+	if (pthread_create(&thread, NULL, (void*) do_request, (void*) args)) {
+		log_e("No se pudo inicializar el hilo para la solicitud");
+	}
+
+}
+
+void do_request(void* arguments) {
+	client_conn_args_t* args = (client_conn_args_t*) arguments;
 	int socket;
 	packet_t* packet;
 
-	if ((socket = setup_connection(process, ip, port)) < 0) {
+	pthread_detach(pthread_self());
+
+	if ((socket = setup_connection(args->process, args->ip, args->port)) < 0) {
 		return;
 	}
 
 	packet = malloc(sizeof(packet_t));
-	build_packet(packet, process, operation, false, content_length, content);
+	build_packet(packet, args->process, args->operation, false, args->content_length, args->content);
 
 	send2(socket, packet);
 
@@ -75,9 +95,10 @@ void do_simple_request(process_t process, char* ip, int port, socket_operation_t
 		return;
 	}
 
-	callback(packet->content);
+	args->callback(packet->content);
 
 	kill_connection(socket);
 	free_packet(packet);
+	free(arguments);
 }
 
