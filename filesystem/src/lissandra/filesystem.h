@@ -2,11 +2,11 @@
 #define FILESYSTEM_H_
 #define FSCFG "filesystem.cfg"
 
-#include "config.h"
+#include "../config.h"
 #include "generic_console.h"
 #include "generic_config.h"
 #include "generic_server.h"
-#include "core/operations.h"
+#include "../core/operations.h"
 
 typedef struct {
 	int port;

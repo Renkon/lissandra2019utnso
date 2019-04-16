@@ -3,6 +3,7 @@
 
 #include "utils/operation_types.h"
 #include "generic_logger.h"
+#include "../filesystem/create_utils.h"
 
 void process_select(select_input_t* input);
 void process_insert(insert_input_t* input);

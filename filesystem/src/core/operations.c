@@ -10,6 +10,11 @@ void process_insert(insert_input_t* input) {
 
 void process_create(create_input_t* input) {
 	log_i("fs create args: %s %i %i %ld", input->table_name, input->consistency, input->partitions, input->compaction_time);
+
+	//Insertar Logica para saber si no esta ya la tabla creada
+	create_table_folder(input->table_name);
+
+
 }
 
 void process_describe(describe_input_t* input) {

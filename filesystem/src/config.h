@@ -1,7 +1,7 @@
 #ifndef CONFIG2_H_
 #define CONFIG2_H_
 
-#include "filesystem.h"
+#include "lissandra/filesystem.h"
 #include "commons/config.h"
 #include <sys/inotify.h>
 #include <unistd.h>
