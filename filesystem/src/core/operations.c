@@ -20,11 +20,13 @@ void process_create(create_input_t* input) {
 
 		log_i("fs> Se creo la tabla %s ", table_name_upper);
 		free(table_name_upper);
+		//Crear tmp
 		//Poner logica para crear las particiones
 
 	} else {
 
 		log_i(
+
 				"fs> La carpeta %s ya esta en el sistema. Operacion CREATE cancelada.",table_name_upper);
 		free(table_name_upper);
 	}
