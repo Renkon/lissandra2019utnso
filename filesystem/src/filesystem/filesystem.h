@@ -6,11 +6,13 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/stat.h>
-#include "../lissandra/filesystem.h"
+
+#include "../lissandra/lissandra.h"
+#include "../utils.h"
 
 
-void create_table_folder(char* table_name);
-char *create_table_path(char* table_name);
+int create_table_folder(char* table_name);
+
 
 
 #endif /* CREATE_CREATE_UTILS_H_ */
