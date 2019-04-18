@@ -8,6 +8,7 @@
 #include "generic_server.h"
 #include "config.h"
 #include "core/operations.h"
+#include <stdbool.h>
 
 typedef struct {
 	int port;
@@ -22,6 +23,19 @@ typedef struct {
 	int gossip_delay;
 	int memory_number;
 } memconfig_t;
+
+typedef struct{
+	long timestamp;
+	int key;
+	char* value;
+} page;
+
+typedef struct{
+	int page_number;
+	page page;
+	bool modified;
+} segment;
+
 
 memconfig_t g_config;
 extern char* g_config_keys[];
