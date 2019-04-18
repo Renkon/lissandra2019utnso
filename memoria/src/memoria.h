@@ -7,6 +7,7 @@
 #include "generic_console.h"
 #include "generic_server.h"
 #include "config.h"
+#include "utils/operation_types.h"
 #include "core/operations.h"
 #include <stdbool.h>
 
@@ -24,22 +25,25 @@ typedef struct {
 	int memory_number;
 } memconfig_t;
 
-typedef struct{
+typedef struct {
 	long timestamp;
 	int key;
 	char* value;
-} page;
+} page_t;
 
-typedef struct{
+typedef struct {
 	int page_number;
-	page page;
+	char* name;
+	page_t page;
 	bool modified;
-} segment;
+} segment_t;
 
 
 memconfig_t g_config;
 extern char* g_config_keys[];
 extern int g_config_keys_size;
+char* segment_exists(char* segment_name);
+void find_page(char* segment,uint16_t key );
 
 callbacks_t* get_callbacks();
 

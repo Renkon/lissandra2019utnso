@@ -2,8 +2,22 @@
 
 void process_select(select_input_t* input) {
 	log_i("mm select args: %s %u", input->table_name, (unsigned int)input->key);
-	char* demo_str = string_duplicate("soy una memoria");
-	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, demo_str, 16, select_callback);
+	//char* demo_str = string_duplicate("soy una memoria");
+	page_t* page_found;
+	char* segment_found;
+
+	segment_found=malloc(sizeof(input->table_name));
+	memcpy(segment_found,segment_exists(input->table_name),strlen(segment_exists(input->table_name))+1);
+
+	if(segment_found != NULL){
+		find_page(segment_found,input->key);
+		if(page_found==NULL){
+			//se lo pido al filesystem que se encargue y me devuelva lo que deba
+			//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, demo_str, 16, select_callback);
+		}else{
+			//logica de retorno por consola
+		};
+	};
 }
 
 void process_insert(insert_input_t* input) {
@@ -28,4 +42,13 @@ void process_journal() {
 
 void select_callback(void* response) {
 	log_i("Recibi respuesta del servidor: %s", (char*) response);
+}
+
+char* segment_exists(char* segment_name){
+	//amplio logica despues
+	return 0;
+}
+
+void find_page(char* segment,uint16_t key ){
+	//amplio logica despues, esta funcion devuelve un char*
 }

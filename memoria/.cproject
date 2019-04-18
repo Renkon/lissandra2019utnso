@@ -56,6 +56,9 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="cdt.managedbuild.config.gnu.exe.debug.1768805407.368914935" name="memoria.c" rcbsApplicability="disable" resourcePath="src/memoria.c" toolsToInvoke="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.539663070.1275647631">
+						<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.539663070.1275647631" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.539663070"/>
+					</fileInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
