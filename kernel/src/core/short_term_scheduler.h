@@ -1,5 +1,5 @@
-#ifndef CORE_SCHEDULER_H_
-#define CORE_SCHEDULER_H_
+#ifndef CORE_SHORT_TERM_SCHEDULER_H_
+#define CORE_SHORT_TERM_SCHEDULER_H_
 
 #include <stdbool.h>
 #include <pthread.h>
@@ -50,4 +50,4 @@ void schedule();
 pcb_t* get_new_pcb();
 void delete_pcb(pcb_t* pcb);
 
-#endif /* CORE_SCHEDULER_H_ */
+#endif /* CORE_SHORT_TERM_SCHEDULER_H_ */

@@ -5,7 +5,8 @@
 #include "generic_client.h"
 #include "../config.h"
 #include "generic_logger.h"
-#include "scheduler.h"
+
+#include "short_term_scheduler.h"
 
 void process_select(select_input_t* input);
 void process_insert(insert_input_t* input);

@@ -1,4 +1,4 @@
-#include "scheduler.h"
+#include "short_term_scheduler.h"
 
 void init_scheduler() {
 	pthread_t planifier_thread;
