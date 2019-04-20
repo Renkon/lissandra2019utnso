@@ -16,14 +16,16 @@ void init_console(char* init_str, char* prefix, process_t type, callbacks_t* cal
 	}
 }
 
-void process_command(char* command, process_t process, callbacks_t* callbacks) {
+bool process_command(char* command, process_t process, callbacks_t* callbacks) {
 	operation_t operation = get_operation(command);
 
 	if (operation == INVALID || !operation_allowed(operation, process) || !validate_input(operation, command)) {
 		log_e("Se solicito una operacion invalida: \"%s\"", command);
 		puts("Operacion invalida. Revise su input");
+		return false;
 	} else {
 		process_input(operation, command, callbacks);
+		return true;
 	}
 }
 

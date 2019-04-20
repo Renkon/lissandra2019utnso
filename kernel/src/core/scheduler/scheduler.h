@@ -1,14 +1,15 @@
-#ifndef CORE_SHORT_TERM_SCHEDULER_H_
-#define CORE_SHORT_TERM_SCHEDULER_H_
+#ifndef CORE_SCHEDULER_SCHEDULER_H_
+#define CORE_SCHEDULER_SCHEDULER_H_
 
 #include <stdbool.h>
 #include <pthread.h>
 #include <unistd.h>
-#include "../config.h"
+#include "../../config.h"
 #include "generic_logger.h"
 #include "commons/collections/list.h"
 #include "utils/operation_types.h"
-#include "utils/pid_utils.h"
+#include "../utils/pid_utils.h"
+#include "short_term_scheduler.h"
 
 typedef enum {
 	NEW,
@@ -45,9 +46,8 @@ typedef struct {
 scheduler_queues_t g_scheduler_queues;
 
 void init_scheduler();
-void scheduler();
-void schedule();
+void setup_scheduler_queues();
 pcb_t* get_new_pcb();
 void delete_pcb(pcb_t* pcb);
 
-#endif /* CORE_SHORT_TERM_SCHEDULER_H_ */
+#endif /* CORE_SCHEDULER_SCHEDULER_H_ */

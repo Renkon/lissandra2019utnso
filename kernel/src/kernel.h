@@ -9,7 +9,7 @@
 #include "generic_config.h"
 #include "generic_logger.h"
 #include "core/operations.h"
-#include "core/short_term_scheduler.h"
+#include "core/scheduler/scheduler.h"
 
 typedef struct {
 	char* memory_ip;

@@ -24,7 +24,7 @@ typedef struct {
 } callbacks_t;
 
 void init_console(char* init_str, char* prefix, process_t type, callbacks_t* callbacks);
-void process_command(char* command, process_t process, callbacks_t* callbacks);
+bool process_command(char* command, process_t process, callbacks_t* callbacks);
 operation_t get_operation(char* input);
 bool operation_allowed(operation_t operation, process_t process);
 bool validate_input(operation_t operation, char* input);
