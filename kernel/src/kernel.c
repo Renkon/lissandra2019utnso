@@ -8,6 +8,7 @@ int main(void) {
 	if (!init_logger("kernel.log", "Kernel", true, LOG_LEVEL_TRACE))
 		return 1;
 	init_config(KNCFG, initialize_kernel_config, update_kernel_config, g_config_keys, g_config_keys_size);
+	init_planifier();
 	init_console("Papito codeo en Assembler - Kernel v1.0", "kernel>", KERNEL, get_callbacks());
 	destroy_logger();
 	return 0;

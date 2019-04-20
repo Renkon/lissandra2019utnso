@@ -8,6 +8,7 @@
 #include "generic_config.h"
 #include "generic_logger.h"
 #include "core/operations.h"
+#include "core/planifier.h"
 
 typedef struct {
 	char* memory_ip;
