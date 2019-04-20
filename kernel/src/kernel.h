@@ -18,6 +18,7 @@ typedef struct {
 	int multiprocessing;
 	int metadata_refresh;
 	int execution_delay;
+	int lts_delay;
 } knconfig_t;
 
 knconfig_t g_config;
