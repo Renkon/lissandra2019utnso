@@ -24,8 +24,9 @@ int generate_pid() {
 
 void remove_pid(int id) {
 	int* pid_ptr;
+	int size = list_size(g_process_ids);
 
-	for (int i = 0; i < list_size(g_process_ids); i++) {
+	for (int i = 0; i < size; i++) {
 		if ((*(pid_ptr = list_get(g_process_ids, i))) == id) {
 			list_remove(g_process_ids, i);
 			free(pid_ptr);

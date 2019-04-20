@@ -2,7 +2,6 @@
 
 void init_console(char* init_str, char* prefix, process_t type, callbacks_t* callbacks) {
 	char* user_input = NULL;
-	operation_t operation = INVALID;
 
 	// Mostramos el titulo del programa
 	puts(init_str);
@@ -10,23 +9,26 @@ void init_console(char* init_str, char* prefix, process_t type, callbacks_t* cal
 	while (true) {
 		user_input = readline(prefix);
 
-		operation = get_operation(user_input, type);
-
-		if (operation == INVALID || !operation_allowed(operation, type) || !validate_input(operation, user_input)) {
-			log_e("Se solicito una operacion invalida: \"%s\"", user_input);
-			puts("Operacion invalida. Revise su input");
-		} else {
-			process_input(operation, user_input, callbacks);
-		}
+		process_command(user_input, type, callbacks);
 
 		free(user_input);
 		user_input = NULL;
-		operation = INVALID;
+	}
+}
+
+void process_command(char* command, process_t process, callbacks_t* callbacks) {
+	operation_t operation = get_operation(command);
+
+	if (operation == INVALID || !operation_allowed(operation, process) || !validate_input(operation, command)) {
+		log_e("Se solicito una operacion invalida: \"%s\"", command);
+		puts("Operacion invalida. Revise su input");
+	} else {
+		process_input(operation, command, callbacks);
 	}
 }
 
 // En base al token inicial devuelve el tipo de operacion
-operation_t get_operation(char* input, process_t process_type) {
+operation_t get_operation(char* input) {
 	operation_t operation_type;
 	int tokens_size;
 	char** tokens = string_split_ignore_quotes(input, " ", &tokens_size);
@@ -341,19 +343,22 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 	free(tokens);
 }
 
-callbacks_t* build_callbacks(void (*select)(select_input_t*), void (*insert)(insert_input_t*), void (*create)(create_input_t*), void (*describe)(describe_input_t*),
+callbacks_t* get_input_callbacks(void (*select)(select_input_t*), void (*insert)(insert_input_t*), void (*create)(create_input_t*), void (*describe)(describe_input_t*),
 		void (*drop)(drop_input_t*), void (*journal)(), void (*add)(add_input_t*), void (*run)(run_input_t*), void (*metrics)()){
-	callbacks_t* callbacks = malloc(sizeof(callbacks_t));
+	if (g_callbacks != NULL)
+		return g_callbacks;
 
-	callbacks->select = select;
-	callbacks->insert = insert;
-	callbacks->create = create;
-	callbacks->describe = describe;
-	callbacks->drop = drop;
-	callbacks->journal = journal;
-	callbacks->add = add;
-	callbacks->run = run;
-	callbacks->metrics = metrics;
+	g_callbacks = malloc(sizeof(callbacks_t));
 
-	return callbacks;
+	g_callbacks->select = select;
+	g_callbacks->insert = insert;
+	g_callbacks->create = create;
+	g_callbacks->describe = describe;
+	g_callbacks->drop = drop;
+	g_callbacks->journal = journal;
+	g_callbacks->add = add;
+	g_callbacks->run = run;
+	g_callbacks->metrics = metrics;
+
+	return g_callbacks;
 }

@@ -1,6 +1,7 @@
 
 #ifndef KERNEL_H_
 #define KERNEL_H_
+
 #define KNCFG "kernel.cfg"
 
 #include "config.h"
@@ -8,7 +9,7 @@
 #include "generic_config.h"
 #include "generic_logger.h"
 #include "core/operations.h"
-#include "core/planifier.h"
+#include "core/scheduler.h"
 
 typedef struct {
 	char* memory_ip;
