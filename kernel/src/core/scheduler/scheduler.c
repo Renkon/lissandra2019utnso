@@ -4,12 +4,13 @@ void init_scheduler() {
 	pthread_t planifier_thread;
 
 	setup_pid_generator();
+	setup_scheduler_queues();
 
 	if (pthread_create(&planifier_thread, NULL, (void*) short_term_schedule, NULL)) {
 		log_e("No se pudo inicializar el hilo de planificacion a corto plazo");
 	}
 
-	if (pthread_create(&planifier_thread, NULL, (void*) short_term_schedule, NULL)) {
+	if (pthread_create(&planifier_thread, NULL, (void*) long_term_schedule, NULL)) {
 		log_e("No se pudo inicializar el hilo de planificacion a largo plazo");
 	}
 }

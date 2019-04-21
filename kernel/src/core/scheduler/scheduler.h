@@ -10,6 +10,7 @@
 #include "utils/operation_types.h"
 #include "../utils/pid_utils.h"
 #include "short_term_scheduler.h"
+#include "long_term_scheduler.h"
 
 typedef enum {
 	NEW,
