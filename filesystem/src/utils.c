@@ -43,3 +43,23 @@ char* to_uppercase(char* lower_string) {
 		return (str_up);
 	}
 }
+
+int exist_in_directory(char* archive, char* directory) {
+	char* upper_archive = to_uppercase(archive);
+	DIR *d;
+	struct dirent *dir;
+	d = opendir(directory);
+	if (d) {
+		while ((dir = readdir(d)) != NULL) {
+			char* upper_read = to_uppercase(dir->d_name);
+			if (strcmp(upper_read, upper_archive) == 0) {
+
+				return 0;
+			}
+		}
+
+		closedir(d);
+	}
+	return 1;
+}
+
