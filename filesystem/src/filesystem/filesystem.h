@@ -13,6 +13,7 @@
 
 int create_table_folder(char* table_name);
 void create_partitions(int partitions, char* table_name);
+char* create_bin_name (int name);
 
 
 #endif /* CREATE_CREATE_UTILS_H_ */

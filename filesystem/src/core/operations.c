@@ -11,17 +11,18 @@ void process_insert(insert_input_t* input) {
 }
 
 void process_create(create_input_t* input) {
-	log_i("fs create args: %s %i %i %ld", input->table_name, input->consistency,
-			input->partitions, input->compaction_time);
+	log_i("fs create args: %s %i %i %ld", input->table_name, input->consistency,input->partitions, input->compaction_time);
 
 	char* table_name_upper = to_uppercase(input->table_name);
 
 	if (create_table_folder(table_name_upper) == 0) {
 
 		log_i("fs> Se creo la tabla %s ", table_name_upper);
+		//Crear metadata
+		create_partitions(input->partitions, table_name_upper );
 		free(table_name_upper);
-		//Crear tmp
-		create_partitions(input->partitions, input->table_name);
+
+
 
 	} else {
 

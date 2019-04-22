@@ -2,18 +2,31 @@
 
 int create_table_folder(char* table_name) {
 	//Creo el nuevo directorio donde va a estar la nueva tabla
-	char *table_directory = create_new_directory(get_table_directory(),table_name);
+	char *table_directory = create_new_directory(get_table_directory(),
+			table_name);
 	//Esta funcion es la que crea la carpeta
 	return mkdir(table_directory, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	//mkdir devuelve 0 is creo la carpeta y 1 si no lo hizo.
 }
 
-void create_partitions(int partitions, char* table_name){
-	char buffer[100]={0}; // lo usaremos para guardar el nombre del fichero
+void create_partitions(int partitions, char* table_name) {
 
-	for (int i = 0; i < partitions; i++){
-	   	sprintf(buffer, "%d.bin", i+1); // Ahora tenemos en buffer = "i+1.bin"
-	   	FILE* arch = fopen(buffer, "w");
-	   	fclose(arch);
+	char *table_directory = create_new_directory(get_table_directory(),table_name);
+	for (int i = 0; i < partitions; i++) {
+		char* bin_name = malloc(digits_in_a_number(partitions) + strlen("/.bin") + 1);
+		sprintf(bin_name, "/%d.bin", i + 1); //Esto transforma de int a string
+		char* partition = malloc(strlen(table_directory) + strlen(bin_name) + 1);
+		strcpy(partition, table_directory);
+		strcat(partition, bin_name); //aca tengo todaa la direcion y termina con n.bin n= nombre archivo
+
+		FILE* arch = fopen(partition, "w");
+		//instertar logica para asignar bloques
+		fclose(arch);
+		free(bin_name);
+		free(partition);
 	}
+
+	free(table_directory);
+
 }
+

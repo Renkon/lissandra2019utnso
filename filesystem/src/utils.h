@@ -16,6 +16,7 @@ char *get_table_directory();
 char *get_block_directory();
 char* create_new_directory(char* old_directory, char* directory_end);
 int exist_in_directory(char* archive, char* directory);
+int digits_in_a_number (int number);
 
 
 #endif /* UTILS_H_ */
