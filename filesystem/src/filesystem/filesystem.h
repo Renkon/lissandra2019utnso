@@ -12,7 +12,7 @@
 
 
 int create_table_folder(char* table_name);
-
+void create_partitions(int partitions, char* table_name);
 
 
 #endif /* CREATE_CREATE_UTILS_H_ */

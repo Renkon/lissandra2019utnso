@@ -8,3 +8,12 @@ int create_table_folder(char* table_name) {
 	//mkdir devuelve 0 is creo la carpeta y 1 si no lo hizo.
 }
 
+void create_partitions(int partitions, char* table_name){
+	char buffer[100]={0}; // lo usaremos para guardar el nombre del fichero
+
+	for (int i = 0; i < partitions; i++){
+	   	sprintf(buffer, "%d.bin", i+1); // Ahora tenemos en buffer = "i+1.bin"
+	   	FILE* arch = fopen(buffer, "w");
+	   	fclose(arch);
+	}
+}
