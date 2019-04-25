@@ -18,17 +18,13 @@ void process_create(create_input_t* input) {
 	if (create_table_folder(table_name_upper) == 0) {
 
 		log_i("fs> Se creo la tabla %s ", table_name_upper);
-		//Crear metadata
+		create_metadata(input->consistency,input->partitions, input->compaction_time, table_name_upper);
 		create_partitions(input->partitions, table_name_upper );
 		free(table_name_upper);
 
-
-
 	} else {
 
-		log_i(
-
-				"fs> La carpeta %s ya esta en el sistema. Operacion CREATE cancelada.",table_name_upper);
+		log_i("fs> La carpeta %s ya esta en el sistema. Operacion CREATE cancelada.",table_name_upper);
 		free(table_name_upper);
 	}
 
