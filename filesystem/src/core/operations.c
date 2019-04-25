@@ -19,7 +19,9 @@ void process_create(create_input_t* input) {
 
 		log_i("fs> Se creo la tabla %s ", table_name_upper);
 		create_metadata(input->consistency,input->partitions, input->compaction_time, table_name_upper);
+		log_i("fs> Se creo la metadata de la tabla %s ", table_name_upper);
 		create_partitions(input->partitions, table_name_upper );
+		log_i("fs> Se crearon %d particiones de la tabla %s ",input->partitions, table_name_upper);
 		free(table_name_upper);
 
 	} else {

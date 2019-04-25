@@ -19,7 +19,7 @@ void create_partitions(int partitions, char* table_name) {
 		strcpy(partition, table_directory);
 		strcat(partition, bin_name); //aca tengo toda la direccion y termina con n.bin n= nombre archivo
 
-		FILE* arch = fopen(partition, "w");
+		FILE* arch = fopen(partition, "wb");
 		//insertar logica para asignar bloques
 
 		fclose(arch);
@@ -33,9 +33,9 @@ void create_partitions(int partitions, char* table_name) {
 
 void create_metadata(consistency_t consistency, int partitions, long compaction_time, char* table_name){
 	char* table_directory = create_new_directory(get_table_directory(),table_name);
-	char* metadata_name = malloc(strlen("metadata.txt") + 1);
+	char* metadata_name = malloc(strlen("/metadata.txt") + 1);
 
-	sprintf(metadata_name, "metadata.txt");
+	sprintf(metadata_name, "/metadata.txt");
 	char* partition = malloc(strlen(table_directory) + strlen(metadata_name) + 1);
 	strcpy(partition, table_directory);
 	strcat(partition, metadata_name); //aca tengo toda la direccion y termina con metadata.txt
@@ -43,15 +43,15 @@ void create_metadata(consistency_t consistency, int partitions, long compaction_
 	FILE* arch = fopen(partition, "w");
 
 	//Escribo logica para modificar txt:
-	//CONSISTENCY = SC
-	fputs("CONSISTENCY = ", arch);
-	fprintf(arch, "%s\n", consistency);
 
-	//PARTITIONS = 4
+	fputs("CONSISTENCY = ", arch);
+	fprintf(arch, "%i\n", consistency);
+
+
 	fputs("PARTITIONS = ", arch);
 	fprintf(arch, "%d\n", partitions);
 
-	//COMPACTION_TIME = 60000
+
 	fputs("COMPACTION_TIME = ", arch);
 	fprintf(arch, "%d\n", compaction_time);
 
