@@ -22,6 +22,7 @@ void process_select(select_input_t* input) {
 
 void process_insert(insert_input_t* input) {
 	log_i("mm insert args: %s %u \"%s\" %ld", input->table_name, (unsigned int) input->key, input->value, input->timestamp);
+
 }
 
 void process_create(create_input_t* input) {
