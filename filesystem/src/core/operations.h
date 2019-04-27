@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include<commons/bitarray.h>
 
 #include "utils/operation_types.h"
 #include "generic_logger.h"

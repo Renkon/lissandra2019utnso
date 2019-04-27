@@ -19,6 +19,15 @@ char *get_block_directory() {
 
 }
 
+char *get_bitmap_directory() {
+	//devuelve el directorio actual de los bloques
+	char *table_path = malloc(strlen(g_config.mount_point) + strlen("Metadata/Bitmap.bin") + 1);
+	strcpy(table_path, g_config.mount_point);
+	strcat(table_path, "Metadata/Bitmap.bin");
+	return table_path;
+
+}
+
 char* create_new_directory(char* old_directory, char* directory_end) {
 //Con esto creo nuevos directorios, mas que nada para crear de forma mas comoda los path a las nuevas tablas
 	char *new_path = malloc(strlen(old_directory) + strlen(directory_end) + 1);
