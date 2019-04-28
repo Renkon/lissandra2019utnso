@@ -249,6 +249,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			select_input->key = string_to_uint16(tokens[2]);
 
 			callbacks->select(select_input);
+			free(select_input->table_name);
 			free(select_input);
 		break;
 		case INSERT:
@@ -265,6 +266,8 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 				insert_input->timestamp = -1;
 
 			callbacks->insert(insert_input);
+			free(insert_input->table_name);
+			free(insert_input->value);
 			free(insert_input);
 		break;
 		case CREATE:
@@ -282,6 +285,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			create_input->compaction_time = string_to_long(tokens[4]);
 
 			callbacks->create(create_input);
+			free(create_input->table_name);
 			free(create_input);
 		break;
 		case DESCRIBE:
@@ -290,10 +294,12 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 				describe_input->table_name = malloc(strlen(tokens[1]) + 1);
 				describe_input->table_name = memcpy(describe_input->table_name, tokens[1], strlen(tokens[1]) + 1);
 			} else {
-				describe_input->table_name = string_new();
+				describe_input->table_name = NULL;
 			}
 
 			callbacks->describe(describe_input);
+			if (tokens_size == 2)
+				free(describe_input->table_name);
 			free(describe_input);
 		break;
 		case DROP:
@@ -303,6 +309,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			drop_input->table_name = memcpy(drop_input->table_name, tokens[1], strlen(tokens[1]) + 1);
 
 			callbacks->drop(drop_input);
+			free(drop_input->table_name);
 			free(drop_input);
 		break;
 		case JOURNAL:
@@ -329,6 +336,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			run_input->path = memcpy(run_input->path, tokens[1], strlen(tokens[1]) + 1);
 
 			callbacks->run(run_input);
+			free(run_input->path);
 			free(run_input);
 		break;
 		case METRICS:

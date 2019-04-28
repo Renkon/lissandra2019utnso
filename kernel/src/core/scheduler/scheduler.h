@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <unistd.h>
 #include "../../config.h"
 #include "generic_logger.h"
@@ -23,26 +24,19 @@ typedef struct {
 	int process_id;
 	t_state state;
 	int program_counter;
+	int quantum;
 	t_list* statements;
 	bool errors;
+	bool __recently_ready;
 } pcb_t;
 
 typedef struct {
 	t_list* new;
 	t_list* ready;
 	t_list* exit;
+	t_list* exec_semaphores;
 	t_list* exec;
 } scheduler_queues_t;
-
-typedef struct {
-	operation_t operation;
-	select_input_t* select_input;
-	insert_input_t* insert_input;
-	create_input_t* create_input;
-	describe_input_t* describe_input;
-	drop_input_t* drop_input;
-	add_input_t* add_input;
-} statement_t;
 
 scheduler_queues_t g_scheduler_queues;
 
