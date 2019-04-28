@@ -2,7 +2,8 @@
 
 void process_select(select_input_t* input) {
 	log_i("mm select args: %s %u", input->table_name, (unsigned int)input->key);
-	//char* demo_str = string_duplicate("soy una memoria");
+	// esto no anda xde log_i("el nombre que tengo es: %s",g_segment_list->elements_count);
+	/*char* demo_str = string_duplicate("soy una memoria");
 	page_t* page_found;
 	char* segment_found;
 
@@ -17,7 +18,7 @@ void process_select(select_input_t* input) {
 		}else{
 			//logica de retorno por consola
 		};
-	};
+	};*/
 }
 
 void process_insert(insert_input_t* input) {
