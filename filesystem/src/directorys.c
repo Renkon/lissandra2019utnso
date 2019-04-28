@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "directorys.h"
 
 char *get_table_directory() {
 	//devuelve el directorio actual de las tablas
@@ -37,21 +37,7 @@ char* create_new_directory(char* old_directory, char* directory_end) {
 	return new_path;
 }
 
-char* to_uppercase(char* lower_string) {
 
-	{
-		int i = 0;
-		char *str_up = strdup(lower_string);
-
-		while (str_up[i]) {
-			if (str_up[i] >= 97 && str_up[i] <= 122)
-				str_up[i] -= 32;
-			i++;
-		}
-		free(lower_string);
-		return (str_up);
-	}
-}
 
 
 int exist_in_directory(char* archive, char* directory) {
@@ -73,15 +59,3 @@ int exist_in_directory(char* archive, char* directory) {
 	return 1;
 }
 
-int digits_in_a_number(int number) {
-
-	int totalDigits = 0;
-
-	while (number != 0) {
-
-		number = number / 10;
-		totalDigits++;
-	}
-
-	return totalDigits;
-}

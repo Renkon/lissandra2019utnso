@@ -12,5 +12,6 @@ char** string_split_ignore_quotes(char* input, char* delimiter, int* size);
 uint16_t string_to_uint16(char* str);
 int string_to_int(char* str);
 long string_to_long(char* str);
+char* to_uppercase(char* lower_string);
 
 #endif /* UTILS_STRING_H_ */

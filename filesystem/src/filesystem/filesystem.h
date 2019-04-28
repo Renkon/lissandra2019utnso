@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 
+#include "../directorys.h"
 #include "../lissandra/lissandra.h"
-#include "../utils.h"
 
 typedef struct table_metadata {
 	consistency_t consistency;
