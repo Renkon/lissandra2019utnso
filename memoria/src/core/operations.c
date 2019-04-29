@@ -2,7 +2,7 @@
 
 void process_select(select_input_t* input) {
 	log_i("mm select args: %s %u", input->table_name, (unsigned int)input->key);
-	// esto no anda xde log_i("el nombre que tengo es: %s",g_segment_list->elements_count);
+	log_i("la cantidad de elementos que tengo es: %d",g_segment_list->elements_count);
 	/*char* demo_str = string_duplicate("soy una memoria");
 	page_t* page_found;
 	char* segment_found;

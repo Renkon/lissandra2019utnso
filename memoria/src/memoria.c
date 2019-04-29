@@ -63,7 +63,6 @@ void create_dummy(){
 
 	list_add(segment_dummy->page,page_dummy);
 	list_add(g_segment_list,segment_dummy);
-	printf(&(record_dummy->key));
 }
 
 
