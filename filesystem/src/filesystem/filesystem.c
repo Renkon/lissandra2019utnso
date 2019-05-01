@@ -2,7 +2,7 @@
 
 int create_table_folder(char* table_name) {
 	//Creo el nuevo directorio donde va a estar la nueva tabla
-	char *table_directory = create_new_directory(get_table_directory(),table_name);
+	char *table_directory = create_new_directory(get_table_directory(), table_name);
 	//Esta funcion es la que crea la carpeta
 	return mkdir(table_directory, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	//mkdir devuelve 0 si creo la carpeta y 1 si no lo hizo.
@@ -12,7 +12,8 @@ void create_partitions(int partitions, char* table_name, int* blocks) {
 	char* table_directory = create_new_directory(get_table_directory(),table_name);
 
 	for (int i = 0; i < partitions; i++) {
-		char* bin_name = malloc(digits_in_a_number(partitions) + strlen("/.bin") + 1);
+		//Pongo i+1 porque no existe la particion "0"
+		char* bin_name = malloc(digits_in_a_number(i+1) + strlen("/.bin") + 1);
 		sprintf(bin_name, "/%d.bin", i + 1); //Esto transforma de int a string
 		char* partition_route = malloc(strlen(table_directory) + strlen(bin_name) + 1);
 		strcpy(partition_route, table_directory);
@@ -33,17 +34,16 @@ void create_partitions(int partitions, char* table_name, int* blocks) {
 		free(partition);
 		free(partition_route);
 	}
-
 	free(table_directory);
 
 }
 
 void create_table_metadata(consistency_t consistency, int partitions,
-		long compaction_time, char* table_name) {
+	long compaction_time, char* table_name) {
 	char* table_directory = create_new_directory(get_table_directory(),table_name);
 	char* metadata_name = "/metadata.bin";
 	char* metadata_directory = malloc(strlen(table_directory) + strlen(metadata_name) + 1);
-	Table_metadata *table_metadata = malloc(sizeof(Table_metadata));
+	Table_metadata* table_metadata = malloc(sizeof(Table_metadata));
 	//con esto ya tendria toda la direccion donde va a estar la metadata
 	metadata_directory = create_new_directory(table_directory, metadata_name);
 	//Creo el struct metadata a guardar con los datos del input
@@ -54,13 +54,11 @@ void create_table_metadata(consistency_t consistency, int partitions,
 	fwrite(&table_metadata->consistency, 1, sizeof(table_metadata->consistency),arch);
 	fwrite(&table_metadata->partitions, 1, sizeof(table_metadata->partitions),arch);
 	fclose(arch);
-
 	free(table_directory);
 	free(metadata_directory);
-
 }
 
-Table_metadata *create_metadata(consistency_t consistency, int partitions,long compaction_time) {
+Table_metadata* create_metadata(consistency_t consistency, int partitions,long compaction_time) {
 
 	Table_metadata *metadata = malloc(sizeof(Table_metadata));
 	metadata->compaction_time = compaction_time;
@@ -70,13 +68,10 @@ Table_metadata *create_metadata(consistency_t consistency, int partitions,long c
 
 }
 
-int assign_free_blocks(t_bitarray *bitmap, int *blocks, int *partitions_amount) {
-
+int assign_free_blocks(t_bitarray* bitmap, int* blocks, int* partitions_amount) {
 	int blocks_amount = 0;
-
-//Si me pedis mas particiones que bloques existentes entonces ni me molesto en mirar el bitmap
+	//Me fijo que la cantidad de particiones que me pedis sea menor a la cantidad de bloques totales
 	if (partitions_amount <= bitmap->size) {
-
 		//Voy a buscar bloques tantas veces como particiones vaya a tener mi tabla
 		for (int i = 0; i < partitions_amount; i++) {
 			int block = find_free_block(bitmap);
@@ -86,9 +81,7 @@ int assign_free_blocks(t_bitarray *bitmap, int *blocks, int *partitions_amount) 
 			} else {
 				//Si encontre un bloque lo guardo en mi array de bloques y aumento el contador de bloques
 				blocks_amount++;
-
 				blocks[i] = block;
-
 			}
 		}
 	}
@@ -96,16 +89,15 @@ int assign_free_blocks(t_bitarray *bitmap, int *blocks, int *partitions_amount) 
 	return blocks_amount;
 }
 
-int find_free_block(t_bitarray *bitmap) {
+int find_free_block(t_bitarray* bitmap) {
 	int i = 0;
 	//Busco por todo el bitmap hasta encontrar un 0
 
 	while (i < bitmap->size) {
 		if (bitarray_test_bit(bitmap, i) == 0) {
-			bitarray_set_bit(bitmap, i);
 			//Si lo encuentro seteo ese lugar en 1 y lo devuelvo
+			bitarray_set_bit(bitmap, i);
 			return i;
-
 		}
 		i++;
 	}

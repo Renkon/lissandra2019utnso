@@ -1,14 +1,11 @@
 #ifndef CORE_OPERATIONS2_H_
 #define CORE_OPERATIONS2_H_
 
-
 #include <stdio.h>
 #include <string.h>
 #include<commons/bitarray.h>
-
 #include "utils/operation_types.h"
 #include "generic_logger.h"
-
 #include "../filesystem/filesystem.h"
 
 void process_select(select_input_t* input);

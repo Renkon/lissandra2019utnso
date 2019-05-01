@@ -48,8 +48,6 @@ long string_to_long(char* str) {
 }
 
 char* to_uppercase(char* lower_string) {
-
-	{
 		int i = 0;
 		char *str_up = strdup(lower_string);
 
@@ -60,5 +58,5 @@ char* to_uppercase(char* lower_string) {
 		}
 		free(lower_string);
 		return (str_up);
-	}
+
 }
