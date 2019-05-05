@@ -48,11 +48,12 @@ void short_term_schedule() {
 				} else {
 					semaphore_init = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_init, i);
 					semaphore_end = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_end, i);
+					pcb->processor = i;
 					sem_post(semaphore_init);
 					log_t("Ejecutando en otro thread %i", i);
 					// Aca el planificador ejecuta
-					pcb->quantum++;
 					sem_wait(semaphore_end);
+					pcb->quantum++;
 				}
 			}
 		}
@@ -67,18 +68,21 @@ void planifier_execute(void* arg) {
 	int exec_id = *((int*) arg);
 	sem_t* semaphore_init = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_init, exec_id);
 	sem_t* semaphore_end = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_end, exec_id);
+	sem_t* semaphore_exec = (sem_t*) list_get(g_scheduler_queues.exec_semaphores, exec_id);
 	pcb_t* pcb;
 
 	while (true) {
 		sem_wait(semaphore_init);
 		log_t("Ejecuto en thread %i", exec_id);
 		pcb = (pcb_t*) list_get(g_scheduler_queues.exec, exec_id);
-		exec_statement((statement_t*) list_get(pcb->statements, pcb->program_counter++));
+		exec_statement((statement_t*) list_get(pcb->statements, pcb->program_counter++), pcb->processor);
+		sem_wait(semaphore_exec);
 		sem_post(semaphore_end);
 	}
 }
 
-void exec_statement(statement_t* statement) {
+void exec_statement(statement_t* statement, int processor) {
 	select_input_t* input = statement->select_input;
 	log_t(input->table_name);
+	sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, processor));
 }

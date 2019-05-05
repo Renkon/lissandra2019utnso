@@ -28,6 +28,7 @@ typedef struct {
 	t_list* statements;
 	bool errors;
 	bool __recently_ready;
+	int processor;
 } pcb_t;
 
 typedef struct {
@@ -35,6 +36,7 @@ typedef struct {
 	t_list* ready;
 	t_list* exit;
 	t_list* exec_semaphores_init;
+	t_list* exec_semaphores;
 	t_list* exec_semaphores_end;
 	t_list* exec;
 } scheduler_queues_t;

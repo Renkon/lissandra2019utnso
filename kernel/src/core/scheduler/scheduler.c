@@ -20,11 +20,13 @@ void setup_scheduler_queues() {
 	int* exec_id;
 	sem_t* semaphore_init;
 	sem_t* semaphore_end;
+	sem_t* semaphore_exec;
 
 	g_scheduler_queues.new = list_create();
 	g_scheduler_queues.ready = list_create();
 	g_scheduler_queues.exec = list_create();
 	g_scheduler_queues.exec_semaphores_init = list_create();
+	g_scheduler_queues.exec_semaphores = list_create();
 	g_scheduler_queues.exec_semaphores_end = list_create();
 	g_scheduler_queues.exit = list_create();
 
@@ -33,11 +35,14 @@ void setup_scheduler_queues() {
 		*exec_id = i;
 		semaphore_init = malloc(sizeof(sem_t));
 		semaphore_end = malloc(sizeof(sem_t));
+		semaphore_exec = malloc(sizeof(sem_t));
 		sem_init(semaphore_init, 0, 0);
 		sem_init(semaphore_end, 0, 0);
+		sem_init(semaphore_exec, 0, 0);
 
 		list_add(g_scheduler_queues.exec, NULL);
 		list_add(g_scheduler_queues.exec_semaphores_init, semaphore_init);
+		list_add(g_scheduler_queues.exec_semaphores, semaphore_exec);
 		list_add(g_scheduler_queues.exec_semaphores_end, semaphore_end);
 
 		if (pthread_create(&exec_thread, NULL, (void*) planifier_execute, (void*) exec_id)) {
