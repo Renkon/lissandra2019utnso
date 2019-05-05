@@ -34,7 +34,8 @@ typedef struct {
 	t_list* new;
 	t_list* ready;
 	t_list* exit;
-	t_list* exec_semaphores;
+	t_list* exec_semaphores_init;
+	t_list* exec_semaphores_end;
 	t_list* exec;
 } scheduler_queues_t;
 
