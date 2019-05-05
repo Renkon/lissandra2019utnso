@@ -14,6 +14,6 @@ typedef struct {
 
 void short_term_schedule();
 void planifier_execute(void* arg);
-void exec_statement(statement_t* statement);
+void exec_statement(statement_t* statement, int processor);
 
 #endif /* CORE_SCHEDULER_SHORT_TERM_SCHEDULER_H_ */
