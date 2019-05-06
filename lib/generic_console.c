@@ -139,7 +139,7 @@ bool validate_select(int tokens_size, char** tokens) {
 bool validate_insert(int tokens_size, char** tokens) {
 	char* end_str;
 	long value_key;
-	long value_timestamp;
+	long long value_timestamp;
 
 	//  INSERT [NOMBRE_TABLA] [KEY] "[VALOR]" [TIMESTAMP]*
 	if (tokens_size != 4 && tokens_size != 5)
@@ -151,7 +151,7 @@ bool validate_insert(int tokens_size, char** tokens) {
 		return false;
 
 	if (tokens_size == 5) { // Valido el timestamp
-		value_timestamp = strtol(tokens[4], &end_str, 10);
+		value_timestamp = strtoll(tokens[4], &end_str, 10);
 		if (end_str[0] != '\0' || value_timestamp < 0)
 			return false;
 	}

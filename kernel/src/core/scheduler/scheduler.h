@@ -12,6 +12,7 @@
 #include "../utils/pid_utils.h"
 #include "short_term_scheduler.h"
 #include "long_term_scheduler.h"
+#include "../statistics/stats.h"
 
 typedef enum {
 	NEW,
@@ -29,6 +30,7 @@ typedef struct {
 	bool errors;
 	bool __recently_ready;
 	int processor;
+	stats_t* last_execution_stats;
 } pcb_t;
 
 typedef struct {
@@ -37,7 +39,6 @@ typedef struct {
 	t_list* exit;
 	t_list* exec_semaphores_init;
 	t_list* exec_semaphores;
-	t_list* exec_semaphores_end;
 	t_list* exec;
 } scheduler_queues_t;
 

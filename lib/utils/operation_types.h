@@ -38,7 +38,7 @@ typedef struct {
 	char* table_name;
 	uint16_t key;
 	char* value;
-	long timestamp;
+	long long timestamp;
 }__attribute__((packed)) insert_input_t;
 
 typedef struct {

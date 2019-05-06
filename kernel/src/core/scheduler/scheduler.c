@@ -19,7 +19,6 @@ void setup_scheduler_queues() {
 	pthread_t exec_thread;
 	int* exec_id;
 	sem_t* semaphore_init;
-	sem_t* semaphore_end;
 	sem_t* semaphore_exec;
 
 	g_scheduler_queues.new = list_create();
@@ -27,23 +26,21 @@ void setup_scheduler_queues() {
 	g_scheduler_queues.exec = list_create();
 	g_scheduler_queues.exec_semaphores_init = list_create();
 	g_scheduler_queues.exec_semaphores = list_create();
-	g_scheduler_queues.exec_semaphores_end = list_create();
 	g_scheduler_queues.exit = list_create();
+
+	g_stats_events = list_create();
 
 	for (int i = 0; i < g_config.multiprocessing; i++) {
 		exec_id = malloc(sizeof(int));
 		*exec_id = i;
 		semaphore_init = malloc(sizeof(sem_t));
-		semaphore_end = malloc(sizeof(sem_t));
 		semaphore_exec = malloc(sizeof(sem_t));
 		sem_init(semaphore_init, 0, 0);
-		sem_init(semaphore_end, 0, 0);
 		sem_init(semaphore_exec, 0, 0);
 
 		list_add(g_scheduler_queues.exec, NULL);
 		list_add(g_scheduler_queues.exec_semaphores_init, semaphore_init);
 		list_add(g_scheduler_queues.exec_semaphores, semaphore_exec);
-		list_add(g_scheduler_queues.exec_semaphores_end, semaphore_end);
 
 		if (pthread_create(&exec_thread, NULL, (void*) planifier_execute, (void*) exec_id)) {
 			log_e("No se pudo inicializar el hilo %i de Exec", i);

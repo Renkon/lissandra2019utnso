@@ -2,6 +2,8 @@
 #define CORE_SCHEDULER_SHORT_TERM_SCHEDULER_H_
 
 #include "scheduler.h"
+#include "../statistics/stats.h"
+#include "utils/dates.h"
 
 typedef struct {
 	operation_t operation;
@@ -14,6 +16,6 @@ typedef struct {
 
 void short_term_schedule();
 void planifier_execute(void* arg);
-void exec_statement(statement_t* statement);
+void exec_next_statement(int processor);
 
 #endif /* CORE_SCHEDULER_SHORT_TERM_SCHEDULER_H_ */
