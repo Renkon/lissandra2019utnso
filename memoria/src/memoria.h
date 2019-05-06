@@ -26,7 +26,7 @@ typedef struct {
 } memconfig_t;
 
 typedef struct {
-	long timestamp;
+	long long timestamp;
 	int key;
 	char* value;
 } record_t;
@@ -53,6 +53,10 @@ void create_dummy();
 record_t* create_record(long timestamp, int key, char* value);
 page_t* create_page(int page_number,record_t* record, bool modified );
 segment_t* create_segment(char* table_name);
+
+//son para las operations, no me dejaba ponerlos en el operations.h
+bool is_our_segment(segment_t* segment, char* table_name);
+bool is_our_page(page_t* page, int key);
 
 //se supone que si los creo acá son variables globales para el proceso :B
 t_list* g_segment_list;
