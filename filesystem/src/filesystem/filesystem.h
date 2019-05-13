@@ -17,9 +17,18 @@ typedef struct table_metadata_t {
 
 typedef struct partition_t {
 	int size;
-	int *blocks;
+	int* blocks;
+	int number_of_blocks;
 
 } Partition;
+
+
+typedef struct key_t {
+	long long timestamp;
+	int key;
+	char* value;
+
+} Key;
 
 int create_table_folder(char* table_name);
 void create_partitions(int partitions, char* table_name, int* blocks);

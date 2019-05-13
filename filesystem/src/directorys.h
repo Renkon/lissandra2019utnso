@@ -14,6 +14,7 @@ char* get_table_directory();
 char* get_block_directory();
 char* get_bitmap_directory();
 char* create_new_directory(char* old_directory, char* directory_end);
+char* create_new_directory(char* old_directory, char* directory_end);
 bool exist_in_directory(char* archive, char* directory);
 
 #endif /* DIRECTORYS_H_ */

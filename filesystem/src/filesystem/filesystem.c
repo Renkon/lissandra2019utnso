@@ -25,6 +25,7 @@ void create_partitions(int partitions, char* table_name, int* blocks) {
 		partition->blocks = malloc(sizeof(int));
 		partition->blocks[0] = blocks[i];
 		partition->size = 0;
+		partition->number_of_blocks = 0;
 
 		fwrite(&partition->size, 1, sizeof(partition->size), arch);
 		fwrite(partition->blocks, 1, sizeof(int), arch);
@@ -42,10 +43,9 @@ void create_table_metadata(consistency_t consistency, int partitions,
 	long compaction_time, char* table_name) {
 	char* table_directory = create_new_directory(get_table_directory(),table_name);
 	char* metadata_name = "/metadata.bin";
-	char* metadata_directory = malloc(strlen(table_directory) + strlen(metadata_name) + 1);
+	char* metadata_directory = create_metadata_directory(table_directory);
 	Table_metadata* table_metadata = malloc(sizeof(Table_metadata));
 	//con esto ya tendria toda la direccion donde va a estar la metadata
-	metadata_directory = create_new_directory(table_directory, metadata_name);
 	//Creo el struct metadata a guardar con los datos del input
 	table_metadata = create_metadata(consistency, partitions, compaction_time);
 	//ABro el nuevo .bin y le guardo los datos correspondientes
@@ -103,4 +103,25 @@ int find_free_block(t_bitarray* bitmap) {
 	}
 	//Si no lo encuentro solo devuelvo -1
 	return -1;
+}
+
+char* search_key (char* table_directory, int key){
+	//Leo la metadata de la tabla
+	Table_metadata* table_metadata = read_table_metadata(table_directory);
+	 //Calculo la particion donde se supone que esta la key
+	int partition_number= (key%table_metadata->partitions)+1;
+	//Creo la direccion hasta la particion
+	char* partition_name = create_partition_name(partition_number);
+	char* partition_path = malloc(strlen(table_directory)+strlen(partition_name)+1);
+	strcpy(partition_path, table_directory);
+	strcat(partition_path, partition_name);
+
+	//Buscar en esa particion
+	 //Buscar en todos los tmp
+	 //Buscar en el tmpc
+	 //Encontrar el que tiene el timestamp mas grande
+	 //DEvuelvo la key encontrada o no.
+	free(partition_path);
+	return "eo";
+
 }

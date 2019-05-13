@@ -1,6 +1,6 @@
 #include "binary_files.h"
 
-t_bitarray *read_bitmap(char* bitmap_directory) {
+t_bitarray* read_bitmap(char* bitmap_directory) {
 	t_bitarray *bitmap = malloc(sizeof(t_bitarray));
 
 	FILE* arch2 = fopen(bitmap_directory, "rb");
@@ -21,3 +21,10 @@ void write_bitmap(t_bitarray *bitmap, char* bitmap_directory) {
 	fclose(arch);
 
 }
+
+
+
+
+
+
+

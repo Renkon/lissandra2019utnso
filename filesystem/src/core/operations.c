@@ -2,6 +2,20 @@
 
 void process_select(select_input_t* input) {
 	log_i("fs select args: %s %u", input->table_name,(unsigned int) input->key);
+	//Primero me fijo si existe la tabla
+	if(exist_in_directory(input->table_name,get_table_directory())){
+		char* table_name_upper = to_uppercase(input->table_name);
+		char *table_directory = create_new_directory(get_table_directory(), table_name_upper);
+		 search_key (table_directory, input->key);
+
+	}else{
+		//Si no existe la tabla entonces se termina la operacion
+		log_w("La tabla %s no existe. Operacion SELECT cancelada",input->table_name);}
+
+
+
+
+
 }
 
 void process_insert(insert_input_t* input) {

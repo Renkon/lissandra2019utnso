@@ -34,6 +34,27 @@ char* create_new_directory(char* old_directory, char* directory_end) {
 	return new_path;
 }
 
+char* create_metadata_directory(char* table_directory){
+	char* metadata_name = "/metadata.bin";
+	char* metadata_directory = malloc(strlen(table_directory) + strlen(metadata_name) + 1);
+	metadata_directory = create_new_directory(table_directory, metadata_name);
+	return metadata_directory;
+}
+
+char* create_partition_name(int partition_number){
+	char* partition = malloc(digits_in_a_number(partition_number) + strlen("/.bin") + 1);
+	sprintf(partition, "/%d.bin", partition_number);
+	return partition;
+
+}
+
+char* create_block_directory (int block_number){
+
+	char* block_name= malloc(digits_in_a_number(block_number) + strlen(".bin") + 1);
+	sprintf(block_name, "%d.bin", block_number);
+	return create_new_directory(get_block_directory(),block_name);
+}
+
 bool exist_in_directory(char* archive, char* directory) {
 	char* upper_archive = to_uppercase(archive);
 	DIR* d;

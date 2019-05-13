@@ -56,7 +56,7 @@ char* to_uppercase(char* lower_string) {
 				str_up[i] -= 32;
 			i++;
 		}
-		free(lower_string);
+
 		return (str_up);
 
 }
