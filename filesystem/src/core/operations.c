@@ -2,24 +2,37 @@
 
 void process_select(select_input_t* input) {
 	log_i("fs select args: %s %u", input->table_name,(unsigned int) input->key);
+	char* table_name_upper = to_uppercase(input->table_name);
 	//Primero me fijo si existe la tabla
-	if(exist_in_directory(input->table_name,get_table_directory())){
-		char* table_name_upper = to_uppercase(input->table_name);
-		char *table_directory = create_new_directory(get_table_directory(), table_name_upper);
-		 search_key (table_directory, input->key);
-		 	 //FALTAN WEAS
-	}else{
+	if (exist_in_directory(input->table_name, get_table_directory())) {
+
+		char* table_directory = create_new_directory(get_table_directory(),table_name_upper);
+		Key* key_found = search_key(table_directory, input->key);
+
+		if (key_found->timestamp == -1) {
+			//Si la key encotnrada me da una timstamp en -1 entonces significa que no la encontro
+			log_w("La clave %d no existe en la tabla %s. Operacion SELECT cancelada",input->key, table_name_upper);
+
+		}else {
+			//SI la timstamp es distinta de -1 entonces si la encontre y la muestro!
+			log_i("Clave %d encontrada en la tabla %s! su valor es: %s",input->key, table_name_upper, key_found->value);
+
+		}
+		free(table_directory);
+		//SI instento hacer este free entonces en el proximo select rompe todo.
+		//free(key_found);
+	} else {
 		//Si no existe la tabla entonces se termina la operacion
-		log_w("La tabla %s no existe. Operacion SELECT cancelada",input->table_name);}
+		log_w("La tabla %s no existe. Operacion SELECT cancelada",table_name_upper);
+	}
 
-
-
-
+	free(table_name_upper);
 
 }
 
 void process_insert(insert_input_t* input) {
-	log_i("fs insert args: %s %u \"%s\" %ld", input->table_name,(unsigned int) input->key, input->value, input->timestamp);
+	log_i("fs insert args: %s %u \"%s\" %ld", input->table_name,
+			(unsigned int) input->key, input->value, input->timestamp);
 }
 
 void process_create(create_input_t* input) {
@@ -41,8 +54,8 @@ void process_create(create_input_t* input) {
 			create_table_metadata(input->consistency, input->partitions,input->compaction_time, table_name_upper);
 			log_i("Se creo la metadata de la tabla %s ", table_name_upper);
 
-			create_partitions(input->partitions, table_name_upper,blocks);
-			write_bitmap(bitmap,get_bitmap_directory());
+			create_partitions(input->partitions, table_name_upper, blocks);
+			write_bitmap(bitmap, get_bitmap_directory());
 			log_i("Se crearon %d particiones para la tabla %s ",input->partitions, table_name_upper);
 
 		} else {
@@ -58,7 +71,7 @@ void process_create(create_input_t* input) {
 	}
 
 	free(table_name_upper);
-    free(bitmap);
+	free(bitmap);
 
 }
 

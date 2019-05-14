@@ -30,14 +30,15 @@ char* get_bitmap_directory() {
 }
 
 char* get_tmpc_directory(char* table_directory){
-	return create_new_directory(table_directory, get_tmpc_name());
+	char* table_directory_with_slash =create_new_directory(table_directory,"/");
+	return create_new_directory(table_directory_with_slash, get_tmpc_name());
 
 }
 
-char get_tmp_name(int tmp_number){
+char* get_tmp_name(int tmp_number){
 
 	char* tmp_name= malloc(digits_in_a_number( tmp_number) + strlen(".tmp") + 1);
-	sprintf(tmp_name, "%d.tmp", tmp_name);
+	sprintf(tmp_name, "A%d.tmp", tmp_number);
 	return tmp_name;
 
 }

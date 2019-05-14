@@ -13,7 +13,7 @@ char* get_table_directory();
 char* get_block_directory();
 char* get_bitmap_directory();
 char* get_tmpc_directory(char* table_directory);
-char get_tmp_name(int tmp_number);
+char* get_tmp_name(int tmp_number);
 char* get_tmp_directory (char*  table_directory,int tmp_number);
 char* create_metadata_directory(char* table_directory);
 char* create_partition_directory(char* table_directory, int partition_number);
