@@ -27,6 +27,7 @@ typedef struct key_t {
 	long long timestamp;
 	int key;
 	char* value;
+	int value_length;
 
 } Key;
 
@@ -37,5 +38,9 @@ void create_table_metadata(consistency_t consistency, int partitions,long compac
 Table_metadata* create_metadata(consistency_t consistency, int partitions,long compaction_time);
 int assign_free_blocks(t_bitarray* bitmap, int* blocks, int* partitions_amount);
 int find_free_block(t_bitarray *bitmap);
+char* search_key (char* table_directory, int key);
+Key* search_in_tmpc(char* table_directory, int key);
+Key* search_in_all_tmps(char* table_directory,int key);
+Key* search_in_partition(char* table_directory, int key);
 
 #endif /* CREATE_CREATE_UTILS_H_ */

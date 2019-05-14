@@ -7,7 +7,7 @@ void process_select(select_input_t* input) {
 		char* table_name_upper = to_uppercase(input->table_name);
 		char *table_directory = create_new_directory(get_table_directory(), table_name_upper);
 		 search_key (table_directory, input->key);
-
+		 	 //FALTAN WEAS
 	}else{
 		//Si no existe la tabla entonces se termina la operacion
 		log_w("La tabla %s no existe. Operacion SELECT cancelada",input->table_name);}

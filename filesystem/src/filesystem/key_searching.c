@@ -24,9 +24,9 @@ Partition* read_partition(char* partition_string) {
 	return partition;
 }
 
-search_key_in_partition(char* partition_path, int key) {
+Key* search_key_in_fs_archive(char* fs_archive_path, int key) {
 	Key* key_found = malloc(sizeof(Key));
-	Partition* partition = read_partition(partition_path);
+	Partition* partition = read_partition(fs_archive_path);
 
 	for (int i = 0; i < partition->number_of_blocks; i++) {
 
@@ -42,23 +42,40 @@ search_key_in_partition(char* partition_path, int key) {
 	return key_found;
 }
 
-Key search_key_in_block(int block, int key) {
+Key* search_key_in_block(int block, int key) {
 	char* block_directory = create_block_directory(block);
 
 	Key* key_found_in_block = malloc(sizeof(Key));
-	//Le seteo -1 para que si no encuentra una key siga buscando
+	//Le seteo -1 para que si no la encuentra, devuelva esta "key invalida"
 	key_found_in_block->timestamp = -1;
+
 	FILE* arch = fopen(block_directory, "rb");
+
+	Key* readed_key = malloc(sizeof(Key));
 	while(!feof(arch)){
 
-		Key* readed_key = malloc(sizeof(Key));
+		//Leo el bloque
+		fread(&readed_key->key,1,sizeof(readed_key->key),arch);
+		fread(&readed_key->value_length,1,sizeof(readed_key->value_length),arch);
+		fread(&readed_key->timestamp,1,sizeof(readed_key->timestamp),arch);
+		fread(readed_key->value,1,sizeof(readed_key->value),arch);
 
-		//FALTA PONER LA LOGICA PARA LEER LOS BLOQUES (STRUCT KEY) Y DESPUES BUSCAR.
-
+			if(readed_key->key == key){
+				//SI encuentro la key entonces paro el while y la devuelvo
+				key_found_in_block = readed_key;
+				free(readed_key);
+				break;
+			}
+	//Si no lo encuentro sigo buscando
 	}
-
-
+ 	fclose(arch);
+ 	free(readed_key);
 	free(block_directory);
+	return key_found_in_block;
 
 }
+
+
+
+
 

@@ -106,22 +106,80 @@ int find_free_block(t_bitarray* bitmap) {
 }
 
 char* search_key (char* table_directory, int key){
-	//Leo la metadata de la tabla
-	Table_metadata* table_metadata = read_table_metadata(table_directory);
-	 //Calculo la particion donde se supone que esta la key
-	int partition_number= (key%table_metadata->partitions)+1;
-	//Creo la direccion hasta la particion
-	char* partition_name = create_partition_name(partition_number);
-	char* partition_path = malloc(strlen(table_directory)+strlen(partition_name)+1);
-	strcpy(partition_path, table_directory);
-	strcat(partition_path, partition_name);
 
-	//Buscar en esa particion
-	 //Buscar en todos los tmp
-	 //Buscar en el tmpc
-	 //Encontrar el que tiene el timestamp mas grande
-	 //DEvuelvo la key encontrada o no.
-	free(partition_path);
+	//Busco la key en el unico archivo tmp que puede haber
+	Key* key_found_in_tmpc = search_in_tmpc(table_directory,key);
+
+	//Busco la key en los tmp que existan
+
+
+	//FALTA HACER ESTE Y EL DE OPERATIONS Y GG!
+
+
+	//Busco en los tmp y en el tmpc
+	//Despues me fijo cual de las keys encontradas tiene el timestamp mas grande
+	// SI no encuentro la key en uno de los 2 o en los 2 la timestamp seria -1
+	//POr ende hago un if para saber si la timestamp es -1
+	//Si entra al if entonces ahi recien busco en el bloque
+	//SI no, devuelvo esa key.
+
 	return "eo";
 
 }
+
+Key* search_in_tmpc(char* table_directory, int key){
+	Key* key_found = malloc(sizeof(Key));
+	//Le seteo -1 para que si no la encuentra, devuelva esta "key invalida"
+	key_found->timestamp = -1;
+	if(exist_in_directory(table_directory,get_tmpc_name())){
+
+		key_found = search_key_in_fs_archive(get_tmpc_directory(table_directory), key);
+
+	}
+	//ALo final devuelvo la key que encontre si es que habia o la key default con timestamp -1 si no estaba
+	return key_found;
+}
+
+
+Key* search_in_all_tmps(char* table_directory,int key){
+
+	//ESta es la key que voy a devolver al final
+	Key* key_found_in_tmp = malloc(sizeof(Key));
+	key_found_in_tmp->timestamp = -1;
+	//ESta key es para meter las keys que encuentro en cada tmp
+	Key* key_found = malloc(sizeof(Key));
+	key_found->timestamp = -1;
+	//Los nombres de los tmp empiezan desde el 1
+	int tmp_number=1;
+	while( exist_in_directory(table_directory,get_tmp_name(tmp_number))){
+
+		key_found = search_key_in_fs_archive(get_tmp_directory(table_directory,tmp_number), key);
+		if(key_found->timestamp > key_found_in_tmp->timestamp){
+			//Si la key que encontre tienen mas timestamp que la key que habia encontrado antes o la default
+			//Entonces la guardo porque es la mas actual
+
+			key_found_in_tmp = key_found;
+		}
+		tmp_number++;
+	}
+	//Al final devuelvo la key con timestamp mas actual si la encontre o la key default con timestamp -1 si no
+	free(key_found);
+	return key_found_in_tmp;
+}
+
+Key* search_in_partition(char* table_directory, int key){
+	//Leo la metadata de la tabla
+	Table_metadata* table_metadata = read_table_metadata(table_directory);
+	//Calculo en que particion va a estar ya que la key se guarda en la particion = (key MOD numeroParticiones)+1
+	int partition_number= (key%table_metadata->partitions)+1;
+	//De nuevo la key default con timestamp en -1
+	Key* key_found = malloc(sizeof(Key));
+	key_found->timestamp = -1;
+
+	key_found = search_key_in_fs_archive(create_partition_directory(table_directory,partition_number), key);
+
+	return key_found;
+}
+
+
+
