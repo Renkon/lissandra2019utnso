@@ -24,7 +24,7 @@ void create_partitions(int partitions, char* table_name, int* blocks) {
 		Partition *partition = malloc(sizeof(Partition));
 		partition->number_of_blocks = 1;
 		partition->blocks = malloc(sizeof(int));
-		partition->blocks[0] = blocks[i];
+		partition->blocks[0] = blocks[i]+1;
 		partition->size = 0;
 
 		fwrite(&partition->number_of_blocks, 1, sizeof(partition->number_of_blocks), arch);
@@ -132,9 +132,9 @@ Key* search_in_tmpc(char* table_directory, int key){
 	Key* key_found = malloc(sizeof(Key));
 	//Le seteo -1 para que si no la encuentra, devuelva esta "key invalida"
 	key_found->timestamp = -1;
-	if(exist_in_directory(table_directory,get_tmpc_name())){
-
-		key_found = search_key_in_fs_archive(get_tmpc_directory(table_directory), key);
+	if(exist_in_directory(get_tmpc_name(),table_directory)){
+		char* wea = get_tmpc_directory(table_directory);
+		key_found = search_key_in_fs_archive(wea, key);
 
 	}
 	//Al final devuelvo la key que encontre si es que habia o la key default con timestamp -1 si no estaba
@@ -150,7 +150,7 @@ Key* search_in_all_tmps(char* table_directory,int key){
 	Key* key_found = malloc(sizeof(Key));
 	//Los nombres de los tmp empiezan desde el 1
 	int tmp_number=1;
-	while( exist_in_directory(table_directory,get_tmp_name(tmp_number))){
+	while( exist_in_directory(get_tmp_name(tmp_number),table_directory)){
 
 		key_found = search_key_in_fs_archive(get_tmp_directory(table_directory,tmp_number), key);
 

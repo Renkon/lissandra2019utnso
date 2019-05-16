@@ -18,9 +18,11 @@ Partition* read_partition(char* partition_directory) {
 	Partition* partition = malloc(sizeof(Partition));
 	fread(&partition->number_of_blocks, 1, sizeof(partition->number_of_blocks),arch);
 	partition->blocks = malloc(sizeof(int) * partition->number_of_blocks);
-	fread(partition->blocks, 1, sizeof(partition->blocks), arch);
-	fread(&partition->size, 1, sizeof(sizeof(int)), arch);
+	fread(partition->blocks, 1, sizeof(int)*partition->number_of_blocks, arch);
+	fread(&partition->size, 1, sizeof(partition->size), arch);
+
 	fclose(arch);
+	int wea = partition->blocks[0];
 	return partition;
 }
 
@@ -30,7 +32,7 @@ Key* search_key_in_fs_archive(char* fs_archive_path, int key) {
 
 	for (int i = 0; i < partition->number_of_blocks; i++) {
 
-		key_found = search_key_in_block(i + 1, key);
+		key_found = search_key_in_block(partition->blocks[i], key);
 
 		if (key_found->timestamp != -1) {
 
@@ -64,15 +66,26 @@ Key* search_key_in_block(int block, int key) {
 
 		if (readed_key->key == key) {
 			//SI encuentro la key entonces paro el while y la devuelvo
-			key_found_in_block = readed_key;
+			key_found_in_block = copy_key(readed_key);
 			break;
 		}
 		//Si no lo encuentro sigo buscando
 	}
 	fclose(arch);
-	free(readed_key);
 	free(block_directory);
 	return key_found_in_block;
+
+}
+
+Key* copy_key(Key* key_to_copy){
+	Key* copied_key = malloc(sizeof(Key));
+	copied_key->key = key_to_copy->key;
+	copied_key->timestamp = key_to_copy->timestamp;
+	copied_key->value = malloc(copied_key->value_length+1);
+	copied_key->value = key_to_copy->value;
+	copied_key->value_length = key_to_copy->value_length;
+	free(key_to_copy);
+	return copied_key;
 
 }
 
