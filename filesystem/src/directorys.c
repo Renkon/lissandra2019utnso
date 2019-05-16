@@ -44,7 +44,8 @@ char* get_tmp_name(int tmp_number){
 }
 
 char* get_tmp_directory (char*  table_directory,int tmp_number){
-	return create_new_directory(table_directory,get_tmp_name(tmp_number));
+	char* table_directory_with_slash =create_new_directory(table_directory,"/");
+	return create_new_directory(table_directory_with_slash,get_tmp_name(tmp_number));
 }
 
 
@@ -81,6 +82,7 @@ bool exist_in_directory(char* archive, char* directory) {
 		while ((dir = readdir(d)) != NULL) {
 			char* upper_read = to_uppercase(dir->d_name);
 			if (strcmp(upper_read, upper_archive) == 0) {
+				closedir(d);
 				return true;
 			}
 		}
