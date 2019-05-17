@@ -25,7 +25,7 @@ void create_partitions(int partitions, char* table_name, int* blocks) {
 		partition->number_of_blocks = 1;
 		partition->blocks = malloc(sizeof(int));
 		partition->blocks[0] = blocks[i]+1;
-		partition->size = 0;
+		partition->size = 69;
 
 		fwrite(&partition->number_of_blocks, 1, sizeof(partition->number_of_blocks), arch);
 		fwrite(partition->blocks, 1, sizeof(int), arch);
@@ -111,19 +111,19 @@ Key* search_key (char* table_directory, int key){
 	Key* key_found_in_tmpc = search_in_tmpc(table_directory,key);
 	//Busco la key en todos los tmps que existan
 	Key* key_found_in_tmp =  search_in_all_tmps(table_directory,key);
-	//Me fijo cual de las 2 keys encontradas tiene timestamp mas grande
-	Key* most_current_key = key_with_greater_timestamp(key_found_in_tmp,key_found_in_tmpc);
-	//SI encontre una key en alguno de los 2 entonces no tengo que buscar en las particiones
-	//Como los valores que estan en los tmp y el tmpc fueron insertados despues de la ultima compactacion
-	//Eso significa que si encontre la key en alguno de estos 2 entonces la key que busco
-	//o no esta en la particion o esta pero esta desactualizada
-	if(most_current_key->timestamp == -1){
-		//Si no encontre nada en los tmps y en el tmpc entonces busco en la particion
-		most_current_key = search_in_partition(table_directory,key);
-	}
+	//Busco la key en la particion que deberia estar
+	Key* key_found_in_partition = search_in_partition(table_directory,key);
+	//Comparo las 3 keys y por transitividad saco la que tiene la timestamp mas grande
+	Key* auxiliar_key = key_with_greater_timestamp(key_found_in_tmp,key_found_in_tmpc);
+
+	Key* most_current_key =  key_with_greater_timestamp(auxiliar_key,key_found_in_partition);
+
 	//Devuelvo lo que encontre, si no esta la key entonces devuelvo una key con timestamp en -1
 	free(key_found_in_tmpc);
 	free(key_found_in_tmp);
+	free(key_found_in_partition);
+	//SI pongo este free pasa lo mismo, cuando hago un select va bien pero cuando hago otro seguido rompe
+	//free(auxiliar_key);
 	return most_current_key;
 
 }

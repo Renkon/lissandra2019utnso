@@ -13,7 +13,7 @@ Table_metadata* read_table_metadata(char* table_directory) {
 	return table_metadata;
 }
 
-Partition* read_partition(char* partition_directory) {
+Partition* read_fs_archive(char* partition_directory) {
 	FILE* arch = fopen(partition_directory, "rb");
 	Partition* partition = malloc(sizeof(Partition));
 	fread(&partition->number_of_blocks, 1, sizeof(partition->number_of_blocks),arch);
@@ -28,7 +28,7 @@ Partition* read_partition(char* partition_directory) {
 
 Key* search_key_in_fs_archive(char* fs_archive_path, int key) {
 	Key* key_found = malloc(sizeof(Key));
-	Partition* partition = read_partition(fs_archive_path);
+	Partition* partition = read_fs_archive(fs_archive_path);
 
 	for (int i = 0; i < partition->number_of_blocks; i++) {
 

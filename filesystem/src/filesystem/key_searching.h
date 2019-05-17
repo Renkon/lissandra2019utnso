@@ -8,7 +8,7 @@
 #include "filesystem.h"
 
 Table_metadata* read_table_metadata(char* table_directory);
-Partition* read_partition(char* partition_string);
+Partition* read_fs_archive(char* partition_string);
 Key* search_key_in_partition(char* partition_path, int key);
 Key* search_key_in_block(int block,int key);
 Key* copy_key(Key* key_to_copy);
