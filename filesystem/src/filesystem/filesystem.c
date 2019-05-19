@@ -105,7 +105,7 @@ int find_free_block(t_bitarray* bitmap) {
 	return -1;
 }
 
-record_t* search_key (char* table_directory, int key){
+record_t* search_key(char* table_directory, int key){
 
 	//Busco la key en el unico archivo tmp que puede haber
 	record_t* key_found_in_tmpc = search_in_tmpc(table_directory,key);
@@ -114,17 +114,18 @@ record_t* search_key (char* table_directory, int key){
 	//Busco la key en la particion que deberia estar
 	record_t* key_found_in_partition = search_in_partition(table_directory,key);
 	//Comparo las 3 keys y por transitividad saco la que tiene la timestamp mas grande
-	record_t* auxiliar_key = key_with_greater_timestamp(key_found_in_tmp,key_found_in_tmpc);
+	record_t* auxiliar_key = key_with_greater_timestamp(key_found_in_tmp, key_found_in_tmpc);
 
-	record_t* most_current_key =  key_with_greater_timestamp(auxiliar_key,key_found_in_partition);
+	record_t* most_current_key =  key_with_greater_timestamp(auxiliar_key, key_found_in_partition);
 
 	//Devuelvo lo que encontre, si no esta la key entonces devuelvo una key con timestamp en -1
+	record_t* the_key = copy_key(most_current_key);
+
 	free(key_found_in_tmpc);
 	free(key_found_in_tmp);
 	free(key_found_in_partition);
-	//SI pongo este free pasa lo mismo, cuando hago un select va bien pero cuando hago otro seguido rompe
-	//free(auxiliar_key);
-	return most_current_key;
+
+	return the_key;
 
 }
 

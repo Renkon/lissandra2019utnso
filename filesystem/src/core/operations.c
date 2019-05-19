@@ -19,8 +19,7 @@ void process_select(select_input_t* input) {
 
 		}
 		free(table_directory);
-		//SI instento hacer este free entonces en el proximo select rompe todo.
-		//free(key_found);
+		free(key_found);
 	} else {
 		//Si no existe la tabla entonces se termina la operacion
 		log_w("La tabla %s no existe. Operacion SELECT cancelada",table_name_upper);

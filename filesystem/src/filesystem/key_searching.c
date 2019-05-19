@@ -82,21 +82,20 @@ record_t* copy_key(record_t* key_to_copy){
 	copied_key->key = key_to_copy->key;
 	copied_key->timestamp = key_to_copy->timestamp;
 	copied_key->value = malloc(copied_key->value_length+1);
-	copied_key->value = key_to_copy->value;
+	memcpy(copied_key->value, key_to_copy->value, key_to_copy->value_length + 1);
 	copied_key->value_length = key_to_copy->value_length;
-	free(key_to_copy);
+	free(key_to_copy); // BORRAR -> Usar afuera
 	return copied_key;
 
 }
 
 record_t* key_with_greater_timestamp(record_t* key_1, record_t* key_2) {
-
 	if (key_1->timestamp > key_2->timestamp) {
 		return key_1;
-
 	} else {
 		return key_2;
 	}
 
 }
+
 
