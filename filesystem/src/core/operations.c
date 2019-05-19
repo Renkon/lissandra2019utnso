@@ -7,7 +7,7 @@ void process_select(select_input_t* input) {
 	if (exist_in_directory(input->table_name, get_table_directory())) {
 
 		char* table_directory = create_new_directory(get_table_directory(),table_name_upper);
-		Key* key_found = search_key(table_directory, input->key);
+		record_t* key_found = search_key(table_directory, input->key);
 
 		if (key_found->timestamp == -1) {
 			//Si la key encotnrada me da una timstamp en -1 entonces significa que no la encontro
