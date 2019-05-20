@@ -5,22 +5,20 @@ void process_select(select_input_t* input) {
 	log_i("la cantidad de elementos que tengo es: %d",g_segment_list->elements_count);
 
 	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, 16, select_callback);
-	/*char* demo_str = string_duplicate("soy una memoria");
-	page_t* page_found;
-	char* segment_found;
+	//char* demo_str = string_duplicate("soy una memoria");
+	page_t* found_page;
+	segment_t* found_segment
 
-	segment_found=malloc(sizeof(input->table_name));
-	memcpy(segment_found,segment_exists(input->table_name),strlen(segment_exists(input->table_name))+1);
+	found_segment = get_segment_by_name(g_segment_list,input->table_name);
 
-	if(segment_found != NULL){
-		find_page(segment_found,input->key);
-		if(page_found==NULL){
-			//se lo pido al filesystem que se encargue y me devuelva lo que deba
-			//
+	if(found_segment != NULL){
+		found_page = get_page_by_key(found_segment,input->key);
+		if(found_page != NULL){
+			//CALLBACK RETORNO CON LO QUE POSEO ACTUALMENTE
 		}else{
-			//logica de retorno por consola
+			//CALLBACK CON LOGICA PARA PREGUNTARSELO AL FILESYSTEM Y DESPUES PASARLO AL KURRLUL
 		};
-	};*/
+	};
 }
 
 void process_insert(insert_input_t* input) {
@@ -29,29 +27,28 @@ void process_insert(insert_input_t* input) {
 	page_t* found_page;
 	record_t* modified_record;
 
-	/* found_segment = list_find(g_list,is_our_segment(segment, input->table_name));
-	if(found_segment != NULL)){
-		found_page = list_find(found_segment->page,is_our_page(page,input->key));
+	found_segment = get_segment_by_name(g_segment_list,input->table_name);
+
+	if(found_segment != NULL){
+		found_page = get_page_by_key(found_segment,input->key);
 		if(found_page != NULL){
 			modified_record = found_page->record;
 			modified_record->timestamp = get_timestamp();
-			modified_record->key = input->value;
-			>> usar una de las funciones de list_replace o list_replace_element
+			modified_record->value = input->value;
 		}else{
-			>>pido pagina libre...que?
+			//pido pagina libre...que?
 			modified_record = create_record(input->timestamp,input->key, input->value);
-			found_page = create_page(BUSCAR,modified_record,true);
+			found_page = create_page(list_size(found_segment->page),modified_record,true);
 			list_add(found_segment,found_page);
-			>>falta expandir la logica de que pasa si no tengo espacio.
+			//falta expandir la logica de que pasa si no tengo espacio.
 		}
 	}else{
 		found_segment = create_segment(input->table_name);
 		modified_record = create_record(input->timestamp,input->key,input->value);
-		found_page = create_page(BUSCAR,modified_record,true);
+		found_page = create_page(list_size(found_segment->page),modified_record,true);
 		list_add(found_segment->page,found_page);
 		list_add(g_segment_list,found_segment);
  	};
-	*/
 
 }
 
@@ -93,10 +90,29 @@ void describe_callback(void* response){
 	//se lo pido al FS con la funcion para devolver parametros
 }
 
-bool is_our_segment(segment_t* segment, char* table_name){
-	return strcmp(segment,table_name);
+segment_t* get_segment_by_name(t_list* list, char* table_name){
+	 	int i = 0;
+	 	segment_t* segment_found;
+
+	 	for(;i < list_size(list);i++){
+	 		segment_found = list_get(list,i);
+	 		if(strcmp(segment_found->name,table_name) == 0){
+	 			break;
+	 		}
+	 	}
+	 	return i<list_size(list)?segment_found:NULL;
 }
 
-bool is_our_page(page_t* page, int key){
-	return page->record->key==key?true:false;
+page_t* get_page_by_key(segment_t* segment, int key){
+	t_list* list_page = segment->page;
+	page_t* page_found;
+	int i = 0;
+
+	for(;i < list_size(list_page);i++){
+		 		page_found = list_get(list_page,i);
+		 		if(page_found->record->key == key){
+		 			break;
+		 		}
+		 	}
+		 	return i<list_size(list_page)?page_found:NULL;
 }
