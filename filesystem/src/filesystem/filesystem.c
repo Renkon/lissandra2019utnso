@@ -120,7 +120,6 @@ record_t* search_key(char* table_directory, int key){
 
 	//Devuelvo lo que encontre, si no esta la key entonces devuelvo una key con timestamp en -1
 	record_t* the_key = copy_key(most_current_key);
-
 	free(key_found_in_tmpc);
 	free(key_found_in_tmp);
 	free(key_found_in_partition);
@@ -158,6 +157,7 @@ record_t* search_in_all_tmps(char* table_directory, int key){
 			//Entonces la guardo porque es la mas actual
 
 			key_found_in_tmp = copy_key(key_found);
+
 		}
 		tmp_number++;
 	}

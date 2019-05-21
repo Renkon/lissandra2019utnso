@@ -37,7 +37,7 @@ char* get_tmpc_directory(char* table_directory){
 
 char* get_tmp_name(int tmp_number){
 
-	char* tmp_name= malloc(digits_in_a_number( tmp_number) + strlen(".tmp") + 1);
+	char* tmp_name= malloc(digits_in_a_number( tmp_number) + strlen("A.tmp") + 1);
 	sprintf(tmp_name, "A%d.tmp", tmp_number);
 	return tmp_name;
 

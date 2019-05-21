@@ -67,6 +67,7 @@ record_t* search_key_in_block(int block, int key) {
 		if (readed_key->key == key) {
 			//SI encuentro la key entonces paro el while y la devuelvo
 			key_found_in_block = copy_key(readed_key);
+			free(readed_key);
 			break;
 		}
 		//Si no lo encuentro sigo buscando
@@ -79,12 +80,15 @@ record_t* search_key_in_block(int block, int key) {
 
 record_t* copy_key(record_t* key_to_copy){
 	record_t* copied_key = malloc(sizeof(record_t));
-	copied_key->key = key_to_copy->key;
+	copied_key->value = malloc(key_to_copy->value_length+1);
 	copied_key->timestamp = key_to_copy->timestamp;
-	copied_key->value = malloc(copied_key->value_length+1);
-	memcpy(copied_key->value, key_to_copy->value, key_to_copy->value_length + 1);
+	if(copied_key->timestamp != -1){
+	copied_key->key = key_to_copy->key;
+	strcpy(copied_key->value, key_to_copy->value);
 	copied_key->value_length = key_to_copy->value_length;
-	free(key_to_copy); // BORRAR -> Usar afuera
+
+	}
+
 	return copied_key;
 
 }
