@@ -5,8 +5,11 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 
+
 #include "../directorys.h"
 #include "../lissandra/lissandra.h"
+#include "../fs_lists.h"
+
 
 typedef struct  {
 	consistency_t consistency;
@@ -28,6 +31,7 @@ typedef struct {
 	int value_length;
 } record_t;
 
+
 int create_table_folder(char* table_name);
 void create_partitions(int partitions, char* table_name, int* blocks);
 char* create_bin_name(int name);
@@ -39,5 +43,6 @@ record_t* search_key (char* table_directory, int key);
 record_t* search_in_tmpc(char* table_directory, int key);
 record_t* search_in_all_tmps(char* table_directory,int key);
 record_t* search_in_partition(char* table_directory, int key);
+record_t* create_record(insert_input_t* input);
 
 #endif /* CREATE_CREATE_UTILS_H_ */

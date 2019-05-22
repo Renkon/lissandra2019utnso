@@ -2,11 +2,13 @@
 #define FILESYSTEM_H_
 #define FSCFG "filesystem.cfg"
 
+
 #include "../config.h"
 #include "generic_console.h"
 #include "generic_config.h"
 #include "generic_server.h"
 #include "../core/operations.h"
+#include "../filesystem/filesystem.h"
 
 typedef struct {
 	int port;
@@ -16,9 +18,11 @@ typedef struct {
 	int dump_time;
 } fsconfig_t;
 
+
 fsconfig_t g_config;
 extern char* g_config_keys[];
 extern int g_config_keys_size;
+extern t_list* mem_table;
 
 callbacks_t* get_callbacks();
 

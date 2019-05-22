@@ -1,5 +1,7 @@
 #include "filesystem.h"
 
+
+
 int create_table_folder(char* table_name) {
 	//Creo el nuevo directorio donde va a estar la nueva tabla
 	char *table_directory = create_new_directory(get_table_directory(), table_name);
@@ -179,5 +181,13 @@ record_t* search_in_partition(char* table_directory, int key) {
 	return key_found;
 }
 
-
+record_t* create_record(insert_input_t* input){
+		record_t* record = malloc(sizeof(record_t));
+		record->key = input->key;
+		record->timestamp = input->timestamp;
+		record->value_length = strlen(input->value);
+		record->value = malloc(record->value_length+1);
+		strcpy(record->value, input->value);
+		return record;
+}
 

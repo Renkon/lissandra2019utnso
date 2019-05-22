@@ -11,9 +11,10 @@ void process_select(select_input_t* input) {
 
 		if (key_found->timestamp == -1) {
 			//Si la key encotnrada me da una timstamp en -1 entonces significa que no la encontro
-			log_w("La clave %d no existe en la tabla %s. Operacion SELECT cancelada",input->key, table_name_upper);
+			log_w(
+					"La clave %d no existe en la tabla %s. Operacion SELECT cancelada",input->key, table_name_upper);
 
-		}else {
+		} else {
 			//SI la timstamp es distinta de -1 entonces si la encontre y la muestro!
 			log_i("Clave %d encontrada en la tabla %s! su valor es: %s",input->key, table_name_upper, key_found->value);
 
@@ -30,8 +31,35 @@ void process_select(select_input_t* input) {
 }
 
 void process_insert(insert_input_t* input) {
-	log_i("fs insert args: %s %u \"%s\" %ld", input->table_name,
-			(unsigned int) input->key, input->value, input->timestamp);
+	log_i("fs insert args: %s %u \"%s\" %ld", input->table_name,(unsigned int) input->key, input->value, input->timestamp);
+	char* table_name_upper = to_uppercase(input->table_name);
+	//Me fijo si existe la tabla
+	if (exist_in_directory(input->table_name, get_table_directory())) {
+
+		if (input->timestamp == -1) {
+			input->timestamp = 420; //Usar get_timestamp();
+		}
+
+		record_t* record = create_record(input);
+
+		if (table_not_exist_in_list(mem_table, table_name_upper)) {
+			//Si no existe la tabla en la mem table la creo
+			table_t* new_table = create_table(table_name_upper);
+			list_add(mem_table, new_table);
+		}
+		//Siempre busco la tabla que necesito y despues le inserto la key, por ahora sin orden despues quizas si
+		table_t* table = find_table_in_list(mem_table, table_name_upper);
+		list_add(table->records, record);
+		//Si le hago free a key_list, new_table o recod cago la lista no?
+		//Se les hace free cuando limpie la memetable despues supongo.
+		log_i("Se inserto satisfactoriamente la clave %d con valor %s y timestamp %d en la tabla %s ",input->key, input->value, input->timestamp, table_name_upper);
+
+	} else {
+		//Si no existe la tabla entonces se termina la operacion
+		log_w("La tabla %s no existe. Operacion INSERT cancelada",table_name_upper);
+	}
+	//SI hago este free rompe todo porque me dice que le haago free 2 veces, o algo asi. FER HELP!!!!!!!!!11!!1UNO
+	//free(table_name_upper);
 }
 
 void process_create(create_input_t* input) {
@@ -41,7 +69,8 @@ void process_create(create_input_t* input) {
 	int blocks[(input->partitions)];
 
 	//Quiero saber si hay tantos bloques libres como particiones asi que busco cuantos bloques libres hay
-	int free_blocks_amount = assign_free_blocks(bitmap, blocks,input->partitions);
+	int free_blocks_amount = assign_free_blocks(bitmap, blocks,
+			input->partitions);
 
 	if (free_blocks_amount == input->partitions) {
 		//Si habia n bloques libres me toca saber si ya existe la tabla a crear o no
