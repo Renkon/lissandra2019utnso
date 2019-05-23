@@ -2,12 +2,12 @@
 
 void process_select(select_input_t* input) {
 	log_i("mm select args: %s %u", input->table_name, (unsigned int)input->key);
-	log_i("la cantidad de elementos que tengo es: %d",g_segment_list->elements_count);
+	log_i("la cantidad de segmentos que tengo es: %d",g_segment_list->elements_count);
 
 	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, 16, select_callback);
-	//char* demo_str = string_duplicate("soy una memoria");
+
 	page_t* found_page;
-	segment_t* found_segment
+	segment_t* found_segment;
 
 	found_segment = get_segment_by_name(g_segment_list,input->table_name);
 
@@ -15,6 +15,7 @@ void process_select(select_input_t* input) {
 		found_page = get_page_by_key(found_segment,input->key);
 		if(found_page != NULL){
 			//CALLBACK RETORNO CON LO QUE POSEO ACTUALMENTE
+			log_i("Clave %u encontrada en la tabla %s ! Su valor es: %s ",(unsigned int)found_page->record->key, found_segment->name, found_page->record->value);
 		}else{
 			//CALLBACK CON LOGICA PARA PREGUNTARSELO AL FILESYSTEM Y DESPUES PASARLO AL KURRLUL
 		};
@@ -30,17 +31,26 @@ void process_insert(insert_input_t* input) {
 	found_segment = get_segment_by_name(g_segment_list,input->table_name);
 
 	if(found_segment != NULL){
+
 		found_page = get_page_by_key(found_segment,input->key);
 		if(found_page != NULL){
+
 			modified_record = found_page->record;
-			modified_record->timestamp = get_timestamp();
+			modified_record->timestamp = 10000;
 			modified_record->value = input->value;
+			found_page->modified = true;
+
+			log_i("Se modifico el registro con key %u con el valor: %s ", found_page->record->key, modified_record->value);
+
 		}else{
 			//pido pagina libre...que?
+
 			modified_record = create_record(input->timestamp,input->key, input->value);
 			found_page = create_page(list_size(found_segment->page),modified_record,true);
-			list_add(found_segment,found_page);
+			list_add(found_segment->page,found_page);
+
 			//falta expandir la logica de que pasa si no tengo espacio.
+			log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %u en la tabla %s", (unsigned int)modified_record->key, modified_record->value , (unsigned int)modified_record->timestamp, found_segment->name);
 		}
 	}else{
 		found_segment = create_segment(input->table_name);
@@ -48,6 +58,8 @@ void process_insert(insert_input_t* input) {
 		found_page = create_page(list_size(found_segment->page),modified_record,true);
 		list_add(found_segment->page,found_page);
 		list_add(g_segment_list,found_segment);
+
+		log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %u en la tabla %s", (unsigned int)modified_record->key, modified_record->value , (unsigned int)modified_record->timestamp, found_segment->name);
  	};
 
 }
@@ -67,8 +79,21 @@ void process_describe(describe_input_t* input) {
 
 void process_drop(drop_input_t* input) {
 	log_i("mm drop args: %s", input->table_name);
-	//verificar si existe el segmento de tabla en M.Principal
-	//libero el espacio
+
+	segment_t* found_segment;
+	page_t* found_page;
+	record_t* modified_record;
+
+	found_segment = get_segment_by_name(g_segment_list,input->table_name);
+
+	if(found_segment != NULL){
+		//list_remove_and_destroy_element(g_segment_list,g_segment_list->elements_count,remove_segment());
+
+		log_i("Se borro satisfactoriamente la tabla %d", found_segment->name);
+	}else{
+		log_i("No se encontro la tabla en memoria, se procede a enviar la peticion al FileSystem");
+	}
+
 	//informo al FS
 	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DROP_IN, demo_str, 16, drop_callback);
 }
@@ -115,4 +140,14 @@ page_t* get_page_by_key(segment_t* segment, int key){
 		 		}
 		 	}
 		 	return i<list_size(list_page)?page_found:NULL;
+}
+
+void remove_segment(segment_t* segment){
+	t_list* list_page = segment->page;
+	page_t* page_found;
+
+	for(int i = 0;list_size(list_page);i++){
+		remove_list_and_destroy_element(list_page,i,remove_page());
+		//falta expandir
+	}
 }

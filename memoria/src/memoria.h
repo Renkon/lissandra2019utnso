@@ -57,6 +57,7 @@ segment_t* create_segment(char* table_name);
 //son para las operations, no me dejaba ponerlos en el operations.h
 segment_t* get_segment_by_name(t_list* list, char* table_name);
 page_t* get_page_by_key(segment_t* segment, int key);
+void remove_segment(segment_t* segment);
 
 //se supone que si los creo acá son variables globales para el proceso :B
 t_list* g_segment_list;

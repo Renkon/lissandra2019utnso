@@ -22,4 +22,5 @@ void describe_callback(void* response);
 void select_callback(void* response);
 
 
+
 #endif /* CORE_OPERATIONS3_H_ */
