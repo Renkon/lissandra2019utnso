@@ -93,5 +93,9 @@ void exec_next_statement(int processor) {
 	// Esto deberia ir en el callback
 	// Aca deberiamos tener el PCB
 	pcb->last_execution_stats->timestamp_end = get_timestamp();
+	log_t("Se ingresa un evento a las estadisticas.");
+	clear_old_stats();
+	list_add(g_stats_events, pcb->last_execution_stats);
+
 	sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
 }

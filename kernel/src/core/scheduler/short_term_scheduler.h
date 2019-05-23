@@ -3,7 +3,6 @@
 
 #include "scheduler.h"
 #include "../statistics/stats.h"
-#include "utils/dates.h"
 
 typedef struct {
 	operation_t operation;

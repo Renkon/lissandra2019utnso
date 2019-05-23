@@ -10,3 +10,7 @@ long long get_timestamp() {
 
 	return ms;
 }
+
+long long timestamp_difference(long long initial, long long end) {
+	return end > initial ? end - initial : initial - end;
+}

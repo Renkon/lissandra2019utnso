@@ -1,9 +1,7 @@
-/*
- * stats.h
- *
- *  Created on: 5 may. 2019
- *      Author: utnso
- */
+#include <stdlib.h>
+#include "commons/collections/list.h"
+#include "generic_logger.h"
+#include "utils/dates.h"
 
 #ifndef CORE_STATISTICS_STATS_H_
 #define CORE_STATISTICS_STATS_H_
@@ -21,5 +19,7 @@ typedef struct {
 } stats_t;
 
 t_list* g_stats_events;
+
+void clear_old_stats();
 
 #endif /* CORE_STATISTICS_STATS_H_ */
