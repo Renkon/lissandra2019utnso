@@ -10,6 +10,7 @@
 #include "generic_logger.h"
 #include "core/operations.h"
 #include "core/scheduler/scheduler.h"
+#include "core/statistics/metrics.h"
 
 typedef struct {
 	char* memory_ip;

@@ -98,18 +98,6 @@ void process_run(run_input_t* input) {
 		list_add(g_scheduler_queues.new, pcb);
 }
 
-void process_metrics() {
-	clear_old_stats();
-	printf("                               METRICAS DE KERNEL                               \n");
-	printf("--------------------------------------------------------------------------------\n");
-	printf(" - 1> Read latency / 30s: %Lf\n", get_read_latency());
-	printf(" - 2> Write latency / 30s: %Lf\n", get_write_latency());
-	printf(" - 3> Reads / 30s: %i\n", get_reads());
-	printf(" - 4> Writes / 30s: %i\n", get_writes());
-	// TODO: get_memory_loads();
-	printf("--------------------------------------------------------------------------------\n");
-}
-
 bool on_inner_run_request(t_list* statements, run_input_t* input, bool free_input) {
 	bool success = true;
 	t_list* file_lines = get_file_lines(input->path);

@@ -47,3 +47,32 @@ long double get_operation_count(stats_event_t event_t) {
 
 	return counter;
 }
+
+void init_metrics() {
+	pthread_t metrics_thread;
+
+	if (pthread_create(&metrics_thread, NULL, (void*) process_metrics_continuously, NULL)) {
+		log_e("No se pudo inicializar el hilo de metricas");
+	}
+}
+
+void process_metrics() {
+	// TODO: hay que hacerlas por cada CRITERIO!!!
+	clear_old_stats();
+	printf("                               METRICAS DE KERNEL                               \n");
+	printf("--------------------------------------------------------------------------------\n");
+	printf(" - 1> Read latency / 30s: %Lf\n", get_read_latency());
+	printf(" - 2> Write latency / 30s: %Lf\n", get_write_latency());
+	printf(" - 3> Reads / 30s: %i\n", get_reads());
+	printf(" - 4> Writes / 30s: %i\n", get_writes());
+	// TODO: get_memory_loads();
+	printf("--------------------------------------------------------------------------------\n");
+}
+
+
+void process_metrics_continuously() {
+	while (true) {
+		usleep(30000 * 1000);
+		process_metrics();
+	}
+}
