@@ -31,13 +31,13 @@ void process_select(select_input_t* input) {
 }
 
 void process_insert(insert_input_t* input) {
-	log_i("fs insert args: %s %u \"%s\" %ld", input->table_name,(unsigned int) input->key, input->value, input->timestamp);
+	log_i("fs insert args: %s %u \"%s\" %ld", input->table_name, (unsigned int) input->key, input->value, input->timestamp);
 	char* table_name_upper = to_uppercase(input->table_name);
 	//Me fijo si existe la tabla
 	if (exist_in_directory(input->table_name, get_table_directory())) {
 
 		if (input->timestamp == -1) {
-			input->timestamp = 420; //Usar get_timestamp();
+			input->timestamp = 420; //TODO: Usar get_timestamp();
 		}
 
 		record_t* record = create_record(input);
@@ -56,7 +56,7 @@ void process_insert(insert_input_t* input) {
 
 	} else {
 		//Si no existe la tabla entonces se termina la operacion
-		log_w("La tabla %s no existe. Operacion INSERT cancelada",table_name_upper);
+		log_w("La tabla %s no existe. Operacion INSERT cancelada", table_name_upper);
 	}
 	//SI hago este free rompe todo porque me dice que le haago free 2 veces, o algo asi. FER HELP!!!!!!!!!11!!1UNO
 	//free(table_name_upper);

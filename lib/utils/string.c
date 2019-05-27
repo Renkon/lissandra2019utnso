@@ -48,15 +48,14 @@ long string_to_long(char* str) {
 }
 
 char* to_uppercase(char* lower_string) {
-		int i = 0;
-		char *str_up = strdup(lower_string);
+	int i = 0;
+	char* str_up = strdup(lower_string);
 
-		while (str_up[i]) {
-			if (str_up[i] >= 97 && str_up[i] <= 122)
-				str_up[i] -= 32;
-			i++;
-		}
+	while (str_up[i]) {
+		if (str_up[i] >= 97 && str_up[i] <= 122)
+			str_up[i] -= 32;
+		i++;
+	}
 
-		return (str_up);
-
+	return str_up;
 }
