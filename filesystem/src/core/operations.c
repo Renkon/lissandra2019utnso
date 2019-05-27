@@ -27,7 +27,6 @@ void process_select(select_input_t* input) {
 	}
 
 	free(table_name_upper);
-
 }
 
 void process_insert(insert_input_t* input) {
@@ -58,8 +57,8 @@ void process_insert(insert_input_t* input) {
 		//Si no existe la tabla entonces se termina la operacion
 		log_w("La tabla %s no existe. Operacion INSERT cancelada", table_name_upper);
 	}
-	//SI hago este free rompe todo porque me dice que le haago free 2 veces, o algo asi. FER HELP!!!!!!!!!11!!1UNO
-	//free(table_name_upper);
+
+	free(table_name_upper);
 }
 
 void process_create(create_input_t* input) {
@@ -100,7 +99,6 @@ void process_create(create_input_t* input) {
 
 	free(table_name_upper);
 	free(bitmap);
-
 }
 
 void process_describe(describe_input_t* input) {
