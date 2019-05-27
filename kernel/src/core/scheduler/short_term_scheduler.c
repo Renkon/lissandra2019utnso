@@ -49,7 +49,6 @@ void short_term_schedule() {
 					semaphore_init = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_init, i);
 					pcb->processor = i;
 					sem_post(semaphore_init);
-					log_t("Ejecutando en otro thread %i", i);
 					// Aca el planificador ejecuta
 					pcb->quantum++;
 				}
@@ -69,7 +68,6 @@ void planifier_execute(void* arg) {
 
 	while (true) {
 		sem_wait(semaphore_init);
-		log_t("Ejecuto en thread %i", exec_id);
 		exec_next_statement(exec_id);
 		sem_wait(semaphore_exec);
 	}
