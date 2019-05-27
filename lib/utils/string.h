@@ -13,5 +13,6 @@ uint16_t string_to_uint16(char* str);
 int string_to_int(char* str);
 long string_to_long(char* str);
 long long string_to_long_long(char* str);
+char* to_uppercase(char* lower_string);
 
 #endif /* UTILS_STRING_H_ */
