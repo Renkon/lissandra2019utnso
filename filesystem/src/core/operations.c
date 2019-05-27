@@ -30,7 +30,7 @@ void process_select(select_input_t* input) {
 }
 
 void process_insert(insert_input_t* input) {
-	log_i("fs insert args: %s %u \"%s\" %ld", input->table_name, (unsigned int) input->key, input->value, input->timestamp);
+	log_i("fs insert args: %s %u \"%s\" %lld", input->table_name, (unsigned int) input->key, input->value, input->timestamp);
 	char* table_name_upper = to_uppercase(input->table_name);
 	//Me fijo si existe la tabla
 	if (exist_in_directory(input->table_name, get_table_directory())) {

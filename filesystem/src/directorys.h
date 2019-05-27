@@ -7,7 +7,9 @@
 #include <dirent.h>
 #include <stdio.h>
 
+#include "utils/numbers.h"
 #include "lissandra/lissandra.h"
+
 char* get_tmpc_name();
 char* get_table_directory();
 char* get_block_directory();

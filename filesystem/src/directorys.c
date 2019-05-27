@@ -20,36 +20,31 @@ char* get_table_directory() {
 char* get_block_directory() {
 	//devuelve el directorio actual de los bloques
 	return create_new_directory(g_config.mount_point,"Bloques/");
-
 }
 
 char* get_bitmap_directory() {
 	//devuelve el directorio actual de los bloques
 	return create_new_directory(g_config.mount_point,"Metadata/Bitmap.bin");
-
 }
 
-char* get_tmpc_directory(char* table_directory){
-	char* table_directory_with_slash =create_new_directory(table_directory,"/");
+char* get_tmpc_directory(char* table_directory) {
+	char* table_directory_with_slash = create_new_directory(table_directory, "/");
 	return create_new_directory(table_directory_with_slash, get_tmpc_name());
-
 }
 
-char* get_tmp_name(int tmp_number){
-
-	char* tmp_name= malloc(digits_in_a_number( tmp_number) + strlen("A.tmp") + 1);
+char* get_tmp_name(int tmp_number) {
+	char* tmp_name = malloc(digits_in_a_number(tmp_number) + strlen("A.tmp") + 1);
 	sprintf(tmp_name, "A%d.tmp", tmp_number);
 	return tmp_name;
-
 }
 
-char* get_tmp_directory (char*  table_directory,int tmp_number){
-	char* table_directory_with_slash =create_new_directory(table_directory,"/");
+char* get_tmp_directory (char*  table_directory,int tmp_number) {
+	char* table_directory_with_slash = create_new_directory(table_directory, "/");
 	return create_new_directory(table_directory_with_slash,get_tmp_name(tmp_number));
 }
 
 
-char* create_metadata_directory(char* table_directory){
+char* create_metadata_directory(char* table_directory) {
 	return  create_new_directory(table_directory, "/metadata.bin");
 }
 
@@ -59,7 +54,7 @@ char* create_partition_directory(char* table_directory, int partition_number){
 
 }
 
-char* create_partition_name(int partition_number){
+char* create_partition_name(int partition_number) {
 	char* partition = malloc(digits_in_a_number(partition_number) + strlen("/.bin") + 1);
 	sprintf(partition, "/%d.bin", partition_number);
 	return partition;

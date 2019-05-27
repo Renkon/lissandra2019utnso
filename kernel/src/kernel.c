@@ -9,6 +9,7 @@ int main(void) {
 		return 1;
 	init_config(KNCFG, initialize_kernel_config, update_kernel_config, g_config_keys, g_config_keys_size);
 	init_scheduler();
+	init_metrics();
 	init_console("Papito codeo en Assembler - Kernel v1.0", "kernel>", KERNEL, get_callbacks());
 	destroy_logger();
 	return 0;

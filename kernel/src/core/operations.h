@@ -1,12 +1,14 @@
 #ifndef CORE_OPERATIONS_H_
 #define CORE_OPERATIONS_H_
 
+#include <stdio.h>
 #include "utils/operation_types.h"
 #include "generic_client.h"
 #include "../config.h"
 #include "generic_logger.h"
 #include "utils/file.h"
 #include "scheduler/scheduler.h"
+#include "statistics/metrics.h"
 
 void process_select(select_input_t* input);
 void process_insert(insert_input_t* input);
