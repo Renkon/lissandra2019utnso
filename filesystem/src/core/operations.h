@@ -10,7 +10,7 @@
 #include "../filesystem/filesystem.h"
 #include "../directorys.h"
 #include "utils/dates.h"
-
+#include "utils/operation_types.h"
 void process_select(select_input_t* input);
 void process_insert(insert_input_t* input);
 void process_create(create_input_t* input);

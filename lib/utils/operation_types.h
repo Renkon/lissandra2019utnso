@@ -70,5 +70,6 @@ typedef struct {
 // metrics no requiere struct
 
 char* get_process_name(process_t process);
+char* get_consistency_name( consistency_t consistency);
 
 #endif /* OPERATION_TYPES_H_ */
