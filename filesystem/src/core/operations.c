@@ -36,7 +36,7 @@ void process_insert(insert_input_t* input) {
 	if (exist_in_directory(input->table_name, get_table_directory())) {
 
 		if (input->timestamp == -1) {
-			input->timestamp = 420; //TODO: Usar get_timestamp();
+			input->timestamp =  get_timestamp();
 		}
 
 		record_t* record = create_record(input);
@@ -49,13 +49,12 @@ void process_insert(insert_input_t* input) {
 		//Siempre busco la tabla que necesito y despues le inserto la key, por ahora sin orden despues quizas si
 		table_t* table = find_table_in_list(mem_table, table_name_upper);
 		list_add(table->records, record);
-		//Si le hago free a key_list, new_table o recod cago la lista no?
-		//Se les hace free cuando limpie la memetable despues supongo.
-		log_i("Se inserto satisfactoriamente la clave %d con valor %s y timestamp %d en la tabla %s ",input->key, input->value, input->timestamp, table_name_upper);
+		//Se les hace free cuando limpie la memetable despues.
+		log_i("Se inserto satisfactoriamente la clave %d con valor %s y timestamp %lld en la tabla %s ",input->key, input->value, input->timestamp, table_name_upper);
 
 	} else {
 		//Si no existe la tabla entonces se termina la operacion
-		log_w("La tabla %s no existe. Operacion INSERT cancelada", table_name_upper);
+		log_w("La tabla %lld  no existe. Operacion INSERT cancelada", table_name_upper);
 	}
 
 	free(table_name_upper);

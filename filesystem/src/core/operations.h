@@ -9,6 +9,7 @@
 #include "generic_logger.h"
 #include "../filesystem/filesystem.h"
 #include "../directorys.h"
+#include "utils/dates.h"
 
 void process_select(select_input_t* input);
 void process_insert(insert_input_t* input);
