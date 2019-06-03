@@ -28,35 +28,45 @@ void process_select(select_input_t* input) {
 	free(table_name_upper);
 }
 
-void process_insert(insert_input_t* input) {
+bool process_insert(insert_input_t* input) {
 	log_i("fs insert args: %s %u \"%s\" %lld", input->table_name, (unsigned int) input->key, input->value, input->timestamp);
 	char* table_name_upper = to_uppercase(input->table_name);
 	//Me fijo si existe la tabla
 	if (exist_in_directory(input->table_name, get_table_directory())) {
+		if( value_exceeds_maximun_size(input->value)){
 
-		if (input->timestamp == -1) {
-			input->timestamp =  get_timestamp();
-		}
+			log_w("El valor de la key a insertar excede el tamaño maximo soportado. Operacion INSERT cancelada", table_name_upper);
+			free(table_name_upper);
+			return false;
 
-		record_t* record = create_record(input);
+		}else{
+				if (input->timestamp == -1) {
+					input->timestamp =  get_timestamp();
+				}
 
-		if (table_not_exist_in_list(mem_table, table_name_upper)) {
-			//Si no existe la tabla en la mem table la creo
-			table_t* new_table = create_table(table_name_upper);
-			list_add(mem_table, new_table);
-		}
-		//Siempre busco la tabla que necesito y despues le inserto la key, por ahora sin orden despues quizas si
-		table_t* table = find_table_in_list(mem_table, table_name_upper);
-		list_add(table->records, record);
-		//Se les hace free cuando limpie la memetable despues.
-		log_i("Se inserto satisfactoriamente la clave %d con valor %s y timestamp %lld en la tabla %s ",input->key, input->value, input->timestamp, table_name_upper);
+				record_t* record = create_record(input);
 
-	} else {
+				if (table_not_exist_in_list(mem_table, table_name_upper)) {
+					//Si no existe la tabla en la mem table la creo
+					table_t* new_table = create_table(table_name_upper);
+					list_add(mem_table, new_table);
+				}
+				//Siempre busco la tabla que necesito y despues le inserto la key, por ahora sin orden despues quizas si
+				table_t* table = find_table_in_list(mem_table, table_name_upper);
+				list_add(table->records, record);
+				//Se les hace free cuando limpie la memetable despues.
+				log_i("Se inserto satisfactoriamente la clave %d con valor %s y timestamp %lld en la tabla %s ",input->key, input->value, input->timestamp, table_name_upper);
+				free(table_name_upper);
+				return true;
+				}
+			}
+			else {
 		//Si no existe la tabla entonces se termina la operacion
-		log_w("La tabla %lld  no existe. Operacion INSERT cancelada", table_name_upper);
+		log_w("La tabla %s no existe. Operacion INSERT cancelada", table_name_upper);
+		free(table_name_upper);
+		return false;
 	}
 
-	free(table_name_upper);
 }
 
 void process_create(create_input_t* input) {
@@ -116,7 +126,6 @@ void process_describe(describe_input_t* input) {
 			free(table_metadata);
 
 		}
-
 
 	} else {
 		//Si no, me fijo si la tabla que me mando existe

@@ -191,3 +191,8 @@ record_t* create_record(insert_input_t* input){
 		return record;
 }
 
+bool value_exceeds_maximun_size(char* value){
+	return strlen(value)+1 > g_config.max_value_size;
+
+}
+

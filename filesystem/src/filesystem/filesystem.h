@@ -44,5 +44,6 @@ record_t* search_in_tmpc(char* table_directory, int key);
 record_t* search_in_all_tmps(char* table_directory,int key);
 record_t* search_in_partition(char* table_directory, int key);
 record_t* create_record(insert_input_t* input);
+bool value_exceeds_maximun_size(char* value);
 
 #endif /* CREATE_CREATE_UTILS_H_ */
