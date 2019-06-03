@@ -87,3 +87,24 @@ bool exist_in_directory(char* archive, char* directory) {
 	return false;
 }
 
+t_list* get_tables_list(){
+	char* directory = get_table_directory();
+	DIR* d;
+	struct dirent* dir;
+	t_list* table_list = list_create();
+	d = opendir(directory);
+	if (d) {
+		while ((dir = readdir(d)) != NULL) {
+			//*Si lo que lei no es . o .. entonces lo meto a la lista de  tablas
+			//No se porque pero me lee esos caracteres, por eso los ignoro (?
+			if(strcmp(dir->d_name,".") != 0 && strcmp(dir->d_name,"..")!=0){
+			char* upper_read = to_uppercase(dir->d_name);
+			list_add(table_list, upper_read);
+			}
+		}
+
+		closedir(d);
+	}
+	return table_list;
+}
+

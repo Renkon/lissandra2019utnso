@@ -11,8 +11,7 @@ void process_select(select_input_t* input) {
 
 		if (key_found->timestamp == -1) {
 			//Si la key encotnrada me da una timstamp en -1 entonces significa que no la encontro
-			log_w(
-					"La clave %d no existe en la tabla %s. Operacion SELECT cancelada",input->key, table_name_upper);
+			log_w("La clave %d no existe en la tabla %s. Operacion SELECT cancelada",input->key, table_name_upper);
 
 		} else {
 			//SI la timstamp es distinta de -1 entonces si la encontre y la muestro!
@@ -103,10 +102,21 @@ void process_describe(describe_input_t* input) {
 	log_i("fs describe args: %s", input->table_name);
 	//Si me mandan null muestro la metadata de todas las tablas
 	if (input->table_name == NULL) {
-		//TODO hacer la logica para cuando mandas un null
-		//Buscar todas las tablas que existen
-		//Hacer un for y hacer la misma logica que abajo
-		printf(" Kapo, todavia no esta implementado esto ");
+		t_list* table_list =get_tables_list();
+
+		for(int i=0; i<table_list->elements_count; i++){
+			char* table_name =list_get(table_list,i);
+			char* table_directory = create_new_directory(get_table_directory(),table_name);
+			table_metadata_t* table_metadata = read_table_metadata(table_directory);
+			//Paso de enum a string
+			char* consistency_name = get_consistency_name(table_metadata->consistency);
+			log_i("La tabla %s tiene: \n Un tiempo de compactacion de %ld milisegundos "
+			"\n Una consistencia del tipo %s \n Y %d particion/es.   ", table_name,table_metadata->compaction_time,consistency_name,table_metadata->partitions);
+			free(table_directory);
+			free(table_metadata);
+
+		}
+
 
 	} else {
 		//Si no, me fijo si la tabla que me mando existe
@@ -118,7 +128,7 @@ void process_describe(describe_input_t* input) {
 			//Paso de enum a string
 			char* consistency_name = get_consistency_name(table_metadata->consistency);
 			log_i("La tabla %s tiene: \n Un tiempo de compactacion de %ld milisegundos "
-					"\n Una consistencia del tipo %s \n Y %d particiones.   ", table_name_upper,table_metadata->compaction_time,consistency_name,table_metadata->partitions);
+					"\n Una consistencia del tipo %s \n Y %d particion/es.   ", table_name_upper,table_metadata->compaction_time,consistency_name,table_metadata->partitions);
 			free(table_directory);
 			free(table_metadata);
 		} else {

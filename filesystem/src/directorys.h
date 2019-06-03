@@ -23,6 +23,7 @@ char* create_new_directory(char* old_directory, char* directory_end);
 char* create_partition_name(int partition_number);
 char* create_block_directory (int block_number);
 bool exist_in_directory(char* archive, char* directory);
+t_list* get_tables_list();
 
 
 #endif /* DIRECTORYS_H_ */
