@@ -108,9 +108,10 @@ void process_create(create_input_t* input) {
 	free(bitmap);
 }
 
-void process_describe(describe_input_t* input) {
+t_list* process_describe(describe_input_t* input) {
 	log_i("fs describe args: %s", input->table_name);
 	//Si me mandan null muestro la metadata de todas las tablas
+	t_list* metadata_list = list_create();
 	if (input->table_name == NULL) {
 		t_list* table_list =get_tables_list();
 
@@ -123,7 +124,7 @@ void process_describe(describe_input_t* input) {
 			log_i("La tabla %s tiene: \n Un tiempo de compactacion de %ld milisegundos "
 			"\n Una consistencia del tipo %s \n Y %d particion/es.   ", table_name,table_metadata->compaction_time,consistency_name,table_metadata->partitions);
 			free(table_directory);
-			free(table_metadata);
+			list_add(metadata_list, table_metadata);
 
 		}
 
@@ -139,14 +140,18 @@ void process_describe(describe_input_t* input) {
 			log_i("La tabla %s tiene: \n Un tiempo de compactacion de %ld milisegundos "
 					"\n Una consistencia del tipo %s \n Y %d particion/es.   ", table_name_upper,table_metadata->compaction_time,consistency_name,table_metadata->partitions);
 			free(table_directory);
-			free(table_metadata);
+			free(table_name_upper);
+			list_add(metadata_list, table_metadata);
+
 		} else {
 			//Si no existe la tabla  se termina la operacion
 			log_w("La tabla %s no existe. Operacion DESCRIBE cancelada",table_name_upper);
-		}
-		free(table_name_upper);
-	}
+			free(table_name_upper);
 
+		}
+
+	}
+	return metadata_list;
 }
 
 void process_drop(drop_input_t* input) {

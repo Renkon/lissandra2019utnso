@@ -12,9 +12,9 @@
 #include "utils/dates.h"
 #include "utils/operation_types.h"
 void process_select(select_input_t* input);
-void process_insert(insert_input_t* input);
+bool process_insert(insert_input_t* input);
 void process_create(create_input_t* input);
-void process_describe(describe_input_t* input);
+t_list* process_describe(describe_input_t* input);
 void process_drop(drop_input_t* input);
 
 
