@@ -10,6 +10,7 @@
 #include "utils/operation_types.h"
 #include "core/operations.h"
 #include <stdbool.h>
+#include <commons/bitarray.h>
 
 typedef struct {
 	int port;
@@ -32,8 +33,7 @@ typedef struct {
 } record_t;
 
 typedef struct {
-	int page_number;
-	record_t* record;
+	int index;
 	bool modified;
 } page_t;
 
@@ -51,18 +51,20 @@ void find_page(char* segment,uint16_t key );
 void create_dummy();
 
 record_t* create_record(long timestamp, int key, char* value);
-page_t* create_page(int page_number,record_t* record, bool modified );
+page_t* create_page(int index, bool modified );
 segment_t* create_segment(char* table_name);
 
 //son para las operations, no me dejaba ponerlos en el operations.h
 segment_t* get_segment_by_name(t_list* list, char* table_name);
 page_t* get_page_by_key(segment_t* segment, int key);
 void remove_segment(segment_t* segment);
+void remove_page(page_t* page);
 
 //se supone que si los creo acá son variables globales para el proceso :B
 t_list* g_segment_list;
-
+char** main_memory;
 
 callbacks_t* get_callbacks();
+void init_main_memory();
 
 #endif /* MEMORIA_H_ */

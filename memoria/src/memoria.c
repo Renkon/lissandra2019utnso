@@ -11,6 +11,7 @@ int main(void) {
 		return 1;
 
 	init_config(MEMCFG, initialize_memory_config, update_memory_config, g_config_keys, g_config_keys_size);
+	init_main_memory();
 	init_server(g_config.port, MEMORY);
 	create_dummy();
 	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY, get_callbacks());
@@ -34,11 +35,10 @@ record_t* create_record(long timestamp, int key, char* value) {
 	return record;
 }
 
-page_t* create_page(int page_number,record_t* record, bool modified ) {
-	page_t *page = malloc(sizeof(page_t));
+page_t* create_page(int index, bool modified ) {
+	page_t* page = malloc(sizeof(page_t));
 
-	page->page_number = page_number;
-	page->record = record;
+	page->index = index;
 	page->modified = modified;
 
 	return page;
@@ -59,11 +59,16 @@ void create_dummy(){
 	segment_t* segment_dummy = create_segment("laposta");
 
 	record_t* record_dummy = create_record(100,1,"hola");
-	page_t* page_dummy = create_page(1,record_dummy,false);
+	page_t* page_dummy = create_page(2,false);
 
 	list_add(segment_dummy->page,page_dummy);
 	list_add(g_segment_list,segment_dummy);
 }
 
-
+void init_main_memory(){
+	main_memory = (char**) malloc(g_config.memory_size/(sizeof(long long)+sizeof(int)+(4*sizeof(char))+(2*sizeof(char)))); //TODO hardcodee el 4
+	for(int i=0;i<(g_config.memory_size/(sizeof(long long)+sizeof(int)+(4*sizeof(char))+(2*sizeof(char))));i++){
+		main_memory[i] = (char*) malloc(sizeof(long long)+sizeof(int)+(4*sizeof(char))+(2*sizeof(char)));
+	}
+}
 

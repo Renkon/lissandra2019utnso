@@ -4,8 +4,6 @@ void process_select(select_input_t* input) {
 	log_i("mm select args: %s %u", input->table_name, (unsigned int)input->key);
 	log_i("la cantidad de segmentos que tengo es: %d",g_segment_list->elements_count);
 
-	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, 16, select_callback);
-
 	page_t* found_page;
 	segment_t* found_segment;
 
@@ -17,7 +15,8 @@ void process_select(select_input_t* input) {
 			//CALLBACK RETORNO CON LO QUE POSEO ACTUALMENTE
 			log_i("Clave %u encontrada en la tabla %s ! Su valor es: %s ",(unsigned int)found_page->record->key, found_segment->name, found_page->record->value);
 		}else{
-			//CALLBACK CON LOGICA PARA PREGUNTARSELO AL FILESYSTEM Y DESPUES PASARLO AL KURRLUL
+			//Lo pido al FS
+
 		};
 	};
 }
@@ -27,20 +26,21 @@ void process_insert(insert_input_t* input) {
 	segment_t* found_segment;
 	page_t* found_page;
 	record_t* modified_record;
+	page_t* index_list;
 
 	found_segment = get_segment_by_name(g_segment_list,input->table_name);
 
 	if(found_segment != NULL){
 
-		found_page = get_page_by_key(found_segment,input->key);
-		if(found_page != NULL){
+		index_list = list_map(found_segment->page,page_get_index);
+		found_page = get_page_by_key(index_list,found_segment,input->key,main_memory);
 
-			modified_record = found_page->record;
-			modified_record->timestamp = 10000;
-			modified_record->value = input->value;
+		if(found_page != NULL){
+			//TODO Tode este wee
+			modify_memory_by_index(found_page->index,input->value,10000);
 			found_page->modified = true;
 
-			log_i("Se modifico el registro con key %u con el valor: %s ", found_page->record->key, modified_record->value);
+			log_i("Se modifico el registro con key %u con el valor: %s ",found_page->index, modified_record->value);
 
 		}else{
 			//pido pagina libre...que?
@@ -87,7 +87,7 @@ void process_drop(drop_input_t* input) {
 	found_segment = get_segment_by_name(g_segment_list,input->table_name);
 
 	if(found_segment != NULL){
-		//list_remove_and_destroy_element(g_segment_list,g_segment_list->elements_count,remove_segment());
+		remove_segment(found_segment);
 
 		log_i("Se borro satisfactoriamente la tabla %d", found_segment->name);
 	}else{
@@ -128,26 +128,38 @@ segment_t* get_segment_by_name(t_list* list, char* table_name){
 	 	return i<list_size(list)?segment_found:NULL;
 }
 
-page_t* get_page_by_key(segment_t* segment, int key){
-	t_list* list_page = segment->page;
+page_t* get_page_by_key(t_list* index_list, int key,char** main_memory){
 	page_t* page_found;
-	int i = 0;
+	int index;
 
-	for(;i < list_size(list_page);i++){
-		 		page_found = list_get(list_page,i);
-		 		if(page_found->record->key == key){
-		 			break;
-		 		}
-		 	}
-		 	return i<list_size(list_page)?page_found:NULL;
+	int i = 0;
+	for(;i < list_size(index_list);i++){
+	 		index = list_get(index_list,i);
+	 		if(main_memory_value(main_memory,index) == key){
+	 			break;
+	 		}
+	 	}
+	if(i<list_size(index_list)){
+		page_found = get_page_by_index(page_found,index);
+		return page_found;
+	}else{
+		return NULL;
+	}
 }
 
-void remove_segment(segment_t* segment){
-	t_list* list_page = segment->page;
+int page_get_index(page_t* page){
+	return page->index;
+}
+
+page_t* get_page_by_index(t_list* page,int index){
+	int i = 0;
 	page_t* page_found;
 
-	for(int i = 0;list_size(list_page);i++){
-		remove_list_and_destroy_element(list_page,i,remove_page());
-		//falta expandir
-	}
+	for(;i < list_size(page);i++){
+		page_found = list_get(page,i);
+		if(page_found->index == index){
+			break;
+	 		}
+	 	}
+	return i<list_size(page)?page_found:NULL;
 }
