@@ -67,13 +67,13 @@ void process_insert(insert_input_t* input) {
 void process_create(create_input_t* input) {
 	log_i("mm create args: %s %i %i %ld", input->table_name, input->consistency, input->partitions, input->compaction_time);
 		// solo se envia al FileSystem la operacion para crear la tabla
-		//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, demo_str, 16, create_callback);
+		//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, input, sizeof(input), create_callback);
 }
 
 void process_describe(describe_input_t* input) {
 	log_i("mm describe args: %s", input->table_name);
 	// se envia la operacion al filesystem,deberia retornar lo que el kernel necesite para la operacion
-	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DESCRIBE_IN, demo_str, 16, describe_callback);
+	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DESCRIBE_IN, input->table_name,strlen(input->table_name), describe_callback);
 
 }
 
@@ -95,7 +95,7 @@ void process_drop(drop_input_t* input) {
 	}
 
 	//informo al FS
-	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DROP_IN, demo_str, 16, drop_callback);
+	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DROP_IN, input->table_name, strlen(input->name), drop_callback);
 }
 
 void process_journal() {
