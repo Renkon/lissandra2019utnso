@@ -11,6 +11,10 @@ int main(void) {
 		return 1;
 
 	init_config(MEMCFG, initialize_memory_config, update_memory_config, g_config_keys, g_config_keys_size);
+
+	total_page_size = sizeof(long long)+sizeof(int)+(4*sizeof(char))+(2*sizeof(char)); //TODO el size esta hardcodeado, lo pasa las configs de FS
+	total_memory_size = g_config.memory_size/total_page_size;
+
 	init_main_memory();
 	init_server(g_config.port, MEMORY);
 	create_dummy();
@@ -24,12 +28,13 @@ callbacks_t* get_callbacks() {
 			process_drop, process_journal, NULL, NULL, NULL);
 }
 
-record_t* create_record(long timestamp, int key, char* value) {
+record_t* create_record(long timestamp, int key, char* value,int sizechar) {
 	record_t* record = malloc(sizeof(record_t));
 
 	record->key = key;
 	record->timestamp = timestamp;
 	record->value = malloc(strlen(value)+1);
+	record->charsize = sizechar;
 	strcpy(record->value,value);
 
 	return record;
@@ -66,9 +71,9 @@ void create_dummy(){
 }
 
 void init_main_memory(){
-	main_memory = (char**) malloc(g_config.memory_size/(sizeof(long long)+sizeof(int)+(4*sizeof(char))+(2*sizeof(char)))); //TODO hardcodee el 4
-	for(int i=0;i<(g_config.memory_size/(sizeof(long long)+sizeof(int)+(4*sizeof(char))+(2*sizeof(char))));i++){
-		main_memory[i] = (char*) malloc(sizeof(long long)+sizeof(int)+(4*sizeof(char))+(2*sizeof(char)));
+	main_memory = (char**) malloc(total_memory_size);
+	for(int i=0;i<(total_memory_size);i++){
+		main_memory[i] = (char*) malloc(total_page_size);
 	}
 }
 

@@ -6,6 +6,10 @@ void process_select(select_input_t* input) {
 
 	page_t* found_page;
 	segment_t* found_segment;
+	long long return_timestamp;
+	int return_key;
+	char* return_value;
+	int position;
 
 	found_segment = get_segment_by_name(g_segment_list,input->table_name);
 
@@ -13,10 +17,22 @@ void process_select(select_input_t* input) {
 		found_page = get_page_by_key(found_segment,input->key);
 		if(found_page != NULL){
 			//CALLBACK RETORNO CON LO QUE POSEO ACTUALMENTE
-			log_i("Clave %u encontrada en la tabla %s ! Su valor es: %s ",(unsigned int)found_page->record->key, found_segment->name, found_page->record->value);
+			//log_i("Clave %u encontrada en la tabla %s ! Su valor es: %s ",(unsigned int)found_page->record->key, found_segment->name, found_page->record->value);
 		}else{
-			//Lo pido al FS
+			//TODO Lo pido al FS, las variables no van a funcionar es hasta que tengamos la conexion con el FS
 
+			if(return_timestamp != -1){ //Si devuelve -1 significa que no lo encontro, tiramos un warning
+
+				if(!memory_full()){ //TODO este es mi algoritmo de reemplazo..deberia expandirlo más
+
+					position = memory_insert(return_timestamp,input->key,return_value,main_memory);
+					found_page = create_page(position,false);
+					list_add(found_segment->page,found_page);
+
+				}
+			}else{
+				//TODO warning
+			};
 		};
 	};
 }
@@ -46,7 +62,7 @@ void process_insert(insert_input_t* input) {
 			//pido pagina libre...que?
 
 			modified_record = create_record(input->timestamp,input->key, input->value);
-			found_page = create_page(list_size(found_segment->page),modified_record,true);
+			found_page = create_page(4,true);
 			list_add(found_segment->page,found_page);
 
 			//falta expandir la logica de que pasa si no tengo espacio.
@@ -55,7 +71,7 @@ void process_insert(insert_input_t* input) {
 	}else{
 		found_segment = create_segment(input->table_name);
 		modified_record = create_record(input->timestamp,input->key,input->value);
-		found_page = create_page(list_size(found_segment->page),modified_record,true);
+		found_page = create_page(4,true);
 		list_add(found_segment->page,found_page);
 		list_add(g_segment_list,found_segment);
 
@@ -128,9 +144,9 @@ segment_t* get_segment_by_name(t_list* list, char* table_name){
 	 	return i<list_size(list)?segment_found:NULL;
 }
 
-page_t* get_page_by_key(t_list* index_list, int key,char** main_memory){
+page_t* get_page_by_key(t_list* index_list, int key){
 	page_t* page_found;
-	int index;
+	int* index;
 
 	int i = 0;
 	for(;i < list_size(index_list);i++){
@@ -162,4 +178,26 @@ page_t* get_page_by_index(t_list* page,int index){
 	 		}
 	 	}
 	return i<list_size(page)?page_found:NULL;
+}
+
+int memory_insert(long long timestamp, int key, char* value){
+	int i = 0;
+	char* str_key;
+	char* str_tstamp;
+
+	for(;i<total_memory_size;i++){
+		if(strlen(main_memory[i]) != 0){
+			str_key = string_itoa(key);
+			str_tstamp = string_from_format("%lld",timestamp);
+
+			strcat(str_tstamp,";");
+			strcat(str_tstamp,str_key);
+			strcat(str_tstamp,";");
+			strcat(str_tstamp,value);
+
+			strcpy(main_memory[i],str_tstamp);
+			break;
+		}
+	}
+	return i;
 }

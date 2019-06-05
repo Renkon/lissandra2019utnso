@@ -30,6 +30,7 @@ typedef struct {
 	long long timestamp;
 	int key;
 	char* value;
+	int charsize;
 } record_t;
 
 typedef struct {
@@ -57,12 +58,15 @@ segment_t* create_segment(char* table_name);
 //son para las operations, no me dejaba ponerlos en el operations.h
 segment_t* get_segment_by_name(t_list* list, char* table_name);
 page_t* get_page_by_key(segment_t* segment, int key);
-void remove_segment(segment_t* segment);
-void remove_page(page_t* page);
+page_t* get_page_by_key(t_list* index_list, int key,char** main_memory);
+page_t* get_page_by_index(t_list* page,int index);
+int memory_insert(long long timestamp, int key, char* value, char** main_mem);
 
-//se supone que si los creo acá son variables globales para el proceso :B
+//GLOBAL STATMENTS
 t_list* g_segment_list;
 char** main_memory;
+int total_memory_size;
+int total_page_size;
 
 callbacks_t* get_callbacks();
 void init_main_memory();
