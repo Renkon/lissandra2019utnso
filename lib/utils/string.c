@@ -47,3 +47,19 @@ long string_to_long(char* str) {
 	return strtol(str, NULL, 10);
 }
 
+long long string_to_long_long(char* str) {
+	return strtoll(str, NULL, 10);
+}
+
+char* to_uppercase(char* lower_string) {
+	int i = 0;
+	char* str_up = strdup(lower_string);
+
+	while (str_up[i]) {
+		if (str_up[i] >= 97 && str_up[i] <= 122)
+			str_up[i] -= 32;
+		i++;
+	}
+
+	return str_up;
+}

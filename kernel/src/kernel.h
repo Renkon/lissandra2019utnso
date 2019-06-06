@@ -1,6 +1,7 @@
 
 #ifndef KERNEL_H_
 #define KERNEL_H_
+
 #define KNCFG "kernel.cfg"
 
 #include "config.h"
@@ -8,6 +9,8 @@
 #include "generic_config.h"
 #include "generic_logger.h"
 #include "core/operations.h"
+#include "core/scheduler/scheduler.h"
+#include "core/statistics/metrics.h"
 
 typedef struct {
 	char* memory_ip;
@@ -16,6 +19,7 @@ typedef struct {
 	int multiprocessing;
 	int metadata_refresh;
 	int execution_delay;
+	int lts_delay;
 } knconfig_t;
 
 knconfig_t g_config;

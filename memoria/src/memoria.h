@@ -11,6 +11,7 @@
 #include "core/operations.h"
 #include <stdbool.h>
 #include <commons/bitarray.h>
+#include "utils/dates.h"
 
 typedef struct {
 	int port;
@@ -63,7 +64,7 @@ page_t* get_page_by_index(segment_t* segment,int index);
 int memory_insert(long long timestamp, int key, char* value);
 bool memory_full();
 char* main_memory_value(int index);
-void* modify_memory_by_index(int index,char* value,long long timestamp);
+void* modify_memory_by_index(int index,int key ,char* value);
 
 //GLOBAL STATMENTS
 t_list* g_segment_list;

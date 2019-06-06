@@ -15,6 +15,9 @@ bool init_config(char* config_file, void (*callback_created)(t_config*), void (*
 
 	config_destroy(config);
 
+	// Usado para defaultear los callbacks post config
+	g_callbacks = NULL;
+
 	thread_args = build_config_args(config_keys, config_size, config_file, callback_updated);
 
 	if (pthread_create(&config_thread, NULL, (void*) pre_check_config, (void*) thread_args)) {

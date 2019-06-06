@@ -24,7 +24,7 @@ int main(void) {
 }
 
 callbacks_t* get_callbacks() {
-	return build_callbacks(process_select, process_insert, process_create, process_describe,
+	return get_input_callbacks(process_select, process_insert, process_create, process_describe,
 			process_drop, process_journal, NULL, NULL, NULL);
 }
 
@@ -53,7 +53,7 @@ void create_dummy(){
 	g_segment_list = list_create();
 	segment_t* segment_dummy = create_segment("laposta");
 
-	a = memory_insert(4000000,5,"hey");
+	a = memory_insert(get_timestamp(),5,"hey");
 	page_t* page_dummy = create_page(a,false);
 
 	list_add(segment_dummy->page,page_dummy);
@@ -64,6 +64,7 @@ void init_main_memory(){
 	main_memory = (char**) malloc(total_memory_size);
 	for(int i=0;i<(total_memory_size);i++){
 		main_memory[i] = (char*) malloc(total_page_size);
+		strcpy(main_memory[i],"null");
 	}
 }
 
