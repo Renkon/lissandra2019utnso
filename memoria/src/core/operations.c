@@ -74,7 +74,7 @@ void process_insert(insert_input_t* input) {
 	}else{
 		//no existe, creo el segmento y to do el resto
 		found_segment = create_segment(input->table_name);
-		index = memory_insert(input->timestamp,(unsigned int) input->key,input->value);
+		index = memory_insert(10000000,(unsigned int) input->key,input->value);
 		found_page = create_page(index,true);
 		list_add(found_segment->page,found_page);
 		list_add(g_segment_list,found_segment);

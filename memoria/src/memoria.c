@@ -12,7 +12,7 @@ int main(void) {
 
 	init_config(MEMCFG, initialize_memory_config, update_memory_config, g_config_keys, g_config_keys_size);
 
-	total_page_size = sizeof(long long)+sizeof(int)+(4*sizeof(char))+(2*sizeof(char)); //TODO el size esta hardcodeado, lo pasa las configs de FS
+	total_page_size = sizeof(long long)+sizeof(int)+(4*sizeof(char))+(3*sizeof(char)); //TODO el size esta hardcodeado, lo pasa las configs de FS
 	total_memory_size = g_config.memory_size/total_page_size;
 
 	init_server(g_config.port, MEMORY);
@@ -53,7 +53,7 @@ void create_dummy(){
 	g_segment_list = list_create();
 	segment_t* segment_dummy = create_segment("laposta");
 
-	a = memory_insert(40000000,5,"hey");
+	a = memory_insert(4000000,5,"hey");
 	page_t* page_dummy = create_page(a,false);
 
 	list_add(segment_dummy->page,page_dummy);
