@@ -15,8 +15,8 @@ int main(void) {
 	total_page_size = sizeof(long long)+sizeof(int)+(4*sizeof(char))+(2*sizeof(char)); //TODO el size esta hardcodeado, lo pasa las configs de FS
 	total_memory_size = g_config.memory_size/total_page_size;
 
-	init_main_memory();
 	init_server(g_config.port, MEMORY);
+	init_main_memory();
 	create_dummy();
 	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY, get_callbacks());
 	destroy_logger();
@@ -28,17 +28,6 @@ callbacks_t* get_callbacks() {
 			process_drop, process_journal, NULL, NULL, NULL);
 }
 
-record_t* create_record(long timestamp, int key, char* value,int sizechar) {
-	record_t* record = malloc(sizeof(record_t));
-
-	record->key = key;
-	record->timestamp = timestamp;
-	record->value = malloc(strlen(value)+1);
-	record->charsize = sizechar;
-	strcpy(record->value,value);
-
-	return record;
-}
 
 page_t* create_page(int index, bool modified ) {
 	page_t* page = malloc(sizeof(page_t));
@@ -60,11 +49,12 @@ segment_t* create_segment(char* table_name) {
 }
 
 void create_dummy(){
+	int a;
 	g_segment_list = list_create();
 	segment_t* segment_dummy = create_segment("laposta");
 
-	record_t* record_dummy = create_record(100,1,"hola");
-	page_t* page_dummy = create_page(2,false);
+	a = memory_insert(40000000,5,"hey");
+	page_t* page_dummy = create_page(a,false);
 
 	list_add(segment_dummy->page,page_dummy);
 	list_add(g_segment_list,segment_dummy);

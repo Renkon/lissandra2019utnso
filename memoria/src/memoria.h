@@ -57,10 +57,13 @@ segment_t* create_segment(char* table_name);
 
 //son para las operations, no me dejaba ponerlos en el operations.h
 segment_t* get_segment_by_name(t_list* list, char* table_name);
-page_t* get_page_by_key(segment_t* segment, int key);
-page_t* get_page_by_key(t_list* index_list, int key,char** main_memory);
-page_t* get_page_by_index(t_list* page,int index);
-int memory_insert(long long timestamp, int key, char* value, char** main_mem);
+page_t* get_page_by_key(segment_t* segment, t_list* index_list, int key);
+int page_get_index(page_t* page);
+page_t* get_page_by_index(segment_t* segment,int index);
+int memory_insert(long long timestamp, int key, char* value);
+bool memory_full();
+char* main_memory_value(int index);
+void* modify_memory_by_index(int index,char* value,long long timestamp);
 
 //GLOBAL STATMENTS
 t_list* g_segment_list;
