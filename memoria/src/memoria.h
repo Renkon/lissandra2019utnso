@@ -63,7 +63,9 @@ int page_get_index(page_t* page);
 page_t* get_page_by_index(segment_t* segment,int index);
 int memory_insert(long long timestamp, int key, char* value);
 bool memory_full();
+char* main_memory_key(int index);
 char* main_memory_value(int index);
+char* main_memory_timestamp(int index);
 void* modify_memory_by_index(int index,int key ,char* value);
 
 //GLOBAL STATMENTS

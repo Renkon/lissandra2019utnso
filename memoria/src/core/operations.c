@@ -5,22 +5,31 @@ void process_select(select_input_t* input) {
 	log_i("la cantidad de segmentos que tengo es: %d",g_segment_list->elements_count);
 	log_i("valor en memoria 0 %s",main_memory[0]);
 	log_i("valor en memoria 1 %s",main_memory[1]);
+	log_i("valor en memoria 2 %s",main_memory[2]);
+	log_i("valor en memoria 3 %s",main_memory[3]);
 	page_t* found_page;
 	segment_t* found_segment;
-	long long return_timestamp;
-	int return_key;
+	char* return_timestamp;
+	char* return_key;
 	char* return_value;
 	int position;
+	t_list* index_list;
 
-	/*found_segment = get_segment_by_name(g_segment_list,input->table_name);
+	found_segment = get_segment_by_name(g_segment_list,input->table_name);
 
 	if(found_segment != NULL){
-		found_page = get_page_by_key(found_segment,input->key);
+		index_list = list_map(found_segment->page,(void*) page_get_index);
+		found_page = get_page_by_key(found_segment,index_list,input->key);
 		if(found_page != NULL){
-			//CALLBACK RETORNO CON LO QUE POSEO ACTUALMENTE
-			//log_i("Clave %u encontrada en la tabla %s ! Su valor es: %s ",(unsigned int)found_page->record->key, found_segment->name, found_page->record->value);
+
+			position = found_page->index;
+			return_timestamp =main_memory_timestamp(position);
+			return_key=main_memory_key(position);
+			return_value=main_memory_value(position);
+
+			log_i("Clave %s encontrada en la tabla %s ! Su valor es: %s ",return_key, found_segment->name, return_value);
 		}else{
-			//TODO Lo pido al FS, las variables no van a funcionar es hasta que tengamos la conexion con el FS
+			/*//TODO Lo pido al FS, las variables no van a funcionar es hasta que tengamos la conexion con el FS
 
 			if(return_timestamp != -1){ //Si devuelve -1 significa que no lo encontro, tiramos un warning
 
@@ -33,9 +42,9 @@ void process_select(select_input_t* input) {
 				}
 			}else{
 				//TODO warning
-			};
+			};*/
 		};
-	};*/
+	};
 }
 
 void process_insert(insert_input_t* input) {
@@ -54,18 +63,18 @@ void process_insert(insert_input_t* input) {
 
 		if(found_page != NULL){
 
-			modify_memory_by_index(found_page->index,(unsigned int) input->key,input->value);
+			modify_memory_by_index(found_page->index,input->key,input->value);
 			found_page->modified = true;
 
 			log_i("Se modifico el registro con key %u con el valor: %s ",found_page->index, input->value);
 
 		}else{
 			if(!memory_full()){
-				index = memory_insert(get_timestamp(),(unsigned int) input->key,input->value);
+				index = memory_insert(get_timestamp(),input->key,input->value);
 				found_page = create_page(index,true);
 				list_add(found_segment->page,found_page);
 
-				log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %u en la tabla %s", (unsigned int)input->key, input->value , (unsigned int)input->timestamp, found_segment->name);
+				log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", (unsigned int)input->key, input->value ,input->timestamp, found_segment->name);
 			}else{
 				//TODO JOURNALING + inserto devuelta.
 			}
@@ -78,7 +87,7 @@ void process_insert(insert_input_t* input) {
 		list_add(found_segment->page,found_page);
 		list_add(g_segment_list,found_segment);
 
-		log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %u en la tabla %s recien creada", (unsigned int) input->key, input->value , (unsigned int)input->timestamp, found_segment->name);
+		log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", (unsigned int) input->key, input->value , input->timestamp, found_segment->name);
  	};
 }
 
@@ -154,9 +163,8 @@ page_t* get_page_by_key(segment_t* segment, t_list* index_list, int key){
 	int i = 0;
 	for(;i < list_size(index_list);i++){
 	 		index = list_get(index_list,i);
-	 		char* pipo = main_memory_value(index);
-	 		int borrar = strcmp(pipo,str_key);
-	 		if(strcmp(pipo,str_key) == 0 ){
+	 		char* comparator = main_memory_key(index);
+	 		if(strcmp(comparator,str_key) == 0 ){
 	 			break;
 	 		}
 	 	}
@@ -215,14 +223,28 @@ bool memory_full(){
 			break;
 		}
 	}
-	return i<total_memory_size?true:false;
+	return i<total_memory_size?false:true;
+}
+
+char* main_memory_key(int index){ //TODO puedo hacerlo mejor con un enum
+	char** our_array;
+	our_array = string_split(main_memory[index],";");
+
+	return our_array[1];
+}
+
+char* main_memory_timestamp(int index){ //TODO puedo hacerlo mejor con un enum
+	char** our_array;
+	our_array = string_split(main_memory[index],";");
+
+	return our_array[0];
 }
 
 char* main_memory_value(int index){ //TODO puedo hacerlo mejor con un enum
 	char** our_array;
 	our_array = string_split(main_memory[index],";");
 
-	return our_array[1];
+	return our_array[2];
 }
 
 void* modify_memory_by_index(int index,int key ,char* value){
