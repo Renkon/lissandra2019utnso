@@ -154,6 +154,25 @@ t_list* process_describe(describe_input_t* input) {
 	return metadata_list;
 }
 
-void process_drop(drop_input_t* input) {
+bool process_drop(drop_input_t* input) {
 	log_i("fs drop args: %s", input->table_name);
+	char* table_name_upper = to_uppercase(input->table_name);
+
+	if (exist_in_directory(input->table_name, get_table_directory())) {
+		char* table_directory = create_new_directory(get_table_directory(),table_name_upper);
+		t_bitarray* bitmap = read_bitmap(get_bitmap_directory());
+		//LIbero los bloques de las particiones
+		free_partitions(table_directory,bitmap);
+		//Libero los bloques de todos los tmp que existan
+		free_blocks_of_all_tmps(table_directory,bitmap);
+		//Borro la carpeta con todo su contenido
+		remove_directory(table_directory);
+		log_i("La tabla %s se borro satisfactoriamente. ", table_name_upper);
+		return true;
+	}else {
+		//Si no existe la tabla  se termina la operacion
+		log_w("La tabla %s no existe. Operacion DROP cancelada",table_name_upper);
+		free(table_name_upper);
+		return false;
+	}
 }

@@ -196,3 +196,52 @@ bool value_exceeds_maximun_size(char* value){
 
 }
 
+void free_partitions(char* table_directory,t_bitarray* bitmap){
+	table_metadata_t* table_metadata = read_table_metadata(table_directory);
+
+
+	for(int i =0; i< table_metadata->partitions; i++ ){
+		char*  partition_directory =create_partition_directory(table_directory,i+1);
+		free_blocks_of_fs_archive(partition_directory,bitmap);
+
+	}
+
+	free(table_directory);
+	free(table_metadata);
+}
+
+void free_blocks_of_fs_archive(char* archive_directory, t_bitarray* bitmap){
+	partition_t* partition = read_fs_archive(archive_directory );
+
+	for(int i=0;i<partition->number_of_blocks;i++){
+		free_block(partition->blocks[i]);
+		//LIbero el espacio en el bitarray asi lo puedo usar en una nueva tabla
+		bitarray_clean_bit(bitmap,partition->blocks[i]);
+
+	}
+	free(partition);
+}
+
+void free_block(int block){
+	char* block_directory = create_block_directory(block);
+	//Borro el bloque
+	remove(block_directory);
+	//Creo otra vez el mismo bloque pero  como no le meto nada queda vacio
+	FILE* arch = fopen(block_directory, "wb");
+	fclose(arch);
+	free(block_directory);
+
+}
+
+
+void free_blocks_of_all_tmps(char* table_directory, t_bitarray* bitmap) {
+	int tmp_number = 1;
+	//Libero todos los bloques que tengan los tmp que existan
+	while (exist_in_directory(get_tmp_name(tmp_number), table_directory)) {
+		free_blocks_of_fs_archive(get_tmp_directory(table_directory, tmp_number), bitmap);
+	}
+	tmp_number++;
+}
+
+
+
