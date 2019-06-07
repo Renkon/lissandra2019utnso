@@ -67,7 +67,7 @@ void process_insert(insert_input_t* input) {
 			modify_memory_by_index(found_page->index,input->key,input->value);
 			found_page->modified = true;
 
-			log_i("Se modifico el registro con key %u con el valor: %s ",found_page->index, input->value);
+			log_i("Se modifico el registro con key %u con el valor: %s ",input->key, input->value);
 
 		}else{
 			if(!memory_full()){
