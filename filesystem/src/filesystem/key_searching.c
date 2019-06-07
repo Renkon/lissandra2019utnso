@@ -27,56 +27,117 @@ partition_t* read_fs_archive(char* partition_directory) {
 }
 
 record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
-	record_t* key_found = malloc(sizeof(record_t));
-	partition_t* partition = read_fs_archive(fs_archive_path);
-
-	for (int i = 0; i < partition->number_of_blocks; i++) {
-
-		key_found = search_key_in_block(partition->blocks[i], key);
-
-		if (key_found->timestamp != -1) {
-
-			break;
-
-		}
-
-	}
-	return key_found;
-}
-
-record_t* search_key_in_block(int block, int key) {
-	char* block_directory = create_block_directory(block);
-
 	record_t* key_found_in_block = malloc(sizeof(record_t));
 	//Le seteo -1 para que si no la encuentra, devuelva esta "key invalida"
 	key_found_in_block->timestamp = -1;
+	tkv_t* key_found= malloc(sizeof(tkv_t));
+	key_found->incomplete = false;
+	partition_t* partition = read_fs_archive(fs_archive_path);
+	char* string_key = malloc(digits_in_a_number(key)+1);
+	int index = 0;
+	string_from_format("%d",key);
+	for (int i = 0; i < partition->number_of_blocks; i++) {
+		key_found = search_key_in_block(partition->blocks[i], string_key,index);
+		index = 0;
+		//Me fijo si la funcion encontro esa key
+		if (strcmp(key_found->tkv, "-1;-1;-1") != 0 && !key_found->incomplete) {
+			break;
+		}
+		//Me fijo si encontro un tkv incompleto
+		if (key_found->incomplete) {
+			while (key_found->incomplete) {
+				key_found->incomplete = false;
+				int next_index = i + 1;
+				char* continuation = read_first_tkv_in_block(partition->blocks[next_index]);
+				//Busco la siguiente parte y la concateno
+				tkv_append(key_found,continuation);
+				if (string_ends_with(key_found->tkv, "\n")) {
+					strcpy(key_found->tkv, string_substring_until(continuation,strlen(continuation)-1));
+					key_found->incomplete = true;
+					i++;
+				}
+			free(continuation);
+			}
+			index = 1;
+			char** tkv = string_split(key_found->tkv,";");// Le tengo que hacer free a esto? x2
+				if (strcmp(tkv[1],string_key) == 0 ){
+				break;
+			}
+		}
 
+	}
+ convert_to_record(	key_found_in_block,key_found);
+ free(key_found);// SI le hago free a un struct que tiene un puntero vasta con esto o primero hago free al puntero del struct?
+	return key_found_in_block;
+}
+
+int tkv_size(){
+	//Es la cantidad de digitos del numero maximo del uint_16 + la cantidad de digitos de la timestamp
+	//+ la cantidad maxima de caracteres de un valor + 3 que es 2 porque tiene 2 ; y uno por el  \0
+	return  digits_in_a_number(USHRT_MAX)+digits_in_a_number(get_timestamp())+g_config_keys_size+3;
+
+}
+
+void tkv_append(tkv_t* tkv,char* end){
+	char* final_tkv=  string_new(); //Le hago free a esto?
+	string_append(&final_tkv, tkv->tkv);
+	string_append(&final_tkv, end);
+	strcpy(tkv->tkv,final_tkv);
+}
+
+char* read_first_tkv_in_block(int block){
+	char* block_directory = create_block_directory(block);
+	FILE* arch = fopen(block_directory, "rb");
+	char* readed_key = malloc(tkv_size());
+	fread(readed_key, 1,tkv_size(), arch);
+	return readed_key;
+}
+
+tkv_t* search_key_in_block(int block, char* key, int index) {
+	char* block_directory = create_block_directory(block);
+	tkv_t* key_found_in_block = malloc(sizeof(tkv_t));
+	key_found_in_block->tkv = malloc(tkv_size());
+	//Le seteo -1 para que si no la encuentra, devuelva este "tkv invalido"
+	strcpy(key_found_in_block->tkv, "-1;-1;-1");
+	key_found_in_block->incomplete = false;
 	FILE* arch = fopen(block_directory, "rb");
 
-	record_t* readed_key = malloc(sizeof(record_t));
+	char* readed_key = malloc(tkv_size());
+	//SI mando index en 1 me salteo el primer read
+	if(index == 1){
+	fread(readed_key, 1,tkv_size(), arch);
+	}
 	while (!feof(arch)) {
-
-		//Leo el bloque
-		fread(&readed_key->key, 1, sizeof(readed_key->key), arch);
-		fread(&readed_key->value_length, 1, sizeof(readed_key->value_length),arch);
-		fread(&readed_key->timestamp, 1, sizeof(readed_key->timestamp), arch);
-		readed_key->value = malloc((readed_key->value_length)+1);
-		fread(readed_key->value, 1,readed_key->value_length +1, arch);
-
-
-		if (readed_key->key == key) {
+		 fread(readed_key, 1,tkv_size(), arch);
+		 if(string_ends_with(readed_key,"\n")){
+			 //Si tiene \n entonces copio este string sin el \n y prengo el flag de incompleto
+			strcpy(key_found_in_block->tkv, string_substring_until(readed_key,strlen(readed_key)-1));
+			key_found_in_block->incomplete = true;
+			break;
+		 }
+		char** tkv = string_split(readed_key,";");// Le tengo que hacer free a esto?
+		if (strcmp(tkv[1],key) == 0 ){
 			//SI encuentro la key entonces paro el while y la devuelvo
-			key_found_in_block = copy_key(readed_key);
-			free(readed_key);
+			strcpy(key_found_in_block->tkv, readed_key);
 			break;
 		}
 		//Si no lo encuentro sigo buscando
 	}
 	fclose(arch);
+	free(readed_key);
 	free(block_directory);
 	return key_found_in_block;
 
 }
+
+void convert_to_record(record_t* record,tkv_t* tkv){
+	char** tkv_split = string_split(tkv->tkv,";");// Le tengo que hacer free a esto? x3
+	record->timestamp = string_to_long_long(tkv_split[0]);
+	record->key = string_to_int(tkv_split[1]);
+	record->value = malloc(strlen(tkv_split[2])+1);
+	strcpy(record->value, tkv_split[2]);
+	}
+
 
 record_t* copy_key(record_t* key_to_copy){
 	record_t* copied_key = malloc(sizeof(record_t));

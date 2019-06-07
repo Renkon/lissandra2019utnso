@@ -28,9 +28,13 @@ typedef struct {
 	long long timestamp;
 	int key;
 	char* value;
-	int value_length;
+	int value_length; //Sacar
 } record_t;
 
+typedef struct {
+	char* tkv;
+	bool incomplete;
+} tkv_t;
 
 int create_table_folder(char* table_name);
 void create_partitions(int partitions, char* table_name, int* blocks);

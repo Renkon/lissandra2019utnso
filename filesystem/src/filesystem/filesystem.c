@@ -134,8 +134,7 @@ record_t* search_in_tmpc(char* table_directory, int key){
 	record_t* key_found = malloc(sizeof(record_t));
 	//Le seteo -1 para que si no la encuentra, devuelva esta "key invalida"
 	key_found->timestamp = -1;
-	if(exist_in_directory(get_tmpc_name(),table_directory)){
-		key_found = search_key_in_fs_archive(get_tmpc_directory(table_directory), key);
+	if(exist_in_directory(get_tmpc_name(),table_directory)){key_found = search_key_in_fs_archive(get_tmpc_directory(table_directory), key);
 
 	}
 	//Al final devuelvo la key que encontre si es que habia o la key default con timestamp -1 si no estaba
