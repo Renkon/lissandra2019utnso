@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <commons/bitarray.h>
 #include "utils/dates.h"
+#include <limits.h>
+#include "utils/numbers.h"
 
 typedef struct {
 	int port;

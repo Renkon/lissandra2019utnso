@@ -53,6 +53,7 @@ void process_insert(insert_input_t* input) {
 	page_t* found_page;
 	t_list* index_list;
 	int index;
+	input->timestamp = get_timestamp();
 
 	found_segment = get_segment_by_name(g_segment_list,input->table_name);
 
@@ -70,11 +71,11 @@ void process_insert(insert_input_t* input) {
 
 		}else{
 			if(!memory_full()){
-				index = memory_insert(get_timestamp(),input->key,input->value);
+				index = memory_insert(input->timestamp,input->key,input->value);
 				found_page = create_page(index,true);
 				list_add(found_segment->page,found_page);
 
-				log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", (unsigned int)input->key, input->value ,input->timestamp, found_segment->name);
+				log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", input->key, input->value ,input->timestamp, found_segment->name);
 			}else{
 				//TODO JOURNALING + inserto devuelta.
 			}
@@ -82,12 +83,12 @@ void process_insert(insert_input_t* input) {
 	}else{
 
 		found_segment = create_segment(input->table_name);
-		index = memory_insert(get_timestamp(),(unsigned int) input->key,input->value);
+		index = memory_insert(input->timestamp,input->key,input->value);
 		found_page = create_page(index,true);
 		list_add(found_segment->page,found_page);
 		list_add(g_segment_list,found_segment);
 
-		log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", (unsigned int) input->key, input->value , input->timestamp, found_segment->name);
+		log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", input->key, input->value , input->timestamp, found_segment->name);
  	};
 }
 

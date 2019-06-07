@@ -1,6 +1,6 @@
 #include "numbers.h"
 
-int digits_in_a_number(int number) {
+int digits_in_a_number(long long number) {
 	int totalDigits = 0;
 
 	while (number != 0) {
@@ -10,5 +10,3 @@ int digits_in_a_number(int number) {
 
 	return totalDigits;
 }
-
-

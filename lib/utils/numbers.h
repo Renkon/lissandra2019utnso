@@ -6,6 +6,6 @@
 #include <dirent.h>
 #include <stdio.h>
 
-int digits_in_a_number(int number);
+int digits_in_a_number(long long number);
 
 #endif /* UTILS_NUMBERS_H_ */
