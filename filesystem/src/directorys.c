@@ -109,7 +109,7 @@ t_list* get_tables_list(){
 }
 
 //Para borrar la carpeta
-int remove_directory(const char *path)
+int remove_directory(char *path)
 {
    DIR *d = opendir(path);
    size_t path_len = strlen(path);

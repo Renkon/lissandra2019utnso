@@ -89,6 +89,7 @@ void process_create(create_input_t* input) {
 			log_i("Se creo la metadata de la tabla %s ", table_name_upper);
 
 			create_partitions(input->partitions, table_name_upper, blocks);
+			//Guardo el bitmap
 			write_bitmap(bitmap, get_bitmap_directory());
 			log_i("Se crearon %d particiones para la tabla %s ",input->partitions, table_name_upper);
 			//Crear hilo para que la tabla haga su propio dumpeo TODO
@@ -167,7 +168,9 @@ bool process_drop(drop_input_t* input) {
 		//Libero los bloques de todorls los tmp que existan
 		free_blocks_of_all_tmps(table_directory,bitmap);
 		//Borro la carpeta con todorl su contenido
-		remove_directory(table_directory);
+		remove_directory(create_new_directory(get_table_directory(),table_name_upper));
+		//Guardo el bitmap
+		write_bitmap(bitmap, get_bitmap_directory());
 		log_i("La tabla %s se borro satisfactoriamente. ", table_name_upper);
 		return true;
 	}else {

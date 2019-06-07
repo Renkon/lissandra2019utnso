@@ -24,6 +24,7 @@ char* create_partition_name(int partition_number);
 char* create_block_directory (int block_number);
 bool exist_in_directory(char* archive, char* directory);
 t_list* get_tables_list();
+int remove_directory(char *path);
 
 
 #endif /* DIRECTORYS_H_ */
