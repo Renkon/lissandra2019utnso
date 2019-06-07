@@ -27,7 +27,7 @@ void create_partitions(int partitions, char* table_name, int* blocks) {
 		partition->number_of_blocks = 1;
 		partition->blocks = malloc(sizeof(int));
 		partition->blocks[0] = blocks[i]+1;
-		partition->size = 69;
+		partition->size = 0;
 
 		fwrite(&partition->number_of_blocks, 1, sizeof(partition->number_of_blocks), arch);
 		fwrite(partition->blocks, 1, sizeof(int), arch);
@@ -93,7 +93,7 @@ int assign_free_blocks(t_bitarray* bitmap, int* blocks, int* partitions_amount) 
 
 int find_free_block(t_bitarray* bitmap) {
 	int i = 0;
-	//Busco por todo el bitmap hasta encontrar un 0
+	//Busco por todorl el bitmap hasta encontrar un 0
 
 	while (i < bitmap->size) {
 		if (bitarray_test_bit(bitmap, i) == 0) {
@@ -134,7 +134,8 @@ record_t* search_in_tmpc(char* table_directory, int key){
 	record_t* key_found = malloc(sizeof(record_t));
 	//Le seteo -1 para que si no la encuentra, devuelva esta "key invalida"
 	key_found->timestamp = -1;
-	if(exist_in_directory(get_tmpc_name(),table_directory)){key_found = search_key_in_fs_archive(get_tmpc_directory(table_directory), key);
+	if(exist_in_directory(get_tmpc_name(),table_directory)){
+		key_found = search_key_in_fs_archive(get_tmpc_directory(table_directory), key);
 
 	}
 	//Al final devuelvo la key que encontre si es que habia o la key default con timestamp -1 si no estaba
@@ -184,8 +185,7 @@ record_t* create_record(insert_input_t* input){
 		record_t* record = malloc(sizeof(record_t));
 		record->key = input->key;
 		record->timestamp = input->timestamp;
-		record->value_length = strlen(input->value);
-		record->value = malloc(record->value_length+1);
+		record->value = malloc(strlen(input->value)+1);
 		strcpy(record->value, input->value);
 		return record;
 }
@@ -215,7 +215,7 @@ void free_blocks_of_fs_archive(char* archive_directory, t_bitarray* bitmap){
 	for(int i=0;i<partition->number_of_blocks;i++){
 		free_block(partition->blocks[i]);
 		//LIbero el espacio en el bitarray asi lo puedo usar en una nueva tabla
-		bitarray_clean_bit(bitmap,partition->blocks[i]);
+		bitarray_clean_bit(bitmap,(partition->blocks[i]-1));
 
 	}
 	free(partition);

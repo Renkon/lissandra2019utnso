@@ -28,7 +28,6 @@ typedef struct {
 	long long timestamp;
 	int key;
 	char* value;
-	int value_length; //Sacar
 } record_t;
 
 typedef struct {

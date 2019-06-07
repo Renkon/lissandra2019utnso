@@ -91,6 +91,7 @@ void process_create(create_input_t* input) {
 			create_partitions(input->partitions, table_name_upper, blocks);
 			write_bitmap(bitmap, get_bitmap_directory());
 			log_i("Se crearon %d particiones para la tabla %s ",input->partitions, table_name_upper);
+			//Crear hilo para que la tabla haga su propio dumpeo TODO
 			log_i("Tabla %s creada exitosamente! ", table_name_upper);
 		} else {
 
@@ -163,9 +164,9 @@ bool process_drop(drop_input_t* input) {
 		t_bitarray* bitmap = read_bitmap(get_bitmap_directory());
 		//LIbero los bloques de las particiones
 		free_partitions(table_directory,bitmap);
-		//Libero los bloques de todos los tmp que existan
+		//Libero los bloques de todorls los tmp que existan
 		free_blocks_of_all_tmps(table_directory,bitmap);
-		//Borro la carpeta con todo su contenido
+		//Borro la carpeta con todorl su contenido
 		remove_directory(table_directory);
 		log_i("La tabla %s se borro satisfactoriamente. ", table_name_upper);
 		return true;
