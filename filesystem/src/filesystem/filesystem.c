@@ -191,7 +191,7 @@ record_t* create_record(insert_input_t* input){
 }
 
 bool value_exceeds_maximun_size(char* value){
-	return strlen(value)+1 > g_config.max_value_size;
+	return strlen(value) > g_config.max_value_size;
 
 }
 
@@ -199,8 +199,8 @@ void free_partitions(char* table_directory,t_bitarray* bitmap){
 	table_metadata_t* table_metadata = read_table_metadata(table_directory);
 
 
-	for(int i =0; i< table_metadata->partitions; i++ ){
-		char*  partition_directory =create_partition_directory(table_directory,i+1);
+	for(int i = 0; i< table_metadata->partitions; i++ ){
+		char* partition_directory =create_partition_directory(table_directory,i+1);
 		free_blocks_of_fs_archive(partition_directory,bitmap);
 
 	}
