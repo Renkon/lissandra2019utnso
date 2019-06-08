@@ -2,11 +2,7 @@
 
 void process_select(select_input_t* input) {
 	log_i("mm select args: %s %u", input->table_name, (unsigned int)input->key);
-	log_i("la cantidad de segmentos que tengo es: %d",g_segment_list->elements_count);
-	log_i("valor en memoria 0 %s",main_memory[0]);
-	log_i("valor en memoria 1 %s",main_memory[1]);
-	log_i("valor en memoria 2 %s",main_memory[2]);
-	log_i("valor en memoria 3 %s",main_memory[3]);
+
 	page_t* found_page;
 	segment_t* found_segment;
 	char* return_timestamp;
@@ -15,12 +11,12 @@ void process_select(select_input_t* input) {
 	int position;
 	t_list* index_list;
 
-	found_segment = get_segment_by_name(g_segment_list,input->table_name);
+	found_segment = get_segment_by_name(g_segment_list, input->table_name);
 
-	if(found_segment != NULL){
+	if (found_segment != NULL) {
 		index_list = list_map(found_segment->page, (void*) page_get_index);
 		found_page = get_page_by_key(found_segment, index_list, input->key);
-		if(found_page != NULL){
+		if(found_page != NULL) {
 
 			position = found_page->index;
 			return_timestamp = main_memory_timestamp(position);
@@ -28,7 +24,11 @@ void process_select(select_input_t* input) {
 			return_value = main_memory_value(position);
 
 			log_i("Clave %s encontrada en la tabla %s ! Su valor es: %s ", return_key, found_segment->name, return_value);
-		}else{
+
+			free(return_timestamp);
+			free(return_key);
+			free(return_value);
+		} else {
 			/*//TODO Lo pido al FS, las variables no van a funcionar es hasta que tengamos la conexion con el FS
 
 			if(return_timestamp != -1){ //Si devuelve -1 significa que no lo encontro, tiramos un warning
@@ -43,13 +43,10 @@ void process_select(select_input_t* input) {
 			}else{
 				//TODO warning
 			};*/
-		};
-	};
+		}
 
-	list_destroy(index_list);
-	free(return_timestamp);
-	free(return_key);
-	free(return_value);
+		list_destroy(index_list);
+	}
 }
 
 void process_insert(insert_input_t* input) {
@@ -60,40 +57,38 @@ void process_insert(insert_input_t* input) {
 	int index;
 	input->timestamp = get_timestamp();
 
-	found_segment = get_segment_by_name(g_segment_list,input->table_name);
+	found_segment = get_segment_by_name(g_segment_list, input->table_name);
 
-	if(found_segment != NULL){
+	if (found_segment != NULL) {
+		index_list = list_map(found_segment->page, (void*) page_get_index);
+		found_page = get_page_by_key(found_segment, index_list, input->key);
 
-		index_list = list_map(found_segment->page,(void*) page_get_index);
-		found_page = get_page_by_key(found_segment,index_list,input->key);
-
-		if(found_page != NULL){
-
-			modify_memory_by_index(found_page->index,input->key,input->value);
+		if (found_page != NULL) {
+			modify_memory_by_index(found_page->index, input->key, input->value);
 			found_page->modified = true;
 
 			log_i("Se modifico el registro con key %u con el valor: %s ",input->key, input->value);
+		} else {
+			if (!memory_full()) {
+				index = memory_insert(input->timestamp, input->key, input->value);
+				found_page = create_page(index, true);
+				list_add(found_segment->page, found_page);
 
-		}else{
-			if(!memory_full()){
-				index = memory_insert(input->timestamp,input->key,input->value);
-				found_page = create_page(index,true);
-				list_add(found_segment->page,found_page);
-
-				log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", input->key, input->value ,input->timestamp, found_segment->name);
-			}else{
+				log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", input->key, input->value, input->timestamp, found_segment->name);
+			} else {
 				//TODO JOURNALING + inserto devuelta.
 			}
 		}
-	}else{
 
+		list_destroy(index_list);
+	} else {
 		found_segment = create_segment(input->table_name);
-		index = memory_insert(input->timestamp,input->key,input->value);
-		found_page = create_page(index,true);
-		list_add(found_segment->page,found_page);
-		list_add(g_segment_list,found_segment);
+		index = memory_insert(input->timestamp, input->key, input->value);
+		found_page = create_page(index, true);
+		list_add(found_segment->page, found_page);
+		list_add(g_segment_list, found_segment);
 
-		log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", input->key, input->value , input->timestamp, found_segment->name);
+		log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", input->key, input->value, input->timestamp, found_segment->name);
  	};
 }
 
