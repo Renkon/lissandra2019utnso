@@ -48,7 +48,7 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 		if (key_found->incomplete) {
 			while (key_found->incomplete) {
 				key_found->incomplete = false;
-				char* continuation = read_first_tkv_in_block(partition->blocks[i+1]);
+				char* continuation = read_first_tkv_in_block(partition->blocks[i + 1]);
 				incomplete_tkv_size = strlen(continuation)+1;
 				//Busco la siguiente parte y la concateno
 				tkv_append(key_found,continuation);
@@ -153,12 +153,21 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 			break;
 		}
 
-		char** tkv = string_split(readed_key,";");// Le tengo que hacer free a esto? TODO
-		if (strcmp(tkv[1],key) == 0 ){
+		char** tkv = string_split(readed_key, ";");
+		if (strcmp(tkv[1], key) == 0) {
 			//SI encuentro la key entonces paro el while y la devuelvo
 			strcpy(key_found_in_block->tkv, readed_key);
+			free(tkv[0]);
+			free(tkv[1]);
+			free(tkv[2]);
+			free(tkv);
 			break;
 		}
+
+		free(tkv[0]);
+		free(tkv[1]);
+		free(tkv[2]);
+		free(tkv);
 		//La lectura se hace al final, porque? Porque si el archivo no tiene nada hago una lectura y se corta el while.
 		//SI la hago primero leeria basura y podria romperse por los ifs de arriba (ya paso)
 

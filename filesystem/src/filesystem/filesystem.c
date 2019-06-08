@@ -156,6 +156,7 @@ record_t* search_in_tmpc(char* table_directory, int key) {
 record_t* search_in_all_tmps(char* table_directory, int key) {
 	//ESta es la key que voy a devolver al final
 	record_t* key_found_in_tmp = malloc(sizeof(record_t));
+	key_found_in_tmp->value = malloc(1);
 	key_found_in_tmp->timestamp = -1;
 
 	//ESta key es para meter las keys que encuentro en cada tmp
@@ -169,6 +170,7 @@ record_t* search_in_all_tmps(char* table_directory, int key) {
 		key_found = search_key_in_fs_archive(tmp_dir, key);
 
 		if(key_found->timestamp > key_found_in_tmp->timestamp){
+			free(key_found_in_tmp->value);
 			free(key_found_in_tmp);
 			//Si la key que encontre tienen mas timestamp que la key que habia encontrado antes o la default
 			//Entonces la guardo porque es la mas actual
