@@ -172,12 +172,12 @@ t_list* init_str_array_config_value(char* key, t_config* config) {
 
 	log_i("Se obtuvo el valor de propiedad %s. Valor tipo lista", key);
 
-	while (*value != NULL) {
-		list_add(values, *value);
-		log_i("Valor %s[%i] -> %s", key, currentValue++, *value);
-		value++;
+	while (value[currentValue] != NULL) {
+		list_add(values, value[currentValue]);
+		log_i("Valor %s[%i] -> %s", key, currentValue++, value[currentValue]);
 	}
 
+	free(value);
 	return values;
 }
 
