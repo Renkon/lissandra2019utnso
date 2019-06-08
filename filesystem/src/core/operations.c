@@ -3,10 +3,11 @@
 void process_select(select_input_t* input) {
 	log_i("fs select args: %s %u", input->table_name,(unsigned int) input->key);
 	char* table_name_upper = to_uppercase(input->table_name);
+	char* initial_table_dir = get_table_directory();
 	//Primero me fijo si existe la tabla
-	if (exist_in_directory(input->table_name, get_table_directory())) {
+	if (exist_in_directory(input->table_name, initial_table_dir)) {
 
-		char* table_directory = create_new_directory(get_table_directory(),table_name_upper);
+		char* table_directory = create_new_directory(initial_table_dir,table_name_upper);
 		record_t* key_found = search_key(table_directory, input->key);
 
 		if (key_found->timestamp == -1) {
@@ -25,6 +26,7 @@ void process_select(select_input_t* input) {
 		log_w("La tabla %s no existe. Operacion SELECT cancelada",table_name_upper);
 	}
 
+	free(initial_table_dir);
 	free(table_name_upper);
 }
 
@@ -41,7 +43,7 @@ bool process_insert(insert_input_t* input) {
 
 		}else{
 				if (input->timestamp == -1) {
-					input->timestamp =  get_timestamp();
+					input->timestamp = get_timestamp();
 				}
 
 				record_t* record = create_record(input);
