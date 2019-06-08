@@ -4,14 +4,19 @@
 
 int create_table_folder(char* table_name) {
 	//Creo el nuevo directorio donde va a estar la nueva tabla
-	char *table_directory = create_new_directory(get_table_directory(), table_name);
+	char* table_dir = get_table_directory();
+	char* table_directory = create_new_directory(table_dir, table_name);
+	int dir = mkdir(table_directory, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	free(table_dir);
+	free(table_directory);
 	//Esta funcion es la que crea la carpeta
-	return mkdir(table_directory, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	return dir;
 	//mkdir devuelve 0 si creo la carpeta y 1 si no lo hizo.
 }
 
 void create_partitions(int partitions, char* table_name, int* blocks) {
-	char* table_directory = create_new_directory(get_table_directory(),table_name);
+	char* table_dir = get_table_directory();
+	char* table_directory = create_new_directory(table_dir,table_name);
 
 	for (int i = 0; i < partitions; i++) {
 		//Pongo i+1 porque no existe la particion "0"
@@ -26,7 +31,7 @@ void create_partitions(int partitions, char* table_name, int* blocks) {
 		partition_t* partition = malloc(sizeof(partition_t));
 		partition->number_of_blocks = 1;
 		partition->blocks = malloc(sizeof(int));
-		partition->blocks[0] = blocks[i]+1;
+		partition->blocks[0] = blocks[i] + 1;
 		partition->size = 0;
 
 		fwrite(&partition->number_of_blocks, 1, sizeof(partition->number_of_blocks), arch);
@@ -35,21 +40,22 @@ void create_partitions(int partitions, char* table_name, int* blocks) {
 
 		fclose(arch);
 		free(bin_name);
+		free(partition->blocks);
 		free(partition);
 		free(partition_route);
 	}
 	free(table_directory);
-
+	free(table_dir);
 }
 
 void create_table_metadata(consistency_t consistency, int partitions,long compaction_time, char* table_name) {
-	char* table_directory = create_new_directory(get_table_directory(),table_name);
+	char* table_dir = get_table_directory();
+	char* table_directory = create_new_directory(table_dir,table_name);
 	char* metadata_name = "/metadata.bin";
 	char* metadata_directory = create_metadata_directory(table_directory);
-	table_metadata_t* table_metadata = malloc(sizeof(table_metadata_t));
 	//con esto ya tendria toda la direccion donde va a estar la metadata
 	//Creo el struct metadata a guardar con los datos del input
-	table_metadata = create_metadata(consistency, partitions, compaction_time);
+	table_metadata_t* table_metadata = create_metadata(consistency, partitions, compaction_time);
 	//ABro el nuevo .bin y le guardo los datos correspondientes
 	FILE* arch = fopen(metadata_directory, "wb");
 	fwrite(&table_metadata->compaction_time, 1,sizeof(table_metadata->compaction_time), arch);
@@ -58,16 +64,16 @@ void create_table_metadata(consistency_t consistency, int partitions,long compac
 	fclose(arch);
 	free(table_directory);
 	free(metadata_directory);
+	free(table_dir);
+	free(table_metadata);
 }
 
 table_metadata_t* create_metadata(consistency_t consistency, int partitions, long compaction_time) {
-
 	table_metadata_t* metadata = malloc(sizeof(table_metadata_t));
 	metadata->compaction_time = compaction_time;
 	metadata->consistency = consistency;
 	metadata->partitions = partitions;
 	return metadata;
-
 }
 
 int assign_free_blocks(t_bitarray* bitmap, int* blocks, int* partitions_amount) {
@@ -215,37 +221,34 @@ record_t* create_record(insert_input_t* input) {
 
 bool value_exceeds_maximun_size(char* value){
 	return strlen(value) > g_config.max_value_size;
-
 }
 
-void free_partitions(char* table_directory,t_bitarray* bitmap){
+void free_partitions(char* table_directory, t_bitarray* bitmap) {
 	table_metadata_t* table_metadata = read_table_metadata(table_directory);
 
-
-	for(int i = 0; i< table_metadata->partitions; i++ ){
-		char* partition_directory =create_partition_directory(table_directory,i+1);
-		free_blocks_of_fs_archive(partition_directory,bitmap);
-
+	for(int i = 0; i < table_metadata->partitions; i++){
+		char* partition_directory = create_partition_directory(table_directory, i + 1);
+		free_blocks_of_fs_archive(partition_directory, bitmap);
+		free(partition_directory);
 	}
 
-	free(table_directory);
 	free(table_metadata);
 }
 
-void free_blocks_of_fs_archive(char* archive_directory, t_bitarray* bitmap){
-	partition_t* partition = read_fs_archive(archive_directory );
+void free_blocks_of_fs_archive(char* archive_directory, t_bitarray* bitmap) {
+	partition_t* partition = read_fs_archive(archive_directory);
 
-	for(int i=0;i<partition->number_of_blocks;i++){
+	for(int i = 0; i < partition->number_of_blocks; i++){
 		free_block(partition->blocks[i]);
 		//LIbero el espacio en el bitarray asi lo puedo usar en una nueva tabla
-		bitarray_clean_bit(bitmap,(partition->blocks[i]-1));
+		bitarray_clean_bit(bitmap, (partition->blocks[i] - 1));
 
 	}
 	free(partition->blocks);
 	free(partition);
 }
 
-void free_block(int block){
+void free_block(int block) {
 	char* block_directory = create_block_directory(block);
 	//Borro el bloque
 	remove(block_directory);
@@ -259,11 +262,19 @@ void free_block(int block){
 
 void free_blocks_of_all_tmps(char* table_directory, t_bitarray* bitmap) {
 	int tmp_number = 1;
+
 	//Libero todos los bloques que tengan los tmp que existan
-	while (exist_in_directory(get_tmp_name(tmp_number), table_directory)) {
-		free_blocks_of_fs_archive(get_tmp_directory(table_directory, tmp_number), bitmap);
+	char* tmp_name = get_tmp_name(tmp_number);
+
+	while (exist_in_directory(tmp_name, table_directory)) {
+		char* tmp_dir = get_tmp_directory(table_directory, tmp_number++);
+		free_blocks_of_fs_archive(tmp_dir, bitmap);
+		free(tmp_dir);
+		free(tmp_name);
+		tmp_name = get_tmp_name(tmp_number);
 	}
-	tmp_number++;
+
+	free(tmp_name);
 }
 
 

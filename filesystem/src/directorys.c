@@ -106,14 +106,15 @@ t_list* get_tables_list(){
 		while ((dir = readdir(d)) != NULL) {
 			//*Si lo que lei no es . o .. entonces lo meto a la lista de  tablas
 			//No se porque pero me lee esos caracteres, por eso los ignoro (?
-			if(strcmp(dir->d_name,".") != 0 && strcmp(dir->d_name,"..")!=0){
-			char* upper_read = to_uppercase(dir->d_name);
-			list_add(table_list, upper_read);
+			if(strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
+				char* upper_read = to_uppercase(dir->d_name);
+				list_add(table_list, upper_read);
 			}
 		}
 
 		closedir(d);
 	}
+	free(directory);
 	return table_list;
 }
 
