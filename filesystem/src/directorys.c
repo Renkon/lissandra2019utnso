@@ -38,8 +38,10 @@ char* get_tmp_name(int tmp_number) {
 
 char* get_tmp_directory(char* table_directory, int tmp_number) {
 	char* table_directory_with_slash = create_new_directory(table_directory, "/");
-	char* new_dir = create_new_directory(table_directory_with_slash, get_tmp_name(tmp_number));
+	char* tmp_name = get_tmp_name(tmp_number);
+	char* new_dir = create_new_directory(table_directory_with_slash, tmp_name);
 	free(table_directory_with_slash);
+	free(tmp_name);
 	return new_dir;
 }
 

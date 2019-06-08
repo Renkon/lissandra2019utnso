@@ -183,6 +183,8 @@ record_t* search_in_all_tmps(char* table_directory, int key) {
 		tmp_name = get_tmp_name(tmp_number);
 	}
 
+	free(tmp_name);
+
 	//Al final devuelvo la key con timestamp mas actual si la encontre o la key default con timestamp -1 si no
 	return key_found_in_tmp;
 }

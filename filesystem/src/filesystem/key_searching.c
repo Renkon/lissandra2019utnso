@@ -32,8 +32,7 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 	key_found_in_block->timestamp = -1;
 	tkv_t* key_found;
 	partition_t* partition = read_fs_archive(fs_archive_path);
-	char* string_key = malloc(digits_in_a_number(key) + 1);
-	string_key = string_itoa(key);
+	char* string_key = string_itoa(key);
 	int index = 0;
 	int incomplete_tkv_size = 0;
 	for (int i = 0; i < partition->number_of_blocks; i++) {
@@ -66,7 +65,7 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 
 			index = 1;
 			char** tkv = string_split(key_found->tkv, ";");
-			if (strcmp(tkv[1],string_key) == 0) {
+			if (strcmp(tkv[1], string_key) == 0) {
 				free(tkv[0]);
 				free(tkv[1]);
 				free(tkv[2]);
@@ -90,6 +89,7 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 	free(key_found);
 	free(partition->blocks);
 	free(partition);
+	free(string_key);
 	return key_found_in_block;
 }
 
@@ -189,7 +189,7 @@ record_t* copy_key(record_t* key_to_copy){
 	record_t* copied_key = malloc(sizeof(record_t));
 	copied_key->timestamp = key_to_copy->timestamp;
 	if (copied_key->timestamp != -1) {
-		copied_key->value = malloc(strlen(key_to_copy->value)+1);
+		copied_key->value = malloc(strlen(key_to_copy->value) + 1);
 		copied_key->key = key_to_copy->key;
 		strcpy(copied_key->value, key_to_copy->value);
 	}
