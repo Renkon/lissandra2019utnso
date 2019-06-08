@@ -18,16 +18,16 @@ void process_select(select_input_t* input) {
 	found_segment = get_segment_by_name(g_segment_list,input->table_name);
 
 	if(found_segment != NULL){
-		index_list = list_map(found_segment->page,(void*) page_get_index);
-		found_page = get_page_by_key(found_segment,index_list,input->key);
+		index_list = list_map(found_segment->page, (void*) page_get_index);
+		found_page = get_page_by_key(found_segment, index_list, input->key);
 		if(found_page != NULL){
 
 			position = found_page->index;
-			return_timestamp =main_memory_timestamp(position);
-			return_key=main_memory_key(position);
-			return_value=main_memory_value(position);
+			return_timestamp = main_memory_timestamp(position);
+			return_key = main_memory_key(position);
+			return_value = main_memory_value(position);
 
-			log_i("Clave %s encontrada en la tabla %s ! Su valor es: %s ",return_key, found_segment->name, return_value);
+			log_i("Clave %s encontrada en la tabla %s ! Su valor es: %s ", return_key, found_segment->name, return_value);
 		}else{
 			/*//TODO Lo pido al FS, las variables no van a funcionar es hasta que tengamos la conexion con el FS
 
@@ -45,6 +45,11 @@ void process_select(select_input_t* input) {
 			};*/
 		};
 	};
+
+	list_destroy(index_list);
+	free(return_timestamp);
+	free(return_key);
+	free(return_value);
 }
 
 void process_insert(insert_input_t* input) {
@@ -143,36 +148,43 @@ void describe_callback(void* response){
 	//se lo pido al FS con la funcion para devolver parametros
 }
 
-segment_t* get_segment_by_name(t_list* list, char* table_name){
-	 	int i = 0;
-	 	segment_t* segment_found;
+segment_t* get_segment_by_name(t_list* list, char* table_name) {
+	 int i = 0;
+	 segment_t* segment_found;
 
-	 	for(;i < list_size(list);i++){
-	 		segment_found = list_get(list,i);
-	 		if(strcmp(segment_found->name,table_name) == 0){
-	 			break;
-	 		}
+	 for(;i < list_size(list); i++){
+	 	segment_found = list_get(list, i);
+	 	if (strcmp(segment_found->name, table_name) == 0) {
+	 		break;
 	 	}
-	 	return i<list_size(list)?segment_found:NULL;
+	 }
+
+	 return i < list_size(list) ? segment_found : NULL;
 }
 
-page_t* get_page_by_key(segment_t* segment, t_list* index_list, int key){
+page_t* get_page_by_key(segment_t* segment, t_list* index_list, int key) {
 	page_t* page_found;
 	int index;
 	char* str_key = string_itoa(key);
 
 	int i = 0;
-	for(;i < list_size(index_list);i++){
-	 		index = list_get(index_list,i);
-	 		char* comparator = main_memory_key(index);
-	 		if(strcmp(comparator,str_key) == 0 ){
-	 			break;
-	 		}
+	for(; i < list_size(index_list); i++){
+	 	index = list_get(index_list, i);
+	 	char* comparator = main_memory_key(index);
+	 	if (strcmp(comparator, str_key) == 0){
+		 	free(comparator);
+	 		break;
 	 	}
-	if(i<list_size(index_list)){
-		page_found = get_page_by_index(segment,index);
+
+	 	free(comparator);
+	}
+
+	free(str_key);
+
+	if (i < list_size(index_list)) {
+		page_found = get_page_by_index(segment, index);
 		return page_found;
-	}else{
+	} else {
 		return NULL;
 	}
 }
@@ -181,14 +193,14 @@ int page_get_index(page_t* page){
 	return page->index;
 }
 
-page_t* get_page_by_index(segment_t* segment,int index){
+page_t* get_page_by_index(segment_t* segment, int index) {
 	page_t* page_found;
 	t_list* pages = segment->page;
 
-	for(int i = 0; i < list_size(pages); i++){
+	for(int i = 0; i < list_size(pages); i++) {
 		page_found = list_get(pages, i);
 
-		if(page_found->index == index){
+		if (page_found->index == index) {
 			return i < list_size(pages) ? page_found : NULL;
 	 	}
 	}
@@ -200,8 +212,8 @@ int memory_insert(long long timestamp, int key, char* value){
 	char* str_key;
 	char* str_tstamp;
 
-	for(int i = 0; i < total_memory_size; i++){
-		if(strcmp(main_memory[i], "null") == 0){
+	for (int i = 0; i < total_memory_size; i++) {
+		if (strcmp(main_memory[i], "null") == 0) {
 			str_key = string_itoa(key);
 			str_tstamp = string_from_format("%lld", timestamp);
 			str_tstamp = realloc(str_tstamp, strlen(str_tstamp) + strlen(str_key) + strlen(value) + 3);
@@ -211,8 +223,10 @@ int memory_insert(long long timestamp, int key, char* value){
 			strcat(str_tstamp, ";");
 			strcat(str_tstamp, value);
 
-			strcpy(main_memory[i],str_tstamp);
+			strcpy(main_memory[i], str_tstamp);
 
+			free(str_key);
+			free(str_tstamp);
 			return i;
 		}
 	}
@@ -220,9 +234,9 @@ int memory_insert(long long timestamp, int key, char* value){
 	return -1;
 }
 
-bool memory_full(){
-	for(int i = 0; i < total_memory_size; i++) {
-		if(strcmp(main_memory[i], "null") == 0) {
+bool memory_full() {
+	for (int i = 0; i < total_memory_size; i++) {
+		if (strcmp(main_memory[i], "null") == 0) {
 			return i >= total_memory_size;
 		}
 	}
@@ -231,24 +245,36 @@ bool memory_full(){
 }
 
 char* main_memory_key(int index){ //TODO puedo hacerlo mejor con un enum
-	char** our_array;
-	our_array = string_split(main_memory[index], ";");
+	char** our_array = string_split(main_memory[index], ";");
+	char* value = our_array[1];
 
-	return our_array[1];
+	free(our_array[0]);
+	free(our_array[2]);
+	free(our_array);
+
+	return value;
 }
 
 char* main_memory_timestamp(int index){ //TODO puedo hacerlo mejor con un enum
-	char** our_array;
-	our_array = string_split(main_memory[index], ";");
+	char** our_array = string_split(main_memory[index], ";");
+	char* value = our_array[0];
 
-	return our_array[0];
+	free(our_array[1]);
+	free(our_array[2]);
+	free(our_array);
+
+	return value;
 }
 
 char* main_memory_value(int index){ //TODO puedo hacerlo mejor con un enum
-	char** our_array;
-	our_array = string_split(main_memory[index], ";");
+	char** our_array = string_split(main_memory[index], ";");
+	char* value = our_array[2];
 
-	return our_array[2];
+	free(our_array[0]);
+	free(our_array[1]);
+	free(our_array);
+
+	return value;
 }
 
 void modify_memory_by_index(int index, int key , char* value){
