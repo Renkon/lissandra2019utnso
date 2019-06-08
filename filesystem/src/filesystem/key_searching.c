@@ -80,7 +80,7 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 int tkv_size(){
 	//Es la cantidad de digitos del numero maximo del uint_16 + la cantidad de digitos de la timestamp
 	//+ la cantidad maxima de caracteres de un valor + 3 que es 2 porque tiene 2 ; y uno por el  \0
-	return  digits_in_a_number(USHRT_MAX)+digits_in_a_number(get_timestamp())+g_config_keys_size+3;
+	return digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + g_config_keys_size + 3;
 
 }
 
@@ -108,24 +108,30 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 	key_found_in_block->incomplete = false;
 	FILE* arch = fopen(block_directory, "rb");
 
-	char* readed_key = malloc(tkv_size());
+	char* readed_key = calloc(1, tkv_size());
+
 	//SI mando index en 1 me salteo el primer read
 	//Porque asi leo la parte del tkv anterior que ya lei
-	if(index == 1){
-	fread(readed_key, 1,incomplete_tkv_size, arch);
+	if (index == 1) {
+		fread(readed_key, incomplete_tkv_size, 1, arch);
 	}
+
+	int i = 0;
+
 	while (!feof(arch)) {
-		size_t lecture =fread(readed_key, 1,tkv_size(), arch);
-		 if(string_ends_with(readed_key,"\n")){
-			 //Si tiene \n entonces copio este string sin el \n y prengo el flag de incompleto
+		size_t lecture = fread(readed_key, tkv_size(), 1, arch);
+
+		if (readed_key[0] && string_ends_with(readed_key, "\n")) {
+			//Si tiene \n entonces copio este string sin el \n y prengo el flag de incompleto
 			strcpy(key_found_in_block->tkv, string_substring_until(readed_key,strlen(readed_key)-1));
 			key_found_in_block->incomplete = true;
 			break;
-		 }
-		 if(lecture == 0){
+		}
+
+		if (lecture == 0) {
 			//Si el bloque no tiene nada entonces corto todorl.
-			 break;
-		 }
+			break;
+		}
 
 		char** tkv = string_split(readed_key,";");// Le tengo que hacer free a esto? TODO
 		if (strcmp(tkv[1],key) == 0 ){
@@ -137,6 +143,7 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 		//SI la hago primero leeria basura y podria romperse por los ifs de arriba (ya paso)
 
 	}
+
 	fclose(arch);
 	free(readed_key);
 	free(block_directory);
