@@ -28,9 +28,12 @@ typedef struct {
 	long long timestamp;
 	int key;
 	char* value;
-	int value_length;
 } record_t;
 
+typedef struct {
+	char* tkv;
+	bool incomplete;
+} tkv_t;
 
 int create_table_folder(char* table_name);
 void create_partitions(int partitions, char* table_name, int* blocks);
@@ -44,5 +47,10 @@ record_t* search_in_tmpc(char* table_directory, int key);
 record_t* search_in_all_tmps(char* table_directory,int key);
 record_t* search_in_partition(char* table_directory, int key);
 record_t* create_record(insert_input_t* input);
+bool value_exceeds_maximun_size(char* value);
+void free_partitions(char* table_directory,t_bitarray* bitmap);
+void free_blocks_of_fs_archive(char* archive_directory, t_bitarray* bitmap);
+void free_block(int block);
+void free_blocks_of_all_tmps(char* table_directory, t_bitarray* bitmap);
 
 #endif /* CREATE_CREATE_UTILS_H_ */
