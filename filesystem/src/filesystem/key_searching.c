@@ -5,9 +5,9 @@ table_metadata_t* read_table_metadata(char* table_directory) {
 	table_metadata_t* table_metadata = malloc(sizeof(table_metadata_t));
 	char* metadata_directory = create_metadata_directory(table_directory);
 	FILE* arch = fopen(metadata_directory, "rb");
-	fread(&table_metadata->compaction_time, sizeof(table_metadata->compaction_time), 1, arch);
-	fread(&table_metadata->consistency, sizeof(table_metadata->consistency), 1, arch);
-	fread(&table_metadata->partitions, sizeof(table_metadata->partitions), 1, arch);
+	fread(&table_metadata->compaction_time, 1, sizeof(table_metadata->compaction_time), arch);
+	fread(&table_metadata->consistency, 1, sizeof(table_metadata->consistency), arch);
+	fread(&table_metadata->partitions, 1, sizeof(table_metadata->partitions), arch);
 	fclose(arch);
 	free(metadata_directory);
 	return table_metadata;
@@ -16,10 +16,10 @@ table_metadata_t* read_table_metadata(char* table_directory) {
 partition_t* read_fs_archive(char* partition_directory) {
 	FILE* arch = fopen(partition_directory, "rb");
 	partition_t* partition = malloc(sizeof(partition_t));
-	fread(&partition->number_of_blocks, sizeof(partition->number_of_blocks), 1, arch);
+	fread(&partition->number_of_blocks, 1, sizeof(partition->number_of_blocks), arch);
 	partition->blocks = malloc(sizeof(int) * partition->number_of_blocks);
-	fread(partition->blocks, sizeof(int) * partition->number_of_blocks, 1, arch);
-	fread(&partition->size, sizeof(partition->size), 1, arch);
+	fread(partition->blocks, 1, sizeof(int) * partition->number_of_blocks, arch);
+	fread(&partition->size, 1, sizeof(partition->size), arch);
 
 	fclose(arch);
 
@@ -118,7 +118,7 @@ char* read_first_tkv_in_block(int block) {
 	char* block_directory = create_block_directory(block);
 	FILE* arch = fopen(block_directory, "rb");
 	char* readed_key = malloc(tkv_size());
-	fread(readed_key, tkv_size(), 1, arch);
+	fread(readed_key, 1, tkv_size(), arch);
 	fclose(arch);
 	free(block_directory);
 	return readed_key;
@@ -138,13 +138,13 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 	//SI mando index en 1 me salteo el primer read
 	//Porque asi leo la parte del tkv anterior que ya lei
 	if (index == 1) {
-		fread(readed_key, incomplete_tkv_size, 1, arch);
+		fread(readed_key, 1, incomplete_tkv_size, arch);
 	}
 
 	int i = 0;
 
 	while (!feof(arch)) {
-		size_t lecture = fread(readed_key, tkv_size(), 1, arch);
+		size_t lecture = fread(readed_key, 1, tkv_size(), arch);
 
 		if (readed_key[0] && string_ends_with(readed_key, "\n")) {
 			//Si tiene \n entonces copio este string sin el \n y prengo el flag de incompleto
