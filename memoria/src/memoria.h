@@ -68,7 +68,7 @@ bool memory_full();
 char* main_memory_key(int index);
 char* main_memory_value(int index);
 char* main_memory_timestamp(int index);
-void* modify_memory_by_index(int index,int key ,char* value);
+void modify_memory_by_index(int index,int key ,char* value);
 
 //GLOBAL STATMENTS
 t_list* g_segment_list;

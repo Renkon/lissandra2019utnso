@@ -182,73 +182,76 @@ int page_get_index(page_t* page){
 }
 
 page_t* get_page_by_index(segment_t* segment,int index){
-	int i = 0;
 	page_t* page_found;
 	t_list* pages = segment->page;
 
-	for(;i < list_size(pages);i++){
-		page_found = list_get(pages,i);
+	for(int i = 0; i < list_size(pages); i++){
+		page_found = list_get(pages, i);
+
 		if(page_found->index == index){
-			break;
-	 		}
+			return i < list_size(pages) ? page_found : NULL;
 	 	}
-	return i<list_size(pages)?page_found:NULL;
+	}
+
+	return NULL;
 }
 
 int memory_insert(long long timestamp, int key, char* value){
-	int i = 0;
 	char* str_key;
 	char* str_tstamp;
 
-	for(;i<total_memory_size;i++){
-		if(strcmp (main_memory[i],"null") == 0){
+	for(int i = 0; i < total_memory_size; i++){
+		if(strcmp(main_memory[i], "null") == 0){
 			str_key = string_itoa(key);
-			str_tstamp = string_from_format("%lld",timestamp);
+			str_tstamp = string_from_format("%lld", timestamp);
+			str_tstamp = realloc(str_tstamp, strlen(str_tstamp) + strlen(str_key) + strlen(value) + 3);
 
-			strcat(str_tstamp,";");
-			strcat(str_tstamp,str_key);
-			strcat(str_tstamp,";");
-			strcat(str_tstamp,value);
+			strcat(str_tstamp, ";");
+			strcat(str_tstamp, str_key);
+			strcat(str_tstamp, ";");
+			strcat(str_tstamp, value);
 
 			strcpy(main_memory[i],str_tstamp);
-			break;
+
+			return i;
 		}
 	}
-	return i;
+
+	return -1;
 }
 
 bool memory_full(){
-	int i = 0;
-	for(; i < total_memory_size;i++){
-		if(strcmp (main_memory[i],"null") == 0){
-			break;
+	for(int i = 0; i < total_memory_size; i++) {
+		if(strcmp(main_memory[i], "null") == 0) {
+			return i >= total_memory_size;
 		}
 	}
-	return i<total_memory_size?false:true;
+
+	return true;
 }
 
 char* main_memory_key(int index){ //TODO puedo hacerlo mejor con un enum
 	char** our_array;
-	our_array = string_split(main_memory[index],";");
+	our_array = string_split(main_memory[index], ";");
 
 	return our_array[1];
 }
 
 char* main_memory_timestamp(int index){ //TODO puedo hacerlo mejor con un enum
 	char** our_array;
-	our_array = string_split(main_memory[index],";");
+	our_array = string_split(main_memory[index], ";");
 
 	return our_array[0];
 }
 
 char* main_memory_value(int index){ //TODO puedo hacerlo mejor con un enum
 	char** our_array;
-	our_array = string_split(main_memory[index],";");
+	our_array = string_split(main_memory[index], ";");
 
 	return our_array[2];
 }
 
-void* modify_memory_by_index(int index,int key ,char* value){
+void modify_memory_by_index(int index,int key ,char* value){
 	char* str_key;
 	char* str_tstamp;
 
