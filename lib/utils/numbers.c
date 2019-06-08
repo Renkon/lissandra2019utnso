@@ -10,5 +10,3 @@ int digits_in_a_number(long long number) {
 
 	return totalDigits;
 }
-
-
