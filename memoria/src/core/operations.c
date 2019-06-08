@@ -251,15 +251,15 @@ char* main_memory_value(int index){ //TODO puedo hacerlo mejor con un enum
 	return our_array[2];
 }
 
-void modify_memory_by_index(int index,int key ,char* value){
-	char* str_key;
-	char* str_tstamp;
+void modify_memory_by_index(int index, int key , char* value){
+	char* str_key = string_itoa(key);
+	char* str_tstamp = string_from_format("%lld", get_timestamp());
 
-	str_key = string_itoa(key);
-	str_tstamp = string_from_format("%lld",get_timestamp());
-	strcat(str_tstamp,";");
-	strcat(str_tstamp,str_key);
-	strcat(str_tstamp,";");
-	strcat(str_tstamp,value);
-	strcpy(main_memory[index],str_tstamp);
+	str_tstamp = realloc(str_tstamp, strlen(str_tstamp) + strlen(str_key) + strlen(value) + 3);
+
+	strcat(str_tstamp, ";");
+	strcat(str_tstamp, str_key);
+	strcat(str_tstamp, ";");
+	strcat(str_tstamp, value);
+	strcpy(main_memory[index], str_tstamp);
 }
