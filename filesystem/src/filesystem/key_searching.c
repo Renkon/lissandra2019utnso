@@ -35,6 +35,7 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 	char* string_key = string_itoa(key);
 	int index = 0;
 	int incomplete_tkv_size = 0;
+
 	for (int i = 0; i < partition->number_of_blocks; i++) {
 		key_found = search_key_in_block(partition->blocks[i], string_key, index, incomplete_tkv_size);
 		index = 0;
@@ -83,7 +84,13 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 			strcpy(key_found->tkv, "-1;-1;-1");
 		}
 
+		// limpiamos en cada iteracion
+		if (i < partition->number_of_blocks - 1) {
+			free(key_found->tkv);
+			free(key_found);
+		}
 	}
+
 	convert_to_record(key_found_in_block, key_found);
 	free(key_found->tkv);
 	free(key_found);
@@ -107,7 +114,7 @@ void tkv_append(tkv_t* tkv,char* end){
 	free(final_tkv);
 }
 
-char* read_first_tkv_in_block(int block){
+char* read_first_tkv_in_block(int block) {
 	char* block_directory = create_block_directory(block);
 	FILE* arch = fopen(block_directory, "rb");
 	char* readed_key = malloc(tkv_size());
