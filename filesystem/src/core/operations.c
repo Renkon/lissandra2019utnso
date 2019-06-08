@@ -17,10 +17,9 @@ void process_select(select_input_t* input) {
 		} else {
 			//SI la timstamp es distinta de -1 entonces si la encontre y la muestro!
 			log_i("Clave %d encontrada en la tabla %s! su valor es: %s", input->key, table_name_upper, key_found->value);
-
+			free(key_found->value);
 		}
 		free(table_directory);
-		free(key_found->value);
 		free(key_found);
 	} else {
 		//Si no existe la tabla entonces se termina la operacion
