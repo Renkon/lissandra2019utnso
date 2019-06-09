@@ -14,7 +14,7 @@ int main(void) {
 
 	total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + (4*sizeof(char)) + (3*sizeof(char)); //TODO el size esta hardcodeado, lo pasa las configs de FS
 	//total_page_size = 25;
-	total_memory_size = g_config.memory_size/total_page_size;
+	total_page_count = g_config.memory_size/total_page_size;
 
 	init_server(g_config.port, MEMORY);
 	init_main_memory();
@@ -62,8 +62,8 @@ void create_dummy(){
 }
 
 void init_main_memory(){
-	main_memory = (char**) malloc(total_memory_size * sizeof(char*));
-	for(int i = 0; i < total_memory_size; i++){
+	main_memory = (char**) malloc(total_page_count * sizeof(char*));
+	for(int i = 0; i < total_page_count; i++){
 		main_memory[i] = (char*) malloc(total_page_size);
 		strcpy(main_memory[i], "null");
 	}
