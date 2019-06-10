@@ -49,21 +49,20 @@ int main(void) {
 		strcpy(directorio_bloques,directorio_bloques2);
 	}
 
-char* bitmap = malloc(metadata->blocks);
-for(int i =0; i<metadata->blocks;i++){
+	char* bitmap = malloc(metadata->blocks);
+	for(int i =0; i<metadata->blocks;i++){
+		bitmap[i] = 0;
+	}
 
-	bitmap[i] = 0;
-}
+	t_bitarray* bitarray = bitarray_create(bitmap,metadata->blocks);
+	FILE* arch2 = fopen(directorio_bitarray, "wb");
+	fwrite(&bitarray->mode, 1, sizeof(bitarray->mode), arch2);
+	fwrite(&bitarray->size, 1, sizeof(bitarray->size), arch2);
+	fwrite(bitarray->bitarray, 1, sizeof(bitarray->size), arch2);
 
-t_bitarray* bitarray = bitarray_create(bitmap,metadata->blocks);
-FILE* arch2 = fopen(directorio_bitarray, "wb");
-fwrite(&bitarray->mode, 1, sizeof(bitarray->mode), arch2);
-fwrite(&bitarray->size, 1, sizeof(bitarray->size), arch2);
-fwrite(bitarray->bitarray, 1, sizeof(bitarray->size), arch2);
+	fclose(arch2);
 
-fclose(arch2);
-
-return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }
 
 
