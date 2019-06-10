@@ -35,6 +35,12 @@ typedef struct {
 	bool incomplete;
 } tkv_t;
 
+typedef struct  {
+	int block_size;
+	int blocks;
+	long magic_number;
+} metadata_t;
+
 int create_table_folder(char* table_name);
 void create_partitions(int partitions, char* table_name, int* blocks);
 char* create_bin_name(int name);
