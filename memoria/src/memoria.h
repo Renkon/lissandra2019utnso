@@ -3,6 +3,9 @@
 #define MEMORIA_H_
 #define MEMCFG "memoria.cfg"
 
+#include "memory_utils.h"
+#include "memory_types.h"
+
 #include "generic_config.h"
 #include "generic_console.h"
 #include "generic_server.h"
@@ -14,7 +17,7 @@
 #include "utils/dates.h"
 #include <limits.h>
 #include "utils/numbers.h"
-#include "memory_utils.h"
+
 
 typedef struct {
 	int port;
@@ -30,39 +33,20 @@ typedef struct {
 	int memory_number;
 } memconfig_t;
 
-typedef struct {
-	long long timestamp;
-	int key;
-	char* value;
-	int charsize;
-} record_t;
-
-typedef struct {
-	int index;
-	bool modified;
-} page_t;
-
-typedef struct {
-	char* name;
-	t_list* page;
-} segment_t;
-
 
 memconfig_t g_config;
 extern char* g_config_keys[];
 extern int g_config_keys_size;
-char* segment_exists(char* segment_name);
-void find_page(char* segment,uint16_t key );
+
 void create_dummy();
 
-page_t* create_page(int index, bool modified );
+/*page_t* create_page(int index, bool modified );
 segment_t* create_segment(char* table_name);
 
-//son para las operations, no me dejaba ponerlos en el operations.h
 segment_t* get_segment_by_name(t_list* list, char* table_name);
 page_t* get_page_by_key(segment_t* segment, t_list* index_list, int key);
 int page_get_index(page_t* page);
-page_t* get_page_by_index(segment_t* segment,int index);
+page_t* get_page_by_index(segment_t* segment,int index);*/
 
 /*int memory_insert(long long timestamp, int key, char* value);
 bool memory_full();

@@ -13,7 +13,6 @@ int main(void) {
 	init_config(MEMCFG, initialize_memory_config, update_memory_config, g_config_keys, g_config_keys_size);
 
 	total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + (4*sizeof(char)) + (3*sizeof(char)); //TODO el size esta hardcodeado, lo pasa las configs de FS
-	//total_page_size = 25;
 	total_page_count = g_config.memory_size/total_page_size;
 
 	init_server(g_config.port, MEMORY);
@@ -30,7 +29,7 @@ callbacks_t* get_callbacks() {
 }
 
 
-page_t* create_page(int index, bool modified ) {
+/*page_t* create_page(int index, bool modified ) {
 	page_t* page = malloc(sizeof(page_t));
 
 	page->index = index;
@@ -47,7 +46,7 @@ segment_t* create_segment(char* table_name) {
   strcpy(segment->name,table_name);
 
   return segment;
-}
+}*/
 
 void create_dummy(){
 	int a;

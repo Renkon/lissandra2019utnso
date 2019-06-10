@@ -152,7 +152,7 @@ void describe_callback(void* response){
 	//se lo pido al FS con la funcion para devolver parametros
 }
 
-segment_t* get_segment_by_name(t_list* list, char* table_name) {
+/*segment_t* get_segment_by_name(t_list* list, char* table_name) {
 	 int i = 0;
 	 segment_t* segment_found;
 
@@ -212,7 +212,7 @@ page_t* get_page_by_index(segment_t* segment, int index) {
 	return NULL;
 }
 
-/*int memory_insert(long long timestamp, int key, char* value){
+int memory_insert(long long timestamp, int key, char* value){
 	char* str_key;
 	char* str_tstamp;
 

@@ -9,15 +9,11 @@
 #define MEMORY_UTILS_H_
 
 #include "memoria.h"
+#include "memory_types.h"
+
 #include <stdbool.h>
 #include "utils/operation_types.h"
 #include "generic_client.h"
-#include "config.h"
-#include "generic_logger.h"
-#include "generic_config.h"
-#include "generic_console.h"
-#include "generic_server.h"
-#include "config.h"
 #include "utils/operation_types.h"
 #include "core/operations.h"
 #include <commons/bitarray.h>
@@ -35,9 +31,9 @@ typedef enum {
 
 int memory_insert(long long timestamp, int key, char* value);
 bool memory_full();
-char* main_memory_key(int index);
+/*char* main_memory_key(int index);
 char* main_memory_value(int index);
-char* main_memory_timestamp(int index);
+char* main_memory_timestamp(int index);*/
 char* main_memory_values(int index,memory_var_t type);
 void modify_memory_by_index(int index,int key ,char* value);
 
