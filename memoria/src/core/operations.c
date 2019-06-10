@@ -19,9 +19,13 @@ void process_select(select_input_t* input) {
 		if(found_page != NULL) {
 
 			position = found_page->index;
-			return_timestamp = main_memory_timestamp(position);
+			/*return_timestamp = main_memory_timestamp(position);
 			return_key = main_memory_key(position);
-			return_value = main_memory_value(position);
+			return_value = main_memory_value(position);*/
+
+			return_timestamp = main_memory_values(position,TIMESTAMP);
+			return_key = main_memory_values(position,KEY);
+			return_value = main_memory_values(position,VALUE);
 
 			log_i("Clave %s encontrada en la tabla %s ! Su valor es: %s ", return_key, found_segment->name, return_value);
 
@@ -148,7 +152,7 @@ void describe_callback(void* response){
 	//se lo pido al FS con la funcion para devolver parametros
 }
 
-segment_t* get_segment_by_name(t_list* list, char* table_name) {
+/*segment_t* get_segment_by_name(t_list* list, char* table_name) {
 	 int i = 0;
 	 segment_t* segment_found;
 
@@ -170,7 +174,7 @@ page_t* get_page_by_key(segment_t* segment, t_list* index_list, int key) {
 	int i = 0;
 	for(; i < list_size(index_list); i++){
 	 	index = list_get(index_list, i);
-	 	char* comparator = main_memory_key(index);
+	 	char* comparator = main_memory_values(index,KEY);
 	 	if (strcmp(comparator, str_key) == 0){
 		 	free(comparator);
 	 		break;
@@ -288,4 +292,4 @@ void modify_memory_by_index(int index, int key , char* value){
 	strcat(str_tstamp, ";");
 	strcat(str_tstamp, value);
 	strcpy(main_memory[index], str_tstamp);
-}
+}*/
