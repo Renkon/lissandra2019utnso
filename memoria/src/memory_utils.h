@@ -31,9 +31,6 @@ typedef enum {
 
 int memory_insert(long long timestamp, int key, char* value);
 bool memory_full();
-/*char* main_memory_key(int index);
-char* main_memory_value(int index);
-char* main_memory_timestamp(int index);*/
 char* main_memory_values(int index,memory_var_t type);
 void modify_memory_by_index(int index,int key ,char* value);
 
