@@ -29,26 +29,8 @@ callbacks_t* get_callbacks() {
 }
 
 
-/*page_t* create_page(int index, bool modified ) {
-	page_t* page = malloc(sizeof(page_t));
 
-	page->index = index;
-	page->modified = modified;
-
-	return page;
-}
-
-segment_t* create_segment(char* table_name) {
-  segment_t* segment = malloc(sizeof(segment_t));
-
-  segment->page = list_create();
-  segment->name = malloc(strlen(table_name)+1);
-  strcpy(segment->name,table_name);
-
-  return segment;
-}*/
-
-void create_dummy(){
+void create_dummy(){ //TODO renombrar a init_global_segment o algo asi y borrar todo excepto el list_create de la segunda linea.
 	int a;
 	g_segment_list = list_create();
 	segment_t* segment_dummy = create_segment("laposta");

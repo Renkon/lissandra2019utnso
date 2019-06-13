@@ -40,22 +40,6 @@ extern int g_config_keys_size;
 
 void create_dummy();
 
-/*page_t* create_page(int index, bool modified );
-segment_t* create_segment(char* table_name);
-
-segment_t* get_segment_by_name(t_list* list, char* table_name);
-page_t* get_page_by_key(segment_t* segment, t_list* index_list, int key);
-int page_get_index(page_t* page);
-page_t* get_page_by_index(segment_t* segment,int index);*/
-
-/*int memory_insert(long long timestamp, int key, char* value);
-bool memory_full();
-char* main_memory_key(int index);
-char* main_memory_value(int index);
-char* main_memory_timestamp(int index);
-void modify_memory_by_index(int index,int key ,char* value);
-*/
-
 //GLOBAL STATMENTS
 t_list* g_segment_list;
 char** main_memory;
