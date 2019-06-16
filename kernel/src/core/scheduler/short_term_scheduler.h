@@ -3,6 +3,7 @@
 
 #include "scheduler.h"
 #include "pcb.h"
+#include "utils/serializer.h"
 #include "../statistics/stats.h"
 
 typedef struct {

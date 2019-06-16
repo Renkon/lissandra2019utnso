@@ -14,7 +14,7 @@ int main(void) {
 
 	total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + (4*sizeof(char)) + (3*sizeof(char)); //TODO el size esta hardcodeado, lo pasa las configs de FS
 	total_page_count = g_config.memory_size/total_page_size;
-
+	init_server_callbacks();
 	init_server(g_config.port, MEMORY);
 	init_main_memory();
 	create_dummy();
@@ -28,7 +28,14 @@ callbacks_t* get_callbacks() {
 			process_drop, process_journal, NULL, NULL, NULL);
 }
 
-
+void init_server_callbacks() {
+	g_server_callbacks[SELECT_IN] = process_select;
+	g_server_callbacks[INSERT_IN] = process_insert;
+	g_server_callbacks[CREATE_IN] = process_create;
+	g_server_callbacks[DESCRIBE_IN] = process_describe;
+	g_server_callbacks[DROP_IN] = process_drop;
+	g_server_callbacks[JOURNAL_IN] = process_journal;
+}
 
 void create_dummy(){ //TODO renombrar a init_global_segment o algo asi y borrar todo excepto el list_create de la segunda linea.
 	int a;

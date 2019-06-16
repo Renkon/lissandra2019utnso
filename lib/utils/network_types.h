@@ -20,19 +20,17 @@ typedef enum {
 	DROP_OUT,
 	JOURNAL_IN,
 	JOURNAL_OUT,
-	ADD_IN,
-	ADD_OUT,
-	RUN_IN,
-	RUN_OUT,
 	GOSSIP_IN,
-	GOSSIP_OUT
+	GOSSIP_OUT,
+	_LAST
 } socket_operation_t;
 
 typedef struct {
 	process_t process;
 	socket_operation_t operation;
 	bool keep_alive;
-	int content_length;
+	int elements;
+	int* elements_size;
 	bool success;
 }__attribute__((packed)) header_t;
 

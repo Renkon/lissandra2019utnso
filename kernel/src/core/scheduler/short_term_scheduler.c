@@ -94,6 +94,8 @@ void exec_next_statement(int processor) {
 void exec_remote(pcb_t* pcb, statement_t* statement) {
 	void* input = NULL;
 	socket_operation_t network_operation;
+	elements_network_t element_info;
+
 	//void (*callback)(int, void*, bool);
 	//pcb_operation_t* pcb_operation = malloc(sizeof(pcb_operation_t));
 	//char* demo_str = string_duplicate("soy un kernel");
@@ -105,54 +107,56 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 		case SELECT:
 			network_operation = SELECT_IN;
 			input = statement->select_input;
+			element_info = elements_select_in_info(statement->select_input);
 			//callback = on_select;
 		break;
 		case INSERT:
 			network_operation = INSERT_IN;
 			input = statement->insert_input;
+			element_info = elements_insert_in_info(statement->insert_input);
 			//callback = on_insert;
 		break;
 		case CREATE:
 			network_operation = CREATE_IN;
 			input = statement->create_input;
+			element_info = elements_create_in_info(statement->create_input);
 			//callback = on_create;
 		break;
 		case DESCRIBE:
 			network_operation = DESCRIBE_IN;
 			input = statement->describe_input;
+			element_info = elements_describe_in_info(statement->describe_input);
 			//callback = on_describe;
 		break;
 		case DROP:
 			network_operation = DROP_IN;
 			input = statement->drop_input;
+			element_info = elements_drop_in_info(statement->drop_input);
 			//callback = on_drop;
 		break;
 		case JOURNAL:
 			network_operation = JOURNAL_IN;
+			element_info = elements_journal_in_info(NULL);
 			//callback = on_journal;
 		break;
 		default:
 		break;
 	}
 
-	do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, network_operation, input, get_input_size(statement->operation, input), /* CALLBACK */ NULL, true);
+	do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, network_operation, input, element_info.elements, element_info.elements_size, /* CALLBACK */ NULL, true);
 
+	// TODO: lo de abajo iria en el callback del request
 	if (statement->operation <= INSERT) {
 		pcb->last_execution_stats->timestamp_end = get_timestamp();
 		log_t("Se ingresa un evento a las estadisticas.");
-		clear_old_stats();
 		list_add(g_stats_events, pcb->last_execution_stats);
 	}
+	clear_old_stats();
 
 	if (pcb->errors) {
 		log_e("Hubo un error al ejecutar un statement. Se cancela ejecucion del proceso con PID %i", pcb->process_id);
 		pcb->program_counter = list_size(pcb->statements);
 	}
-
-	pcb->last_execution_stats->timestamp_end = get_timestamp();
-	log_t("Se ingresa un evento a las estadisticas.");
-	clear_old_stats();
-	list_add(g_stats_events, pcb->last_execution_stats);
 
 	sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
 }

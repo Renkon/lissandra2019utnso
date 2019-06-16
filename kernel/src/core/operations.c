@@ -11,8 +11,6 @@ void process_select(select_input_t* input) {
 	statement->select_input->key = input->key;
 	memcpy(statement->select_input->table_name, input->table_name, strlen(input->table_name) + 1);
 
-	//char* demo_str = string_duplicate("soy un kernel");
-	//do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, SELECT_IN, demo_str, 14, select_callback);
 	list_add(pcb->statements, statement);
 	list_add(g_scheduler_queues.new, pcb);
 }
@@ -58,9 +56,13 @@ void process_describe(describe_input_t* input) {
 
 	statement->operation = DESCRIBE;
 	statement->describe_input = malloc(sizeof(describe_input_t));
-	statement->describe_input->table_name = malloc(strlen(input->table_name) + 1);
 
-	memcpy(statement->describe_input->table_name, input->table_name, strlen(input->table_name) + 1);
+	if (input->table_name != NULL) {
+		statement->describe_input->table_name = malloc(strlen(input->table_name) + 1);
+		memcpy(statement->describe_input->table_name, input->table_name, strlen(input->table_name) + 1);
+	} else {
+		statement->describe_input->table_name = NULL;
+	}
 
 	list_add(pcb->statements, statement);
 	list_add(g_scheduler_queues.new, pcb);
