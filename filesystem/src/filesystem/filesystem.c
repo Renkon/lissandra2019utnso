@@ -76,7 +76,7 @@ table_metadata_t* create_metadata(consistency_t consistency, int partitions, lon
 	return metadata;
 }
 
-int assign_free_blocks(t_bitarray* bitmap, int* blocks, int* partitions_amount) {
+int assign_free_blocks(t_bitarray* bitmap, int* blocks, int partitions_amount) {
 	int blocks_amount = 0;
 	//Me fijo que la cantidad de particiones que me pedis sea menor a la cantidad de bloques totales
 	if (partitions_amount <= bitmap->size) {
@@ -210,13 +210,11 @@ record_t* search_in_partition(char* table_directory, int key) {
 	return key_found;
 }
 
-record_t* create_record(insert_input_t* input) {
-		record_t* record = malloc(sizeof(record_t));
-		record->key = input->key;
-		record->timestamp = input->timestamp;
-		record->value = malloc(strlen(input->value)+1);
-		strcpy(record->value, input->value);
-		return record;
+record_t* create_tkv(insert_input_t* input) {
+	tkv_t* tkv = malloc(sizeof(tkv_t));
+	tkv->tkv = malloc(digits_in_a_number(input->timestamp)+digits_in_a_number(input->key)+strlen(input->value)+3);
+	sprintf(tkv->tkv, "%lld;%d;%s", input->timestamp, input->key, input->value);
+	return tkv;
 }
 
 bool value_exceeds_maximun_size(char* value){

@@ -45,7 +45,7 @@ bool process_insert(insert_input_t* input) {
 				input->timestamp = get_timestamp();
 			}
 
-			record_t* record = create_record(input);
+			tkv_t* tkv = create_tkv(input);
 
 			if (table_not_exist_in_list(mem_table, table_name_upper)) {
 				//Si no existe la tabla en la mem table la creo
@@ -54,7 +54,7 @@ bool process_insert(insert_input_t* input) {
 			}
 			//Siempre busco la tabla que necesito y despues le inserto la key, por ahora sin orden despues quizas si
 			table_t* table = find_table_in_list(mem_table, table_name_upper);
-			list_add(table->records, record);
+			list_add(table->tkvs, tkv);
 			//Se les hace free cuando limpie la memetable despues.
 			log_i("Se inserto satisfactoriamente la clave %d con valor %s y timestamp %lld en la tabla %s ",input->key, input->value, input->timestamp, table_name_upper);
 			free(table_name_upper);
@@ -111,6 +111,7 @@ void process_create(create_input_t* input) {
 }
 
 t_list* process_describe(describe_input_t* input) {
+
 	log_i("fs describe args: %s", input->table_name);
 	char* table_dir = get_table_directory();
 	//Si me mandan null muestro la metadata de todas las tablas
@@ -195,3 +196,5 @@ bool process_drop(drop_input_t* input) {
 
 	return result;
 }
+
+
