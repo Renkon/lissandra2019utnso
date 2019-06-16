@@ -45,12 +45,13 @@ int send2(int socket, packet_t* packet) {
 	return bytes_sent;
 }
 
-void build_packet(packet_t* packet, process_t process, operation_t operation, bool keep_alive, int length, void* content) {
+void build_packet(packet_t* packet, process_t process, operation_t operation, bool keep_alive, int length, void* content, bool success) {
 	packet->header.process = process;
 	packet->header.operation = operation;
 	packet->header.keep_alive = keep_alive;
 	packet->header.content_length = length;
 	packet->content = malloc(length);
+	packet->header.success = success;
 
 	if (length > 0)
 		memcpy(packet->content, content, length);

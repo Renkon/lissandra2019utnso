@@ -12,10 +12,11 @@ typedef struct {
 	void* content;
 	int content_length;
 	void (*callback)(void*);
+	bool success;
 } client_conn_args_t;
 
 int setup_connection(process_t process, char* ip, int port);
-void do_simple_request(process_t process, char* ip, int port, socket_operation_t operation, void* content, int content_length, void (*callback)(void*));
+void do_simple_request(process_t process, char* ip, int port, socket_operation_t operation, void* content, int content_length, void (*callback)(void*), bool success);
 void do_request(void* args);
 
 #endif /* GENERIC_CLIENT_H_ */

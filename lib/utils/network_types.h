@@ -33,6 +33,7 @@ typedef struct {
 	socket_operation_t operation;
 	bool keep_alive;
 	int content_length;
+	bool success;
 }__attribute__((packed)) header_t;
 
 typedef struct {
