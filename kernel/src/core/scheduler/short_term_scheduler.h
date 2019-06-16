@@ -2,6 +2,7 @@
 #define CORE_SCHEDULER_SHORT_TERM_SCHEDULER_H_
 
 #include "scheduler.h"
+#include "pcb.h"
 #include "../statistics/stats.h"
 
 typedef struct {
