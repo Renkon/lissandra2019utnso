@@ -1,7 +1,5 @@
 #include "directorys.h"
 
-char * get_tmpc_name = "A1.tmpc";
-
 char* create_new_directory(char* old_directory, char* directory_end) {
 	//Con esto creo nuevos directorios, mas que nada para crear de forma mas comoda los path a las nuevas tablas
 	char* new_path = malloc(strlen(old_directory) + strlen(directory_end) + 1);
@@ -181,4 +179,17 @@ int remove_directory(char *path)
    }
 
    return r;
+}
+
+metadata_t* read_fs_metadata(){
+	char* metadata_directory =create_new_directory(g_config.mount_point,"Metadata/Metadata.bin");
+	metadata_t* metadata = malloc(sizeof(metadata_t));
+	metadata->magic_number = malloc(strlen("LISSANDRA")+1);
+
+	FILE* arch = fopen(metadata_directory, "rb");
+	fread(&metadata->block_size, 1, sizeof(metadata->block_size), arch);
+	fread(&metadata->blocks, 1, sizeof(metadata->blocks), arch);
+	fread(metadata->magic_number, 1, strlen("LISSANDRA")+1, arch);
+	free(metadata_directory);
+	return metadata;
 }

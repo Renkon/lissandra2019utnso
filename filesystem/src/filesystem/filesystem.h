@@ -6,10 +6,10 @@
 #include <sys/stat.h>
 
 
-#include "../directorys.h"
-#include "../lissandra/lissandra.h"
 #include "../fs_lists.h"
-
+#include "../lib/utils/operation_types.h"
+#include "../lissandra/lissandra.h"
+#include<commons/bitarray.h>
 
 typedef struct  {
 	consistency_t consistency;
@@ -35,11 +35,6 @@ typedef struct {
 	bool incomplete;
 } tkv_t;
 
-typedef struct  {
-	int block_size;
-	int blocks;
-	long magic_number;
-} metadata_t;
 
 int create_table_folder(char* table_name);
 void create_partitions(int partitions, char* table_name, int* blocks);

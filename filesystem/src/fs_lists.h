@@ -12,6 +12,15 @@ typedef struct {
 
 }table_t;
 
+
+typedef struct  {
+	int block_size;
+	int blocks;
+	char* magic_number;
+} metadata_t;
+
+
+
 extern char* possible_table_name;
 bool table_not_exist_in_list(t_list* list, char* table_name);
 bool table_exist(table_t* table);
