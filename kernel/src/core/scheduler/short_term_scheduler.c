@@ -90,10 +90,19 @@ void exec_next_statement(int processor) {
 	//select_input_t* input = statement->select_input;
 	// Esto deberia ir en el callback
 	// Aca deberiamos tener el PCB
+	if (pcb->errors) {
+		log_e("Hubo un error al ejecutar un statement. Se cancela ejecucion del proceso con PID %i", pcb->process_id);
+		pcb->program_counter = list_size(pcb->statements);
+	}
+
 	pcb->last_execution_stats->timestamp_end = get_timestamp();
 	log_t("Se ingresa un evento a las estadisticas.");
 	clear_old_stats();
 	list_add(g_stats_events, pcb->last_execution_stats);
 
 	sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
+}
+
+void on_statement_failure(pcb_t* pcb) {
+	pcb->errors = true;
 }

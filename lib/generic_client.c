@@ -77,6 +77,7 @@ void do_request(void* arguments) {
 	client_conn_args_t* args = (client_conn_args_t*) arguments;
 	int socket;
 	packet_t* packet;
+	bool successful = false;
 
 	pthread_detach(pthread_self());
 	if ((socket = setup_connection(args->process, args->ip, args->port)) < 0) {
@@ -92,7 +93,8 @@ void do_request(void* arguments) {
 	if (recv2(socket, packet) <= 0) { // Si me devuelve 0 o menos, fallo el recv.
 		free_packet(packet);
 		log_w("El servidor cerro la conexion. Se cancela la request");
-		return;
+	} else {
+		successful = packet->header.success;
 	}
 
 	args->callback(packet->content);
