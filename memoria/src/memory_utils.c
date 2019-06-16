@@ -32,7 +32,7 @@ int memory_insert(long long timestamp, int key, char* value){
 	return -1;
 }
 
-bool memory_full() {
+_Bool memory_full() {
 	for (int i = 0; i < total_page_count; i++) {
 		if (strcmp(main_memory[i], "null") == 0) {
 			return i >= total_page_count;
@@ -83,9 +83,25 @@ void modify_memory_by_index(int index, int key , char* value){
 	strcpy(main_memory[index], str_tstamp);
 }
 
+bool order_by_timestamp(int first_i,int second_i){
+	char* timestamp_1 = main_memory_values(first_i,TIMESTAMP);
+	char* timestamp_2 = main_memory_values(second_i,TIMESTAMP);
+
+	long long t1 = string_to_long_long(timestamp_1);
+	long long t2 = string_to_long_long(timestamp_2);
+
+	return t1>t2;
+
+}
+
+void eliminate_page_instance_by_index(int index){
+
+}
+
 void journaling(){
-	t_list* journal = list_map(g_segment_list,memory_is_modified());
-	t_list* indexes = list_map(journal,memory_is_modified_());
+	t_list* journal = get_pages_by_modified(true);
+	t_list* indexes = list_map(journal,(void*)page_get_index);
+
 	//journal_type* journal = conformado por un registro_t y un nombre de la tabla
 	int position;
 
@@ -102,10 +118,29 @@ void journaling(){
 	}
 }
 
-void replace_algorithm(){
-	t_list* indexes = list_map(g_segment_list,page_modified());
-	indexes = list_sort(indexes,order_by_timestamp());
-	int replace = get_list(indexes,0);
-	page_t* page = get_page_by_index(replace);
-	//TODO continua ejecucion normal con esta page xd
+page_t* replace_algorithm(long long timestamp,int key, char* value){
+	t_list* not_modified_pages = get_pages_by_modified(false);
+	int index;
+	page_t* found_page;
+
+	if(list_size(not_modified_pages) != 0){
+
+		t_list* indexes = list_map(not_modified_pages,(void*) page_get_index);
+
+		indexes = list_sorted(indexes,order_by_timestamp);
+
+		int replace = list_get(indexes,0);
+
+		//page_t* page = get_page_by_index(replace);
+
+		eliminate_page_instance_by_index(replace);
+
+		index = memory_insert(timestamp, key, value);
+		found_page = create_page(index, true);
+
+		return found_page;
+	}else{
+		journaling();
+		return NULL;
+	}
 }

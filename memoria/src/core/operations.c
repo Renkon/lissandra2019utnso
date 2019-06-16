@@ -76,13 +76,17 @@ void process_insert(insert_input_t* input) {
 				log_i("Se modifico el registro con key %u con el valor: %s ",input->key, input->value);
 			} else {
 				if (!memory_full()) {
+
 					index = memory_insert(input->timestamp, input->key, input->value);
 					found_page = create_page(index, true);
 					list_add(found_segment->page, found_page);
 
 					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", input->key, input->value, input->timestamp, found_segment->name);
 				} else {
-					//TODO JOURNALING + inserto devuelta.
+					found_page = replace_algorithm(input->timestamp, input->key, input->value);
+					list_add(found_segment->page, found_page);
+
+					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", input->key, input->value, input->timestamp, found_segment->name);
 				}
 			}
 
@@ -124,11 +128,11 @@ void process_drop(drop_input_t* input) {
 	found_segment = get_segment_by_name(g_segment_list,input->table_name);
 
 	if(found_segment != NULL){
-		//remove_segment(found_segment);
+		remove_segment(found_segment);
 
 		log_i("Se borro satisfactoriamente la tabla %d", found_segment->name);
 	}else{
-		log_i("No se encontro la tabla en memoria, se procede a enviar la peticion al FileSystem");
+		log_w("No se encontro la tabla en memoria, se procede a enviar la peticion al FileSystem");
 	}
 
 	//informo al FS

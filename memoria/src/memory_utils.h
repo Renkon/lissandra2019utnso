@@ -33,6 +33,11 @@ int memory_insert(long long timestamp, int key, char* value);
 bool memory_full();
 char* main_memory_values(int index,memory_var_t type);
 void modify_memory_by_index(int index,int key ,char* value);
+_Bool order_by_timestamp(int first_i,int second_i);
+void eliminate_page_instance_by_index(int index);
+void journaling();
+page_t* replace_algorithm(long long timestamp,int key, char* value);
+
 
 #endif /* MEMORY_UTILS_H_ */
 

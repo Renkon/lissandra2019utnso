@@ -85,3 +85,44 @@ segment_t* create_segment(char* table_name) {
 
   return segment;
 }
+
+t_list* get_pages_by_modified(bool modified){
+	segment_t* segment;
+	t_list* page_list;
+	page_t* page;
+	t_list* modified_pages_list = list_create();
+
+	for(int i = 0; i < list_size(g_segment_list); i++){
+		segment = list_get(g_segment_list,i);
+		page_list = segment->page;
+
+		for(int j = 0; j < list_size(page_list); j++){
+			page = list_get(page_list,j);
+
+			if(page->modified == modified){
+				list_add(modified_pages_list,page);
+			}
+		}
+	}
+
+	free(segment);
+	free(page_list);
+
+	return modified_pages_list;
+}
+
+void remove_segment(segment_t* segment){
+	t_list* page_list = segment->page;
+	page_t* page;
+
+	for(int i = 0; i < list_size(page_list); i++){
+		page = list_get(page_list,i);
+		strcpy(main_memory[page->index],"null");
+
+		free(page);
+	}
+
+	list_destroy(page_list);
+
+	free(segment);
+}
