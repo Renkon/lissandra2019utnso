@@ -84,6 +84,7 @@ void handle_request(void* args) {
 	conn_args_t* connection_args = (conn_args_t*) args;
 	packet_t* packet = malloc(sizeof(packet_t));
 	void* response;
+	void* payload;
 
 	pthread_detach(pthread_self());
 
@@ -102,25 +103,32 @@ void handle_request(void* args) {
 		// Paso 2: revisamos si es handshake o no
 		if (packet->header.operation == HANDSHAKE_IN) {
 			log_t("Recibi solicitud de handshake de %s", get_process_name(packet->header.process));
-			build_packet(packet, connection_args->process, HANDSHAKE_OUT, true, 0, NULL);
+			build_packet(packet, connection_args->process, HANDSHAKE_OUT, true, 0, NULL, NULL, true);
 			send2(connection_args->socket, packet);
 		} else { // Esto seria una peticion normal
-			char* dummy_response = " y he sido respondida";
+			//char* dummy_response = " y he sido respondida";
 
-			log_t("Recibi request de %s. Body: %s", get_process_name(packet->header.process), (char*) packet->content);
+			log_t("Recibi request de %s.", get_process_name(packet->header.process));
 
 			// TODO: agregar logica de recepcion del buffer
+			payload = deserialize_content(packet->content, packet->header.operation, packet->header.elements, packet->header.elements_size);
+
+			if (payload != NULL)
+				g_server_callbacks[packet->header.operation](payload);
+
 			// aca se procesa todo... y se obtiene un body
-			response = malloc(packet->header.content_length + strlen(dummy_response));
+			/*response = malloc(packet->header.content_length + strlen(dummy_response));
 			memcpy(response, packet->content, packet->header.content_length);
 			strcat(response, dummy_response);
 
 			build_packet(packet, connection_args->process, packet->header.operation + 1, packet->header.keep_alive,
-					packet->header.content_length + strlen(dummy_response), response);
+					packet->header.content_length + strlen(dummy_response), response, true);
 
 			send2(connection_args->socket, packet);
 
-			free(response);
+			free(response);*/
+
+			free_deserialized_content(payload, packet->header.operation);
 		}
 	}
 

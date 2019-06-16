@@ -18,14 +18,53 @@ int __recv(int socket, void* buffer, int bytes_to_read) {
 }
 
 int recv2(int socket, packet_t* packet) {
-	int bytes_read;
+	int bytes_read = 0;
+	int partial_header_size = sizeof(process_t) + sizeof(socket_operation_t) + sizeof(bool) + sizeof(int);
+	char* partial_buffer = malloc(partial_header_size);
+	int offset = 0;
 
-	if ((bytes_read = __recv(socket, &packet->header, sizeof(header_t))) <= 0)
+	// Primero, hay que traer las cosas del header
+	if ((bytes_read += __recv(socket, partial_buffer, partial_header_size)) <= 0)
 		return bytes_read; // que no lea basura si no trae bien la data
 
-	if (packet->header.content_length > 0) {
-		packet->content = realloc(packet->content, packet->header.content_length);
-		bytes_read += __recv(socket, packet->content, packet->header.content_length);
+	// Tenemos los primeros cuatro parametros del header, el cual tenemos que armar ahora.
+	packet->header.process = (process_t) *partial_buffer;
+	offset += sizeof(process_t);
+	packet->header.operation = (socket_operation_t) *(partial_buffer + offset);
+	offset += sizeof(socket_operation_t);
+	packet->header.keep_alive = *(partial_buffer + offset);
+	offset += sizeof(bool);
+	packet->header.elements = *(partial_buffer + offset);
+	offset += sizeof(int);
+
+	free(partial_buffer);
+	offset = 0;
+
+	// Sigo con los sizes y bool
+	partial_buffer = malloc(packet->header.elements * sizeof(int) + sizeof(bool));
+	bytes_read += __recv(socket, partial_buffer, packet->header.elements * sizeof(int) + sizeof(bool));
+
+	if (packet->header.elements == 0) {
+		packet->header.elements_size = NULL;
+	} else {
+		packet->header.elements_size = malloc(packet->header.elements * sizeof(int));
+		memcpy(packet->header.elements_size, partial_buffer, packet->header.elements * sizeof(int));
+		offset += packet->header.elements * sizeof(int);
+	}
+
+	// Y Terminamos de armar el header
+	packet->header.success = *(partial_buffer + offset);
+	offset += sizeof(bool);
+
+	free(partial_buffer);
+
+	if (packet->header.elements > 0) {
+		int total_content_length = 0;
+		for (int i = 0; i < packet->header.elements; i++)
+			total_content_length += packet->header.elements_size[i];
+
+		packet->content = realloc(packet->content, total_content_length);
+		bytes_read += __recv(socket, packet->content, total_content_length);
 	}
 
 	return bytes_read;
@@ -33,31 +72,65 @@ int recv2(int socket, packet_t* packet) {
 
 int send2(int socket, packet_t* packet) {
 	int bytes_sent;
-	int length = packet->header.content_length;
-	void* send_wrapper = malloc(sizeof(header_t) + length);
+	int content_length = 0;
+	int offset = 0;
 
-	memcpy(send_wrapper, &packet->header, sizeof(header_t));
-	memcpy(send_wrapper + sizeof(header_t), packet->content, length);
+	for (int i = 0; i < packet->header.elements; i++)
+		content_length += packet->header.elements_size[i];
 
-	bytes_sent = send(socket, send_wrapper, sizeof(header_t) + length, 0);
+	// como se envia lo serializado?
+	// [process|operation|keep_alive|elements|elements_size|success][content]
+	int wrapper_length = sizeof(process_t) + sizeof(socket_operation_t) + sizeof(bool) + sizeof(int) +
+			packet->header.elements * sizeof(int) + sizeof(bool) + content_length;
+	void* send_wrapper = malloc(wrapper_length);
+
+	memcpy(send_wrapper + offset, &(packet->header.process), sizeof(process_t));
+	offset += sizeof(process_t);
+	memcpy(send_wrapper + offset, &(packet->header.operation), sizeof(socket_operation_t));
+	offset += sizeof(socket_operation_t);
+	memcpy(send_wrapper + offset, &(packet->header.keep_alive), sizeof(bool));
+	offset += sizeof(bool);
+	memcpy(send_wrapper + offset, &(packet->header.elements), sizeof(int));
+	offset += sizeof(int);
+	memcpy(send_wrapper + offset, packet->header.elements_size, packet->header.elements * sizeof(int));
+	offset += packet->header.elements * sizeof(int);
+	memcpy(send_wrapper + offset, &(packet->header.success), sizeof(bool));
+	offset += sizeof(bool);
+	memcpy(send_wrapper + offset, packet->content, content_length);
+
+	bytes_sent = send(socket, send_wrapper, wrapper_length, 0);
+
 	free(send_wrapper);
 
 	return bytes_sent;
 }
 
-void build_packet(packet_t* packet, process_t process, operation_t operation, bool keep_alive, int length, void* content) {
+void build_packet(packet_t* packet, process_t process, socket_operation_t operation, bool keep_alive, int elements, int* elements_size, void* content, bool success) {
+	int content_length = 0;
+	int* iterator = elements_size;
+	for (int i = 0; i < elements; i++) {
+		content_length += *iterator;
+		iterator++;
+	}
+
 	packet->header.process = process;
 	packet->header.operation = operation;
 	packet->header.keep_alive = keep_alive;
-	packet->header.content_length = length;
-	packet->content = malloc(length);
+	packet->header.elements = elements;
+	packet->header.elements_size = elements_size;
+	packet->header.success = success;
+	if (content_length > 0) {
+		packet->content = malloc(content_length);
+	} else {
+		packet->content = NULL;
+	}
 
-	if (length > 0)
-		memcpy(packet->content, content, length);
+	serialize_content(packet->content, operation, content);
 }
 
 void free_packet(packet_t* packet) {
-	if (packet->header.content_length > 0) {
+	if (packet->header.elements > 0) {
+		free(packet->header.elements_size);
 		free(packet->content);
 	}
 	free(packet);

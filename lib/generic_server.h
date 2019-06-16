@@ -24,6 +24,8 @@ typedef struct {
 	process_t process;
 } conn_args_t;
 
+void (*g_server_callbacks[_LAST])(void*);
+
 bool init_server(int listen_port, process_t process);
 bool setup_server(void* args);
 void handle_request(void* args);
