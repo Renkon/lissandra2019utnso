@@ -261,7 +261,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			insert_input->value = malloc(strlen(tokens[3]) + 1);
 			insert_input->value = memcpy(insert_input->value, tokens[3], strlen(tokens[3]) + 1);
 			if (tokens_size == 5)
-				insert_input->timestamp = string_to_long(tokens[4]);
+				insert_input->timestamp = string_to_long_long(tokens[4]);
 			else
 				insert_input->timestamp = -1;
 

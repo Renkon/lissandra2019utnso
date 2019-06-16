@@ -1,5 +1,7 @@
 #include "directorys.h"
 
+char * get_tmpc_name = "A1.tmpc";
+
 char* create_new_directory(char* old_directory, char* directory_end) {
 	//Con esto creo nuevos directorios, mas que nada para crear de forma mas comoda los path a las nuevas tablas
 	char* new_path = malloc(strlen(old_directory) + strlen(directory_end) + 1);

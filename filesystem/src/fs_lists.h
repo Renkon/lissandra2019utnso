@@ -8,7 +8,7 @@
 
 typedef struct {
 	char*	name;
-	t_list*	records;
+	t_list*	tkvs;
 
 }table_t;
 
