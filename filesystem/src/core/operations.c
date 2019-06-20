@@ -23,6 +23,11 @@ void process_select(select_input_t* input, response_t* response) {
 	} else {
 		//Si no existe la tabla entonces se termina la operacion
 		log_w("La tabla %s no existe. Operacion SELECT cancelada",table_name_upper);
+		// entonces instanciamos un elemento con timestamp -2 para decirle che capo no existe la tabla
+		key_found = malloc(sizeof(record_t));
+		key_found->key = -2;
+		key_found->timestamp = -2;
+		key_found->value = strdup("-2");
 	}
 
 	free(initial_table_dir);
@@ -32,14 +37,6 @@ void process_select(select_input_t* input, response_t* response) {
 		free(key_found->value);
 		free(key_found);
 	} else {
-		if (key_found == NULL) { // si es null quiere decir que no existe la tabla
-			// entonces instanciamos un elemento con timestamp -2 para decirle che capo no existe la tabla
-			key_found = malloc(sizeof(record_t));
-			key_found->key = -2;
-			key_found->timestamp = -2;
-			key_found->value = strdup("-2");
-		}
-
 		set_response(response, key_found);
 	}
 }
