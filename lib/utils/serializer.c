@@ -424,9 +424,15 @@ void* deserialize_content(void* from, socket_operation_t operation, int elements
 }
 
 void free_deserialized_content(void* content, socket_operation_t operation) {
+	t_list* describe_list;
+
 	switch (operation) {
 		case SELECT_IN:
 			free(((select_input_t*) content)->table_name);
+			free(content);
+		break;
+		case SELECT_OUT:
+			free(((record_t*) content)->value);
 			free(content);
 		break;
 		case INSERT_IN:
@@ -434,16 +440,34 @@ void free_deserialized_content(void* content, socket_operation_t operation) {
 			free(((insert_input_t*) content)->value);
 			free(content);
 		break;
+		case INSERT_OUT:
+			free(content);
+		break;
 		case CREATE_IN:
 			free(((create_input_t*) content)->table_name);
+			free(content);
+		break;
+		case CREATE_OUT:
 			free(content);
 		break;
 		case DESCRIBE_IN:
 			free(((describe_input_t*) content)->table_name);
 			free(content);
 		break;
+		case DESCRIBE_OUT:
+			describe_list = (t_list*) content;
+			for (int i = 0; i < list_size(describe_list); i++)
+				free(list_get(describe_list, i));
+			list_destroy(describe_list);
+		break;
 		case DROP_IN:
 			free(((drop_input_t*) content)->table_name);
+			free(content);
+		break;
+		case DROP_OUT:
+			free(content);
+		break;
+		case JOURNAL_OUT:
 			free(content);
 		break;
 		default:
