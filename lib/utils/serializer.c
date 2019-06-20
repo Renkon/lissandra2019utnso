@@ -96,7 +96,6 @@ elements_network_t elements_describe_out_info(void* input) {
 	int* iterator = element_info.elements_size;
 
 	for (int i = 0; i < list_size(describe_list); i++) {
-		table_metadata_t* list_metadata = (table_metadata_t*) list_get(describe_list, i);
 		*iterator = sizeof(consistency_t);
 		iterator++;
 		*iterator = sizeof(int);
