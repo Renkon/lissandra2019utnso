@@ -499,4 +499,3 @@ void free_deserialized_content(void* content, socket_operation_t operation) {
 		break;
 	}
 }
-

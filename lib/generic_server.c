@@ -104,6 +104,7 @@ void handle_request(void* args) {
 		// Paso 2: revisamos si es handshake o no
 		if (packet->header.operation == HANDSHAKE_IN) {
 			log_t("Recibi solicitud de handshake de %s", get_process_name(packet->header.process));
+			free_packet_content(packet);
 			build_packet(packet, connection_args->process, HANDSHAKE_OUT, true, 0, NULL, NULL, true);
 			send2(connection_args->socket, packet);
 		} else { // Esto seria una peticion normal
@@ -117,6 +118,7 @@ void handle_request(void* args) {
 
 			// Ya tenemos la response lista aca.
 			element_info = get_out_element_info(packet->header.operation + 1, response->result);
+			free_packet_content(packet);
 			build_packet(packet, connection_args->process, packet->header.operation + 1, false, element_info.elements, element_info.elements_size,
 					response->result, true);
 

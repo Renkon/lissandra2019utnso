@@ -3,6 +3,8 @@
 #include <semaphore.h>
 #include <stdlib.h>
 #include "commons/collections/list.h"
+#include "network_types.h"
+#include "../shared_types/shared_types.h"
 
 #ifndef UTILS_RESPONSE_H_
 #define UTILS_RESPONSE_H_
