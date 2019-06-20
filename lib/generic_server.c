@@ -107,11 +107,8 @@ void handle_request(void* args) {
 			build_packet(packet, connection_args->process, HANDSHAKE_OUT, true, 0, NULL, NULL, true);
 			send2(connection_args->socket, packet);
 		} else { // Esto seria una peticion normal
-			//char* dummy_response = " y he sido respondida";
-
 			log_t("Recibi request de %s.", get_process_name(packet->header.process));
 
-			// TODO: agregar logica de recepcion del buffer
 			payload = deserialize_content(packet->content, packet->header.operation, packet->header.elements, packet->header.elements_size);
 			response = generate_response_object();
 
@@ -120,18 +117,17 @@ void handle_request(void* args) {
 
 			// Ya tenemos la response lista aca.
 			element_info = get_out_element_info(packet->header.operation + 1, response->result);
-
 			build_packet(packet, connection_args->process, packet->header.operation + 1, false, element_info.elements, element_info.elements_size,
 					response->result, true);
 
-			// Le mandamos -1 porque en realidad ya cambio la operacion
+			// Le mandamos OPERATION-1 porque en realidad ya cambio la operacion
 			free_deserialized_content(payload, packet->header.operation - 1);
 			send2(connection_args->socket, packet);
 			destroy_response(response);
 		}
 	}
 
-	shutdown(connection_args->socket, SHUT_RD);
+	shutdown(connection_args->socket, SHUT_RDWR);
 	close(connection_args->socket);
 	free(packet);
 	free(args);

@@ -54,7 +54,7 @@ int setup_connection(process_t process, char* ip, int port) {
 }
 
 void kill_connection(int socket) {
-	shutdown(socket, SHUT_WR);
+	shutdown(socket, SHUT_RDWR);
 	close(socket);
 }
 
