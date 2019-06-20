@@ -103,7 +103,7 @@ int send2(int socket, packet_t* packet) {
 	bytes_sent = send(socket, send_wrapper, wrapper_length, 0);
 
 	free(send_wrapper);
-	free_packet(packet);
+	free_packet_content(packet);
 	return bytes_sent;
 }
 
@@ -130,10 +130,10 @@ void build_packet(packet_t* packet, process_t process, socket_operation_t operat
 	serialize_content(packet->content, operation, content);
 }
 
-void free_packet(packet_t* packet) {
+void free_packet_content(packet_t* packet) {
 	if (packet->header.elements > 0) {
 		free(packet->header.elements_size);
 		free(packet->content);
+		packet->content = NULL;
 	}
-	free(packet);
 }

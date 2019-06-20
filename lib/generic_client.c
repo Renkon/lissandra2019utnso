@@ -40,13 +40,15 @@ int setup_connection(process_t process, char* ip, int port) {
 
 	if (packet->header.operation != HANDSHAKE_OUT) {
 		log_w("El servidor no respondio el handshake. Se cancela la solicitud");
-		free_packet(packet);
+		free_packet_content(packet);
+		free(packet);
 		return -4;
 	}
 
 	log_t("Se realizo el handshake satisfactoriamente");
 
-	free_packet(packet);
+	free_packet_content(packet);
+	free(packet);
 
 	return connection_socket;
 }
@@ -92,7 +94,8 @@ void do_request(void* arguments) {
 
 	// Recibimos el paquete de respuesta del servidor
 	if (recv2(socket, packet) <= 0) { // Si me devuelve 0 o menos, fallo el recv.
-		free_packet(packet);
+		free_packet_content(packet);
+		free(packet);
 		log_w("El servidor cerro la conexion. Se cancela la request");
 	} else {
 		successful = packet->header.success;
@@ -102,7 +105,8 @@ void do_request(void* arguments) {
 	args->callback(deserialized_content);
 
 	kill_connection(socket);
-	free_packet(packet);
+	free_packet_content(packet);
+	free(packet);
 	free(arguments);
 }
 
