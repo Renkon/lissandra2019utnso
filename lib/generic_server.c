@@ -131,7 +131,9 @@ void handle_request(void* args) {
 		}
 	}
 
+	shutdown(connection_args->socket, SHUT_RD);
 	close(connection_args->socket);
+	free(packet);
 	free(args);
 }
 

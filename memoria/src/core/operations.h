@@ -24,6 +24,6 @@ void create_callback(void* response);
 void describe_callback(void* response);
 void select_callback(void* response);
 
-
+void cleanup_select_input(void* input);
 
 #endif /* CORE_OPERATIONS3_H_ */

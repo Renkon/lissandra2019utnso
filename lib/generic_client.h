@@ -14,10 +14,11 @@ typedef struct {
 	int* elements_length;
 	void (*callback)(void*);
 	bool success;
+	void (*free_content)(void*);
 } client_conn_args_t;
 
 int setup_connection(process_t process, char* ip, int port);
-void do_simple_request(process_t process, char* ip, int port, socket_operation_t operation, void* content, int elements, int* elements_length, void (*callback)(void*), bool success);
+void do_simple_request(process_t process, char* ip, int port, socket_operation_t operation, void* content, int elements, int* elements_length, void (*callback)(void*), bool success, void (*free_content)(void*));
 void do_request(void* args);
 
 #endif /* GENERIC_CLIENT_H_ */

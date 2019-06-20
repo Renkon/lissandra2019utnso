@@ -54,10 +54,11 @@ int setup_connection(process_t process, char* ip, int port) {
 }
 
 void kill_connection(int socket) {
+	shutdown(socket, SHUT_WR);
 	close(socket);
 }
 
-void do_simple_request(process_t process, char* ip, int port, socket_operation_t operation, void* content, int elements, int* elements_length, void (*callback)(void*), bool success) {
+void do_simple_request(process_t process, char* ip, int port, socket_operation_t operation, void* content, int elements, int* elements_length, void (*callback)(void*), bool success, void (*free_content)(void*)) {
 	pthread_t thread;
 	client_conn_args_t* args = malloc(sizeof(client_conn_args_t));
 	args->process = process;
@@ -69,6 +70,7 @@ void do_simple_request(process_t process, char* ip, int port, socket_operation_t
 	args->elements_length = elements_length;
 	args->callback = callback;
 	args->success = success;
+	args->free_content = free_content;
 
 	if (pthread_create(&thread, NULL, (void*) do_request, (void*) args)) {
 		log_e("No se pudo inicializar el hilo para la solicitud");
@@ -91,6 +93,9 @@ void do_request(void* arguments) {
 	build_packet(packet, args->process, args->operation, false, args->elements, args->elements_length, args->content, args->success);
 
 	send2(socket, packet);
+
+	if (args->free_content != NULL)
+		args->free_content(args->content);
 
 	// Recibimos el paquete de respuesta del servidor
 	if (recv2(socket, packet) <= 0) { // Si me devuelve 0 o menos, fallo el recv.
