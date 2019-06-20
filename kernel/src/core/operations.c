@@ -1,6 +1,6 @@
 #include "operations.h"
 
-void process_select(select_input_t* input) {
+void process_select(select_input_t* input, response_t* response) {
 	pcb_t* pcb = get_new_pcb();
 	statement_t* statement = malloc(sizeof(statement_t));
 
@@ -15,7 +15,7 @@ void process_select(select_input_t* input) {
 	list_add(g_scheduler_queues.new, pcb);
 }
 
-void process_insert(insert_input_t* input) {
+void process_insert(insert_input_t* input, response_t* response) {
 	pcb_t* pcb = get_new_pcb();
 	statement_t* statement = malloc(sizeof(statement_t));
 
@@ -33,7 +33,7 @@ void process_insert(insert_input_t* input) {
 	list_add(g_scheduler_queues.new, pcb);
 }
 
-void process_create(create_input_t* input) {
+void process_create(create_input_t* input, response_t* response) {
 	pcb_t* pcb = get_new_pcb();
 	statement_t* statement = malloc(sizeof(statement_t));
 
@@ -50,7 +50,7 @@ void process_create(create_input_t* input) {
 	list_add(g_scheduler_queues.new, pcb);
 }
 
-void process_describe(describe_input_t* input) {
+void process_describe(describe_input_t* input, response_t* response) {
 	pcb_t* pcb = get_new_pcb();
 	statement_t* statement = malloc(sizeof(statement_t));
 
@@ -68,7 +68,7 @@ void process_describe(describe_input_t* input) {
 	list_add(g_scheduler_queues.new, pcb);
 }
 
-void process_drop(drop_input_t* input) {
+void process_drop(drop_input_t* input, response_t* response) {
 	pcb_t* pcb = get_new_pcb();
 	statement_t* statement = malloc(sizeof(statement_t));
 
@@ -82,7 +82,7 @@ void process_drop(drop_input_t* input) {
 	list_add(g_scheduler_queues.new, pcb);
 }
 
-void process_journal() {
+void process_journal(response_t* response) {
 	// TODO: invocar a una memoria para hacer journaling
 }
 
