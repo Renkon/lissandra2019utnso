@@ -4,7 +4,6 @@ response_t* generate_response_object() {
 	response_t* response = malloc(sizeof(response_t));
 	response->id = generate_id();
 	response->result = NULL;
-	response->with_result = false;
 	response->semaphore = malloc(sizeof(sem_t));
 
 	sem_init(response->semaphore, 0, 1);
@@ -16,14 +15,18 @@ void wait_for_response(response_t* response) {
 	sem_wait(response->semaphore);
 }
 
-void set_response(response_t* response, bool with_result, void* result) {
-	response->with_result = with_result;
-
-	if (with_result)
-		response->result = result;
+void set_response(response_t* response, void* result) {
+	response->result = result;
 
 	// si no se bloqueo no pasa nada, hace el post igual.
 	sem_post(response->semaphore);
+}
+
+void destroy_response(response_t* response) {
+	sem_destroy(response->semaphore);
+	free(response->semaphore);
+	remove_id(response->id);
+	free(response);
 }
 
 void setup_response_id_generator() {

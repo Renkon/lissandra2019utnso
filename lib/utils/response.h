@@ -9,7 +9,6 @@
 
 typedef struct {
 	int id;
-	bool with_result;
 	sem_t* semaphore;
 	void* result;
 } response_t;
@@ -17,6 +16,9 @@ typedef struct {
 t_list* g_response_ids;
 
 response_t* generate_response_object();
+void wait_for_response(response_t* response);
+void set_response(response_t* response, void* result);
+void destroy_response(response_t* response);
 void setup_response_id_generator();
 int generate_id();
 void remove_id(int id);
