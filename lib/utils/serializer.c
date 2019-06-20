@@ -12,6 +12,20 @@ elements_network_t elements_select_in_info(void* input) {
 	return element_info;
 }
 
+elements_network_t elements_select_out_info(void* input) {
+	record_t* record = (record_t*) input;
+	elements_network_t element_info = init_elements_info(3);
+	int* iterator = element_info.elements_size;
+
+	*iterator = sizeof(long long);
+	iterator++;
+	*iterator = sizeof(int);
+	iterator++;
+	*iterator = strlen(record->value) + 1;
+
+	return element_info;
+}
+
 elements_network_t elements_insert_in_info(void* input) {
 	insert_input_t* insert_input = (insert_input_t*) input;
 	elements_network_t element_info = init_elements_info(4);
@@ -24,6 +38,15 @@ elements_network_t elements_insert_in_info(void* input) {
 	*iterator = strlen(insert_input->value) + 1;
 	iterator++;
 	*iterator = sizeof(long long);
+
+	return element_info;
+}
+
+elements_network_t elements_insert_out_info(void* input) {
+	elements_network_t element_info = init_elements_info(1);
+	int* iterator = element_info.elements_size;
+
+	*iterator = sizeof(int);
 
 	return element_info;
 }
@@ -44,6 +67,15 @@ elements_network_t elements_create_in_info(void* input) {
 	return element_info;
 }
 
+elements_network_t elements_create_out_info(void* input) {
+	elements_network_t element_info = init_elements_info(1);
+	int* iterator = element_info.elements_size;
+
+	*iterator = sizeof(int);
+
+	return element_info;
+}
+
 elements_network_t elements_describe_in_info(void* input) {
 	describe_input_t* describe_input = (describe_input_t*) input;
 	elements_network_t element_info;
@@ -53,6 +85,24 @@ elements_network_t elements_describe_in_info(void* input) {
 		element_info = init_elements_info(1);
 		int* iterator = element_info.elements_size;
 		*iterator = strlen(describe_input->table_name) + 1;
+	}
+
+	return element_info;
+}
+
+elements_network_t elements_describe_out_info(void* input) {
+	t_list* describe_list = (t_list*) input;
+	elements_network_t element_info = init_elements_info(3 * list_size(describe_list));
+	int* iterator = element_info.elements_size;
+
+	for (int i = 0; i < list_size(describe_list); i++) {
+		table_metadata_t* list_metadata = (table_metadata_t*) list_get(describe_list, i);
+		*iterator = sizeof(consistency_t);
+		iterator++;
+		*iterator = sizeof(int);
+		iterator++;
+		*iterator = sizeof(long);
+		iterator++;
 	}
 
 	return element_info;
@@ -68,8 +118,26 @@ elements_network_t elements_drop_in_info(void* input) {
 	return element_info;
 }
 
+elements_network_t elements_drop_out_info(void* input) {
+	elements_network_t element_info = init_elements_info(1);
+	int* iterator = element_info.elements_size;
+
+	*iterator = sizeof(int);
+
+	return element_info;
+}
+
 elements_network_t elements_journal_in_info(void* input) {
 	return init_elements_info(0);
+}
+
+elements_network_t elements_journal_out_info(void* input) {
+	elements_network_t element_info = init_elements_info(1);
+	int* iterator = element_info.elements_size;
+
+	*iterator = sizeof(int);
+
+	return element_info;
 }
 
 elements_network_t init_elements_info(int elements) {

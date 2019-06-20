@@ -119,6 +119,7 @@ void handle_request(void* args) {
 
 			// Ya tenemos la response lista aca.
 
+
 			// aca se procesa todo... y se obtiene un body
 			/*response = malloc(packet->header.content_length + strlen(dummy_response));
 			memcpy(response, packet->content, packet->header.content_length);
