@@ -9,6 +9,7 @@
 #include "generic_server.h"
 #include "../core/operations.h"
 #include "../filesystem/filesystem.h"
+#include "utils/response.h"
 
 typedef struct {
 	int port;

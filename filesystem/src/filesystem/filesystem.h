@@ -9,6 +9,7 @@
 #include "../directorys.h"
 #include "../lissandra/lissandra.h"
 #include "../fs_lists.h"
+#include "shared_types/shared_types.h"
 
 
 typedef struct  {
@@ -22,13 +23,6 @@ typedef struct {
 	int size;
 	int* blocks;
 } partition_t;
-
-
-typedef struct {
-	long long timestamp;
-	int key;
-	char* value;
-} record_t;
 
 typedef struct {
 	char* tkv;
