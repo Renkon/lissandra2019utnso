@@ -10,6 +10,7 @@ int main(void) {
 	mem_table = list_create();
 	get_tmpc_name = "A1.tmpc";
 	init_config(FSCFG, initialize_fs_config, update_fs_config, g_config_keys, g_config_keys_size);
+	init_server_callbacks();
 	init_server(g_config.port, FILESYSTEM);
 	setup_response_id_generator();
 	init_console("Papito codeo en Assembler - Filesystem v1.0", "filesystem>", FILESYSTEM, get_callbacks());

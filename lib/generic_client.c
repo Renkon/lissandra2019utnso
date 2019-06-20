@@ -77,6 +77,7 @@ void do_request(void* arguments) {
 	client_conn_args_t* args = (client_conn_args_t*) arguments;
 	int socket;
 	packet_t* packet;
+	void* deserialized_content;
 	bool successful = false;
 
 	pthread_detach(pthread_self());
@@ -89,6 +90,9 @@ void do_request(void* arguments) {
 
 	send2(socket, packet);
 
+	free(packet->header.elements_size);
+	free(packet->content);
+
 	// Recibimos el paquete de respuesta del servidor
 	if (recv2(socket, packet) <= 0) { // Si me devuelve 0 o menos, fallo el recv.
 		free_packet(packet);
@@ -97,7 +101,8 @@ void do_request(void* arguments) {
 		successful = packet->header.success;
 	}
 
-	args->callback(packet->content);
+	deserialized_content = deserialize_content(packet->content, packet->header.operation, packet->header.elements, packet->header.elements_size);
+	args->callback(deserialized_content);
 
 	kill_connection(socket);
 	free_packet(packet);

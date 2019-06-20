@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include "../memory_utils.h"
 #include "utils/response.h"
+#include "utils/serializer.h"
 
 void process_select(select_input_t* input, response_t* response);
 void process_insert(insert_input_t* input, response_t* response);
