@@ -8,7 +8,6 @@ typedef struct {
 	long long timestamp;
 	int key;
 	char* value;
-	int charsize;
 } record_t;
 
 typedef struct {

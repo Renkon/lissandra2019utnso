@@ -83,7 +83,7 @@ void process_insert(insert_input_t* input) {
 
 					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", input->key, input->value, input->timestamp, found_segment->name);
 				} else {
-					found_page = replace_algorithm(input->timestamp, input->key, input->value);
+					found_page = replace_algorithm(found_segment,input->timestamp, input->key, input->value);
 					list_add(found_segment->page, found_page);
 
 					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", input->key, input->value, input->timestamp, found_segment->name);

@@ -94,8 +94,19 @@ bool order_by_timestamp(int first_i,int second_i){
 
 }
 
-void eliminate_page_instance_by_index(int index){
+void eliminate_page_instance_by_index(segment_t* segment, int index){
+	page_t* page = get_page_by_index(segment, index);
+	int index_in_memory = page->index;
 
+	strcpy(main_memory[index_in_memory],"null");
+
+	int position = get_position_by_index(segment->page,index);
+
+	if(position != -1){
+		list_remove_and_destroy_element(segment->page,position,(void*) destroy_page);
+	}else{
+		log_w("NO se encontro la pagina, abortando");//nunca deberia pasar esto xd
+	}
 }
 
 void journaling(){
@@ -118,7 +129,7 @@ void journaling(){
 	}
 }
 
-page_t* replace_algorithm(long long timestamp,int key, char* value){
+page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* value){
 	t_list* not_modified_pages = get_pages_by_modified(false);
 	int index;
 	page_t* found_page;
@@ -133,7 +144,7 @@ page_t* replace_algorithm(long long timestamp,int key, char* value){
 
 		//page_t* page = get_page_by_index(replace);
 
-		eliminate_page_instance_by_index(replace);
+		eliminate_page_instance_by_index(segment,replace);
 
 		index = memory_insert(timestamp, key, value);
 		found_page = create_page(index, true);

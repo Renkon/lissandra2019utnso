@@ -21,6 +21,19 @@ segment_t* get_segment_by_name(t_list* list, char* table_name) {
 	 return i < list_size(list) ? segment_found : NULL;
 }
 
+int get_position_by_index(t_list* page_list, int index){
+	int i;
+	page_t* page;
+
+	for(; i < list_size(page_list); i++){
+		page = list_get(page_list,i);
+		if(page->index == index){
+			break;
+		}
+	}
+	return i < list_size(page_list)?i:-1;
+}
+
 page_t* get_page_by_key(segment_t* segment, t_list* index_list, int key) {
 	page_t* page_found;
 	int index;
@@ -111,18 +124,24 @@ t_list* get_pages_by_modified(bool modified){
 	return modified_pages_list;
 }
 
+void destroy_page(page_t* page){
+	free(page);
+}
+
 void remove_segment(segment_t* segment){
-	t_list* page_list = segment->page;
-	page_t* page;
 
-	for(int i = 0; i < list_size(page_list); i++){
-		page = list_get(page_list,i);
-		strcpy(main_memory[page->index],"null");
+	t_list* indexes = list_map(segment->page,(void*) page_get_index);
+	int index;
 
-		free(page);
+	for(int i = 0; i < list_size(indexes); i++){
+		index = list_get(indexes,i);
+		strcpy(main_memory[index],"null");
 	}
 
-	list_destroy(page_list);
+	list_destroy_and_destroy_elements(segment->page,(void*)destroy_page);
+
+	free(indexes);
 
 	free(segment);
 }
+
