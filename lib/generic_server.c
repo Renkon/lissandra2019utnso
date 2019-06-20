@@ -83,8 +83,8 @@ void handle_request(void* args) {
 	int received_bytes = 1;
 	conn_args_t* connection_args = (conn_args_t*) args;
 	packet_t* packet = malloc(sizeof(packet_t));
-	void* response;
 	void* payload;
+	response_t* response = NULL;
 
 	pthread_detach(pthread_self());
 
@@ -112,9 +112,12 @@ void handle_request(void* args) {
 
 			// TODO: agregar logica de recepcion del buffer
 			payload = deserialize_content(packet->content, packet->header.operation, packet->header.elements, packet->header.elements_size);
+			response = generate_response_object();
 
 			if (payload != NULL)
-				g_server_callbacks[packet->header.operation](payload);
+				g_server_callbacks[packet->header.operation](payload, response);
+
+			// Ya tenemos la response lista aca.
 
 			// aca se procesa todo... y se obtiene un body
 			/*response = malloc(packet->header.content_length + strlen(dummy_response));

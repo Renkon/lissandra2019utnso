@@ -25,6 +25,7 @@ void set_response(response_t* response, void* result) {
 void destroy_response(response_t* response) {
 	sem_destroy(response->semaphore);
 	free(response->semaphore);
+	free(response->result);
 	remove_id(response->id);
 	free(response);
 }

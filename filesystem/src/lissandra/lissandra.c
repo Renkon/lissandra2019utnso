@@ -21,3 +21,11 @@ callbacks_t* get_callbacks() {
 	return get_input_callbacks(process_select, process_insert, process_create, process_describe,
 			process_drop, NULL, NULL, NULL, NULL);
 }
+
+void init_server_callbacks() {
+	g_server_callbacks[SELECT_IN] = process_select;
+	g_server_callbacks[INSERT_IN] = process_insert;
+	g_server_callbacks[CREATE_IN] = process_create;
+	g_server_callbacks[DESCRIBE_IN] = process_describe;
+	g_server_callbacks[DROP_IN] = process_drop;
+}

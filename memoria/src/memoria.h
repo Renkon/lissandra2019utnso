@@ -38,6 +38,7 @@ memconfig_t g_config;
 extern char* g_config_keys[];
 extern int g_config_keys_size;
 
+void init_server_callbacks();
 void create_dummy();
 
 //GLOBAL STATMENTS

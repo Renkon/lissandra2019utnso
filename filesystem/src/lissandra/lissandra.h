@@ -26,5 +26,6 @@ extern int g_config_keys_size;
 extern t_list* mem_table;
 
 callbacks_t* get_callbacks();
+void init_server_callbacks();
 
 #endif /* FILESYSTEM_H_ */
