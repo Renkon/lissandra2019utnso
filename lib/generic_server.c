@@ -84,7 +84,8 @@ void handle_request(void* args) {
 	conn_args_t* connection_args = (conn_args_t*) args;
 	packet_t* packet = malloc(sizeof(packet_t));
 	void* payload;
-	response_t* response = NULL;
+	response_t* response;
+	elements_network_t element_info;
 
 	pthread_detach(pthread_self());
 
@@ -118,20 +119,15 @@ void handle_request(void* args) {
 				g_server_callbacks[packet->header.operation](payload, response);
 
 			// Ya tenemos la response lista aca.
+			element_info = get_out_element_info(packet->header.operation + 1, response->result);
 
-
-			// aca se procesa todo... y se obtiene un body
-			/*response = malloc(packet->header.content_length + strlen(dummy_response));
-			memcpy(response, packet->content, packet->header.content_length);
-			strcat(response, dummy_response);
-
-			build_packet(packet, connection_args->process, packet->header.operation + 1, packet->header.keep_alive,
-					packet->header.content_length + strlen(dummy_response), response, true);
+			build_packet(packet, connection_args->process, packet->header.operation + 1, false, element_info.elements, element_info.elements_size,
+					response->result, true);
 
 			send2(connection_args->socket, packet);
 
-			free(response);*/
-
+			free(element_info.elements_size);
+			destroy_response(response);
 			free_deserialized_content(payload, packet->header.operation);
 		}
 	}

@@ -152,6 +152,32 @@ elements_network_t init_elements_info(int elements) {
 	return element_info;
 }
 
+elements_network_t get_out_element_info(socket_operation_t operation, void* input) {
+	switch(operation) {
+		case SELECT_OUT:
+			return elements_select_out_info(input);
+		break;
+		case INSERT_OUT:
+			return elements_insert_out_info(input);
+		break;
+		case CREATE_OUT:
+			return elements_create_out_info(input);
+		break;
+		case DESCRIBE_OUT:
+			return elements_describe_out_info(input);
+		break;
+		case DROP_OUT:
+			return elements_drop_out_info(input);
+		break;
+		case JOURNAL_OUT:
+			return elements_journal_out_info(input);
+		break;
+		default:
+			return init_elements_info(0);
+		break;
+	}
+}
+
 void serialize_content(void* to, socket_operation_t operation, void* from) {
 	select_input_t* select;
 	record_t* record_select;
