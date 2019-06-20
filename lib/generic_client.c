@@ -104,6 +104,7 @@ void do_request(void* arguments) {
 	deserialized_content = deserialize_content(packet->content, packet->header.operation, packet->header.elements, packet->header.elements_size);
 	args->callback(deserialized_content);
 
+	free_deserialized_content(deserialized_content, packet->header.operation);
 	kill_connection(socket);
 	free_packet_content(packet);
 	free(packet);
