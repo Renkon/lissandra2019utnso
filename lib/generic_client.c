@@ -90,9 +90,6 @@ void do_request(void* arguments) {
 
 	send2(socket, packet);
 
-	free(packet->header.elements_size);
-	free(packet->content);
-
 	// Recibimos el paquete de respuesta del servidor
 	if (recv2(socket, packet) <= 0) { // Si me devuelve 0 o menos, fallo el recv.
 		free_packet(packet);

@@ -63,7 +63,9 @@ int recv2(int socket, packet_t* packet) {
 		for (int i = 0; i < packet->header.elements; i++)
 			total_content_length += packet->header.elements_size[i];
 
-		packet->content = realloc(packet->content, total_content_length);
+		if (packet->content != NULL)
+			free(packet->content);
+		packet->content = malloc(total_content_length);
 		bytes_read += __recv(socket, packet->content, total_content_length);
 	}
 
@@ -101,7 +103,7 @@ int send2(int socket, packet_t* packet) {
 	bytes_sent = send(socket, send_wrapper, wrapper_length, 0);
 
 	free(send_wrapper);
-
+	free_packet(packet);
 	return bytes_sent;
 }
 

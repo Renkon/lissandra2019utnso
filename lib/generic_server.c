@@ -124,16 +124,14 @@ void handle_request(void* args) {
 			build_packet(packet, connection_args->process, packet->header.operation + 1, false, element_info.elements, element_info.elements_size,
 					response->result, true);
 
+			free_deserialized_content(payload, packet->header.operation);
 			send2(connection_args->socket, packet);
-
 			free(element_info.elements_size);
 			destroy_response(response);
-			free_deserialized_content(payload, packet->header.operation);
 		}
 	}
 
 	close(connection_args->socket);
-	free_packet(packet);
 	free(args);
 }
 
