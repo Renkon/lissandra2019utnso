@@ -108,6 +108,7 @@ void handle_request(void* args) {
 			build_packet(packet, connection_args->process, HANDSHAKE_OUT, true, 0, NULL, NULL, true);
 			send2(connection_args->socket, packet);
 		} else { // Esto seria una peticion normal
+			socket_operation_t operation;
 			log_t("Recibi request de %s.", get_process_name(packet->header.process));
 
 			payload = deserialize_content(packet->content, packet->header.operation, packet->header.elements, packet->header.elements_size);
@@ -123,9 +124,10 @@ void handle_request(void* args) {
 					response->result, true);
 
 			// Le mandamos OPERATION-1 porque en realidad ya cambio la operacion
-			free_deserialized_content(payload, packet->header.operation - 1);
+			operation = packet->header.operation;
+			free_deserialized_content(payload, operation - 1);
 			send2(connection_args->socket, packet);
-			destroy_response(response);
+			destroy_response(response, operation);
 		}
 	}
 

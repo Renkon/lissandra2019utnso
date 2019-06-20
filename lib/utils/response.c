@@ -22,10 +22,26 @@ void set_response(response_t* response, void* result) {
 	sem_post(response->semaphore);
 }
 
-void destroy_response(response_t* response) {
+void destroy_response(response_t* response, socket_operation_t operation) {
 	sem_destroy(response->semaphore);
 	free(response->semaphore);
-	free(response->result);
+
+	// El cleanup del result varia segun el tipo
+	switch (operation) {
+		case SELECT_OUT:
+			free(((record_t*) response->result)->value);
+			free(response->result);
+		break;
+		case DESCRIBE_OUT:
+			for (int i = 0; i < list_size((t_list*) response->result); i++)
+				free(list_get((t_list*) response->result, i));
+			list_destroy((t_list*) response->result);
+		break;
+		default:
+			free(response->result);
+		break;
+	}
+
 	remove_id(response->id);
 	free(response);
 }

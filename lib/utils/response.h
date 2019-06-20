@@ -20,7 +20,7 @@ t_list* g_response_ids;
 response_t* generate_response_object();
 void wait_for_response(response_t* response);
 void set_response(response_t* response, void* result);
-void destroy_response(response_t* response);
+void destroy_response(response_t* response, socket_operation_t operation);
 void setup_response_id_generator();
 int generate_id();
 void remove_id(int id);
