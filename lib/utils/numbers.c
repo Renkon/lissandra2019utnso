@@ -10,3 +10,8 @@ int digits_in_a_number(long long number) {
 
 	return totalDigits;
 }
+
+
+unsigned int division_rounded_up(unsigned int dividend, unsigned int divisor){
+    return (dividend + (divisor - 1)) / divisor;
+}

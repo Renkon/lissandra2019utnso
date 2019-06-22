@@ -75,6 +75,7 @@ void process_create(create_input_t* input) {
 	char* table_name_upper = to_uppercase(input->table_name);
 	char* bitmap_dir = get_bitmap_directory();
 	t_bitarray* bitmap = read_bitmap(bitmap_dir);
+	//Creo un array  de tantos bloques como particiones pida
 	int blocks[(input->partitions)];
 
 	//Quiero saber si hay tantos bloques libres como particiones asi que busco cuantos bloques libres hay
