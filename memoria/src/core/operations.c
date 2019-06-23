@@ -130,12 +130,12 @@ void process_drop(drop_input_t* input) {
 	if(found_segment != NULL){
 		remove_segment(found_segment);
 
-		log_i("Se borro satisfactoriamente la tabla %d", found_segment->name);
+		log_i("Se borro satisfactoriamente la tabla %s", input->table_name);
 	}else{
 		log_w("No se encontro la tabla en memoria, se procede a enviar la peticion al FileSystem");
 	}
 
-	//informo al FS
+	//TODO informo al FS
 	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DROP_IN, input->table_name, strlen(input->name), drop_callback);
 }
 

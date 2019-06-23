@@ -128,20 +128,39 @@ void destroy_page(page_t* page){
 	free(page);
 }
 
+void destroy_segment(segment_t* segment){
+	free(segment->name);
+	list_destroy_and_destroy_elements(segment->page,(void*)destroy_page);
+}
+
+int get_segment_position_by_name(char* segment_name){
+	int i=0;
+	segment_t* segment;
+
+	for(;i < list_size(g_segment_list);i++){
+		segment = list_get(g_segment_list,i);
+		if(strcmp(segment_name,segment->name)==0){
+			break;
+		}
+	}
+
+	return i < list_size(g_segment_list)?i:-1;
+}
+
 void remove_segment(segment_t* segment){
 
 	t_list* indexes = list_map(segment->page,(void*) page_get_index);
 	int index;
+	int position;
 
 	for(int i = 0; i < list_size(indexes); i++){
 		index = list_get(indexes,i);
 		strcpy(main_memory[index],"null");
 	}
 
-	list_destroy_and_destroy_elements(segment->page,(void*)destroy_page);
-
 	free(indexes);
 
-	free(segment);
+	position = get_segment_position_by_name(segment->name);
+	list_remove_and_destroy_element(g_segment_list,position,(void*)destroy_segment);
 }
 
