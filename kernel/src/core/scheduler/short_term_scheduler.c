@@ -143,7 +143,7 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 		break;
 	}
 
-	do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, network_operation, input, element_info.elements, element_info.elements_size, /* CALLBACK */ NULL, true);
+	do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, network_operation, input, element_info.elements, element_info.elements_size, /* CALLBACK */ NULL, true, NULL);
 
 	// TODO: lo de abajo iria en el callback del request
 	if (statement->operation <= INSERT) {

@@ -248,7 +248,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			select_input->table_name = memcpy(select_input->table_name, tokens[1], strlen(tokens[1]) + 1);
 			select_input->key = string_to_uint16(tokens[2]);
 
-			callbacks->select(select_input);
+			callbacks->select(select_input, NULL);
 			free(select_input->table_name);
 			free(select_input);
 		break;
@@ -265,7 +265,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			else
 				insert_input->timestamp = -1;
 
-			callbacks->insert(insert_input);
+			callbacks->insert(insert_input, NULL);
 			free(insert_input->table_name);
 			free(insert_input->value);
 			free(insert_input);
@@ -284,7 +284,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			create_input->partitions = string_to_int(tokens[3]);
 			create_input->compaction_time = string_to_long(tokens[4]);
 
-			callbacks->create(create_input);
+			callbacks->create(create_input, NULL);
 			free(create_input->table_name);
 			free(create_input);
 		break;
@@ -297,7 +297,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 				describe_input->table_name = NULL;
 			}
 
-			callbacks->describe(describe_input);
+			callbacks->describe(describe_input, NULL);
 			if (tokens_size == 2)
 				free(describe_input->table_name);
 			free(describe_input);
@@ -308,12 +308,12 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			drop_input->table_name = malloc(strlen(tokens[1]) + 1);
 			drop_input->table_name = memcpy(drop_input->table_name, tokens[1], strlen(tokens[1]) + 1);
 
-			callbacks->drop(drop_input);
+			callbacks->drop(drop_input, NULL);
 			free(drop_input->table_name);
 			free(drop_input);
 		break;
 		case JOURNAL:
-			callbacks->journal();
+			callbacks->journal(NULL);
 		break;
 		case ADD:
 			add_input = malloc(sizeof(add_input_t));
@@ -353,8 +353,8 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 	free(tokens);
 }
 
-callbacks_t* get_input_callbacks(void (*select)(select_input_t*), void (*insert)(insert_input_t*), void (*create)(create_input_t*), void (*describe)(describe_input_t*),
-		void (*drop)(drop_input_t*), void (*journal)(), void (*add)(add_input_t*), void (*run)(run_input_t*), void (*metrics)()){
+callbacks_t* get_input_callbacks(void (*select)(select_input_t*, response_t*), void (*insert)(insert_input_t*, response_t*), void (*create)(create_input_t*, response_t*),
+		void (*describe)(describe_input_t*, response_t*), void (*drop)(drop_input_t*, response_t*), void (*journal)(response_t*), void (*add)(add_input_t*), void (*run)(run_input_t*), void (*metrics)()){
 	if (g_callbacks != NULL)
 		return g_callbacks;
 

@@ -83,8 +83,9 @@ void handle_request(void* args) {
 	int received_bytes = 1;
 	conn_args_t* connection_args = (conn_args_t*) args;
 	packet_t* packet = malloc(sizeof(packet_t));
-	void* response;
 	void* payload;
+	response_t* response;
+	elements_network_t element_info;
 
 	pthread_detach(pthread_self());
 
@@ -103,37 +104,36 @@ void handle_request(void* args) {
 		// Paso 2: revisamos si es handshake o no
 		if (packet->header.operation == HANDSHAKE_IN) {
 			log_t("Recibi solicitud de handshake de %s", get_process_name(packet->header.process));
+			free_packet_content(packet);
 			build_packet(packet, connection_args->process, HANDSHAKE_OUT, true, 0, NULL, NULL, true);
 			send2(connection_args->socket, packet);
 		} else { // Esto seria una peticion normal
-			//char* dummy_response = " y he sido respondida";
-
+			socket_operation_t operation;
 			log_t("Recibi request de %s.", get_process_name(packet->header.process));
 
-			// TODO: agregar logica de recepcion del buffer
 			payload = deserialize_content(packet->content, packet->header.operation, packet->header.elements, packet->header.elements_size);
+			response = generate_response_object();
 
 			if (payload != NULL)
-				g_server_callbacks[packet->header.operation](payload);
+				g_server_callbacks[packet->header.operation](payload, response);
 
-			// aca se procesa todo... y se obtiene un body
-			/*response = malloc(packet->header.content_length + strlen(dummy_response));
-			memcpy(response, packet->content, packet->header.content_length);
-			strcat(response, dummy_response);
+			// Ya tenemos la response lista aca.
+			element_info = get_out_element_info(packet->header.operation + 1, response->result);
+			free_packet_content(packet);
+			build_packet(packet, connection_args->process, packet->header.operation + 1, false, element_info.elements, element_info.elements_size,
+					response->result, true);
 
-			build_packet(packet, connection_args->process, packet->header.operation + 1, packet->header.keep_alive,
-					packet->header.content_length + strlen(dummy_response), response, true);
-
+			// Le mandamos OPERATION-1 porque en realidad ya cambio la operacion
+			operation = packet->header.operation;
+			free_deserialized_content(payload, operation - 1);
 			send2(connection_args->socket, packet);
-
-			free(response);*/
-
-			free_deserialized_content(payload, packet->header.operation);
+			destroy_response(response, operation);
 		}
 	}
 
+	shutdown(connection_args->socket, SHUT_RDWR);
 	close(connection_args->socket);
-	free_packet(packet);
+	free(packet);
 	free(args);
 }
 

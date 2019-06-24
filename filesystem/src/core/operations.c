@@ -1,14 +1,15 @@
 #include "operations.h"
 
-void process_select(select_input_t* input) {
+void process_select(select_input_t* input, response_t* response) {
 	log_i("fs select args: %s %u", input->table_name,(unsigned int) input->key);
+	record_t* key_found = NULL;
 	char* table_name_upper = to_uppercase(input->table_name);
 	char* initial_table_dir = get_table_directory();
 	//Primero me fijo si existe la tabla
 	if (exist_in_directory(input->table_name, initial_table_dir)) {
 
 		char* table_directory = create_new_directory(initial_table_dir,table_name_upper);
-		record_t* key_found = search_key(table_directory, input->key);
+		key_found = search_key(table_directory, input->key);
 
 		if (key_found->timestamp == -1) {
 			//Si la key encotnrada me da una timstamp en -1 entonces significa que no la encontro
@@ -17,21 +18,32 @@ void process_select(select_input_t* input) {
 		} else {
 			//SI la timstamp es distinta de -1 entonces si la encontre y la muestro!
 			log_i("Clave %d encontrada en la tabla %s! su valor es: %s", input->key, table_name_upper, key_found->value);
-			free(key_found->value);
 		}
 		free(table_directory);
-		free(key_found);
 	} else {
 		//Si no existe la tabla entonces se termina la operacion
 		log_w("La tabla %s no existe. Operacion SELECT cancelada",table_name_upper);
+		// entonces instanciamos un elemento con timestamp -2 para decirle che capo no existe la tabla
+		key_found = malloc(sizeof(record_t));
+		key_found->key = -2;
+		key_found->timestamp = -2;
+		key_found->value = strdup("-2");
 	}
 
 	free(initial_table_dir);
 	free(table_name_upper);
+
+	if (response == NULL) {
+		free(key_found->value);
+		free(key_found);
+	} else {
+		set_response(response, key_found);
+	}
 }
 
-bool process_insert(insert_input_t* input) {
+void process_insert(insert_input_t* input, response_t* response) {
 	log_i("fs insert args: %s %u \"%s\" %lld", input->table_name, (unsigned int) input->key, input->value, input->timestamp);
+	int* insert_status = malloc(sizeof(int));
 	char* table_name_upper = to_uppercase(input->table_name);
 	char* table_directory = get_table_directory();
 	//Me fijo si existe la tabla
@@ -39,7 +51,7 @@ bool process_insert(insert_input_t* input) {
 		if (value_exceeds_maximun_size(input->value)) {
 			log_w("El valor de la key a insertar excede el tamaño maximo soportado. Operacion INSERT cancelada", table_name_upper);
 			free(table_name_upper);
-			return false;
+			*insert_status = -1;
 		} else {
 			if (input->timestamp == -1) {
 				input->timestamp = get_timestamp();
@@ -59,19 +71,25 @@ bool process_insert(insert_input_t* input) {
 			log_i("Se inserto satisfactoriamente la clave %d con valor %s y timestamp %lld en la tabla %s ",input->key, input->value, input->timestamp, table_name_upper);
 			free(table_name_upper);
 			free(table_directory);
-			return true;
+			*insert_status = 0;
 		}
 	} else {
 		//Si no existe la tabla entonces se termina la operacion
 		log_w("La tabla %s no existe. Operacion INSERT cancelada", table_name_upper);
 		free(table_name_upper);
 		free(table_directory);
-		return false;
+		*insert_status = -2;
 	}
+
+	if (response == NULL)
+		free(insert_status);
+	else
+		set_response(response, insert_status);
 }
 
-void process_create(create_input_t* input) {
+void process_create(create_input_t* input, response_t* response) {
 	log_i("fs create args: %s %i %i %ld", input->table_name, input->consistency,input->partitions, input->compaction_time);
+	int* create_status = sizeof(int);
 	char* table_name_upper = to_uppercase(input->table_name);
 	char* bitmap_dir = get_bitmap_directory();
 	t_bitarray* bitmap = read_bitmap(bitmap_dir);
@@ -95,23 +113,30 @@ void process_create(create_input_t* input) {
 			log_i("Se crearon %d particiones para la tabla %s ",input->partitions, table_name_upper);
 			//Crear hilo para que la tabla haga su propio dumpeo TODO
 			log_i("Tabla %s creada exitosamente! ", table_name_upper);
+			*create_status = 0;
 		} else {
 			log_w("La tabla %s ya esta en el sistema. Operacion CREATE cancelada.",table_name_upper);
+			*create_status = -1;
 		}
 
 	} else {
 		//SI no habia tantos bloques libres como particiones quiero tener, entonces cancelo el CREATE
 		log_w("No hay bloques suficientes como para crear la tabla con %d particiones. Operacion CREATE cancelada",input->partitions);
+		*create_status = -2;
 	}
 
 	free(table_name_upper);
 	free(bitmap->bitarray);
 	free(bitmap);
 	free(bitmap_dir);
+
+	if (response == NULL)
+		free(create_status);
+	else
+		set_response(response, create_status);
 }
 
-t_list* process_describe(describe_input_t* input) {
-
+void process_describe(describe_input_t* input, response_t* response) {
 	log_i("fs describe args: %s", input->table_name);
 	char* table_dir = get_table_directory();
 	//Si me mandan null muestro la metadata de todas las tablas
@@ -147,26 +172,30 @@ t_list* process_describe(describe_input_t* input) {
 			free(table_directory);
 			free(table_name_upper);
 			list_add(metadata_list, table_metadata);
-
 		} else {
 			//Si no existe la tabla  se termina la operacion
 			log_w("La tabla %s no existe. Operacion DESCRIBE cancelada", table_name_upper);
 			free(table_name_upper);
-
 		}
-
 	}
 
 	free(table_dir);
-	return metadata_list;
+
+	if (response == NULL) {
+		for (int i = 0; i < list_size(metadata_list); i++)
+			free(list_get(metadata_list, i));
+		list_destroy(metadata_list);
+	} else {
+		set_response(response, metadata_list);
+	}
 }
 
-bool process_drop(drop_input_t* input) {
+void process_drop(drop_input_t* input, response_t* response) {
 	log_i("fs drop args: %s", input->table_name);
+	int* drop_status = malloc(sizeof(int));
 	char* table_dir = get_table_directory();
 	char* bitmap_directory = get_bitmap_directory();
 	char* table_name_upper = to_uppercase(input->table_name);
-	bool result;
 
 	if (exist_in_directory(input->table_name, table_dir)) {
 		char* table_directory = create_new_directory(table_dir, table_name_upper);
@@ -180,21 +209,24 @@ bool process_drop(drop_input_t* input) {
 		//Guardo el bitmap
 		write_bitmap(bitmap, bitmap_directory);
 		log_i("La tabla %s se borro satisfactoriamente.", table_name_upper);
-		result = true;
 		free(bitmap->bitarray);
 		free(bitmap);
 		free(table_directory);
+		*drop_status = 0;
 	} else {
 		//Si no existe la tabla  se termina la operacion
 		log_w("La tabla %s no existe. Operacion DROP cancelada", table_name_upper);
-		result = false;
+		*drop_status = -1;
 	}
 
 	free(table_name_upper);
 	free(table_dir);
 	free(bitmap_directory);
 
-	return result;
+	if (response == NULL)
+		free(drop_status);
+	else
+		set_response(response, drop_status);
 }
 
 

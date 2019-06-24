@@ -4,31 +4,16 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/stat.h>
-
-
 #include "../directorys.h"
 #include "../lissandra/lissandra.h"
 #include "../fs_lists.h"
-
-
-typedef struct  {
-	consistency_t consistency;
-	int partitions;
-	long compaction_time;
-} table_metadata_t;
+#include "shared_types/shared_types.h"
 
 typedef struct {
 	int number_of_blocks;
 	int size;
 	int* blocks;
 } partition_t;
-
-
-typedef struct {
-	long long timestamp;
-	int key;
-	char* value;
-} record_t;
 
 typedef struct {
 	char* tkv;

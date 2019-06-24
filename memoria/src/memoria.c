@@ -17,6 +17,7 @@ int main(void) {
 	init_server_callbacks();
 	init_server(g_config.port, MEMORY);
 	init_main_memory();
+	setup_response_id_generator();
 	create_dummy();
 	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY, get_callbacks());
 	destroy_logger();
