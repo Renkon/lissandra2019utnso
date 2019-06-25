@@ -9,7 +9,7 @@ typedef struct  {
 int main(void) {
 	metadata_t* metadata = malloc(sizeof(metadata_t));
 
-	metadata->block_size = 64;
+	metadata->block_size = 5;
 	metadata->blocks = 5192;
 	metadata->magic_number = "LISSANDRA";
 
