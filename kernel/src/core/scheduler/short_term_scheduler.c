@@ -198,9 +198,15 @@ void on_select(void* result, response_t* response) {
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
-	log_i("SELECT: %s", record->value);
-
-	sem_post(current_statement->semaphore);
+	if (record->timestamp == -2) {
+		log_i("La tabla que se solicito no existe. El SELECT ha fallado");
+		on_statement_failure(pcb);
+	} else if (record->timestamp == -1) {
+		log_i("La key solicitada no se encuentra en la tabla. El SELECT ha fallado");
+		on_statement_failure(pcb);
+	} else {
+		log_i("RESULTADO SELECT: %s", record->value);
+	}
 
 	if (current_statement->operation <= INSERT) {
 		pcb->last_execution_stats->timestamp_end = get_timestamp();
@@ -217,6 +223,7 @@ void on_select(void* result, response_t* response) {
 		pcb->program_counter++;
 	}
 
+	sem_post(current_statement->semaphore);
 	sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
 }
 

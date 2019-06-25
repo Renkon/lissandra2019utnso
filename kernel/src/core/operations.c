@@ -141,8 +141,8 @@ bool on_inner_run_request(t_list* statements, run_input_t* input, bool free_inpu
 
 	for (int i = 0; i < list_size(file_lines); i++) {
 		free(list_get(file_lines, i));
-		list_destroy(file_lines);
 	}
+	list_destroy(file_lines);
 
 	if (free_input)
 		free(input);
@@ -152,8 +152,9 @@ bool on_inner_run_request(t_list* statements, run_input_t* input, bool free_inpu
 
 void add_statement(t_list* statements, operation_t operation, char* command) {
 	int tokens_size;
+	bool run = false;
 	char** tokens = string_split_ignore_quotes(command, " ", &tokens_size);
-	statement_t* statement = malloc(sizeof(statement_t));
+	statement_t* statement = generate_statement();
 	select_input_t* select_input;
 	insert_input_t* insert_input;
 	create_input_t* create_input;
@@ -230,12 +231,17 @@ void add_statement(t_list* statements, operation_t operation, char* command) {
 			run_input->path = memcpy(run_input->path, tokens[1], strlen(tokens[1]) + 1);
 
 			on_inner_run_request(statements, run_input, true);
-			return;
+			run = true;
 		break;
 		default:
 		break;
 	}
 
-	list_add(statements, statement);
+	if (!run)
+		list_add(statements, statement);
+
+	for (int i = 0; i < tokens_size; i++)
+		free(tokens[i]);
+	free(tokens);
 }
 

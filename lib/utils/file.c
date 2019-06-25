@@ -2,7 +2,7 @@
 
 t_list* get_file_lines(char* file) {
 	FILE* stream;
-	char* line;
+	char* line = NULL;
 	size_t len = 0;
 	ssize_t read;
 	t_list* lines;
