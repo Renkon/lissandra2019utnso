@@ -58,7 +58,9 @@ void process_select(select_input_t* input, response_t* response) {
 
 	select_input->key = input->key;
 	memcpy(select_input->table_name, input->table_name, strlen(input->table_name) + 1);
-	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, select_input, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input);
+	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, select_input, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input, response);
+
+	// LA LIMPIEZA DE LAS COSAS LA HACES EN EL CLEANUP CALLBACK, EN ESTE CASO, CLEANUP_SELECT_INPUT
 }
 
 void process_insert(insert_input_t* input, response_t* response) {
@@ -147,19 +149,25 @@ void process_journal(response_t* response) {
 	log_i("mm journal args none");
 }
 
-void select_callback(void* response) {
-	//creo un socket que invoque una funcion  y dicha funcion info con ese mismo socket...que es un socket?
-	record_t* record = (record_t*) response;
-	// para debuguear
-	int i = 6;
+void select_callback(void* result, response_t* response) {
+	record_t* record = (record_t*) result;
+
+	if (response != NULL) {
+		// Vamos a copiar el objeto record, asi se lo podemos devolver
+		record_t* new_record = malloc(sizeof(record_t));
+		new_record->key = record->key;
+		new_record->timestamp = record->timestamp;
+		new_record->value = strdup(record->value);
+		set_response(response, new_record);
+	}
 }
 
 
-void create_callback(void* response) {
+void create_callback(void* result, response_t* response) {
 	//lo mismo que el select callback, la funcion con el socket seguro tendre que hacerla polimorfica o weas
 }
 
-void describe_callback(void* response){
+void describe_callback(void* result, response_t* response){
 	//se lo pido al FS con la funcion para devolver parametros
 }
 

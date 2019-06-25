@@ -14,6 +14,8 @@ void process_select(select_input_t* input, response_t* response) {
 		if (key_found->timestamp == -1) {
 			//Si la key encotnrada me da una timstamp en -1 entonces significa que no la encontro
 			log_w("La clave %d no existe en la tabla %s. Operacion SELECT cancelada", input->key, table_name_upper);
+			key_found->key = -1;
+			key_found->value = strdup("-1");
 
 		} else {
 			//SI la timstamp es distinta de -1 entonces si la encontre y la muestro!
