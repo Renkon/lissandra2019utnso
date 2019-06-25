@@ -4,7 +4,7 @@ void init_console(char* init_str, char* prefix, process_t type, callbacks_t* cal
 	char* user_input = NULL;
 
 	// Mostramos el titulo del programa
-	puts(init_str);
+	log_i(init_str);
 
 	while (true) {
 		user_input = readline(prefix);
@@ -21,7 +21,6 @@ bool process_command(char* command, process_t process, callbacks_t* callbacks) {
 
 	if (operation == INVALID || !operation_allowed(operation, process) || !validate_input(operation, command)) {
 		log_e("Se solicito una operacion invalida: \"%s\"", command);
-		puts("Operacion invalida. Revise su input");
 		return false;
 	} else {
 		process_input(operation, command, callbacks);
