@@ -92,10 +92,15 @@ page_t* create_page(int index, bool modified ) {
 segment_t* create_segment(char* table_name) {
   segment_t* segment = malloc(sizeof(segment_t));
 
-  segment->page = list_create();
-  segment->name = malloc(strlen(table_name)+1);
-  strcpy(segment->name,table_name);
+  char* copia = malloc(strlen(table_name)+1);
+  strcpy(copia,table_name);
+  string_to_upper(copia);
 
+  segment->page = list_create();
+  segment->name = malloc(strlen(copia)+1);
+  strcpy(segment->name,copia);
+
+  free(copia);
   return segment;
 }
 
@@ -158,7 +163,7 @@ void remove_segment(segment_t* segment){
 		strcpy(main_memory[index],"null");
 	}
 
-	free(indexes);
+	list_destroy(indexes);
 
 	position = get_segment_position_by_name(segment->name);
 	list_remove_and_destroy_element(g_segment_list,position,(void*)destroy_segment);

@@ -11,7 +11,11 @@ void process_select(select_input_t* input, response_t* response) {
 	int position;
 	t_list* index_list;
 
-	found_segment = get_segment_by_name(g_segment_list, input->table_name);
+	char* upper_table_name = malloc(strlen(input->table_name)+1);
+	strcpy(upper_table_name,input->table_name);
+	string_to_upper(upper_table_name);
+
+	found_segment = get_segment_by_name(g_segment_list, upper_table_name);
 
 	if (found_segment != NULL) {
 		index_list = list_map(found_segment->page, (void*) page_get_index);
@@ -56,6 +60,8 @@ void process_select(select_input_t* input, response_t* response) {
 	memcpy(select_input->table_name, input->table_name, strlen(input->table_name) + 1);
 	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, select_input, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input);
 	 */
+
+	free(upper_table_name);
 }
 
 void process_insert(insert_input_t* input, response_t* response) {
