@@ -138,6 +138,7 @@ void process_drop(drop_input_t* input, response_t* response) {
 		log_w("No se encontro la tabla en memoria, se procede a enviar la peticion al FileSystem");
 	}
 
+	free(found_segment);
 	//TODO informo al FS
 	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DROP_IN, input->table_name, strlen(input->name), drop_callback);
 }

@@ -109,15 +109,32 @@ void eliminate_page_instance_by_index(segment_t* segment, int index){
 	}
 }
 
+t_list* list_add_multi_lists(t_list* pages_indexes, t_list* journal_list){
+	t_list* new_list = list_create();
+	insert_input_t* insert = malloc(sizeof(insert_input_t));
+
+	for(int i = 0;i < list_size(pages_indexes); i++){
+		insert->timestamp = string_to_long_long(main_memory_values(list_get(pages_indexes,i),TIMESTAMP));
+		insert->key = string_to_uint16(main_memory_values(list_get(pages_indexes,i),KEY));
+		insert->value = main_memory_values(list_get(pages_indexes,i),VALUE);
+		insert->table_name;//TODO Con el index encontrar la tabla. :L
+
+		list_add(new_list,insert);
+	}
+
+	return new_list;
+}
+
 void journaling(){
 	t_list* journal = get_pages_by_modified(true);
 	t_list* indexes = list_map(journal,(void*)page_get_index);
 
-	//journal_type* journal = conformado por un registro_t y un nombre de la tabla
+	t_list* journal_list = list_add_multi_lists(journal_list,journal);//TODO funcion
+
 	int position;
 
-	for(int i = 0; i < list_size(journal); i++){
-		//journal = list_get(journal,0);
+	for(int i = 0; i < list_size(journal_list); i++){
+		//sending_journal = list_get(journal_list,0);
 		//TODO enviar al FILESYSTEM la peticion de lo que esta asignado en la variable journal.
 	}
 
@@ -142,16 +159,17 @@ page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* 
 
 		int replace = list_get(indexes,0);
 
-		//page_t* page = get_page_by_index(replace);
-
 		eliminate_page_instance_by_index(segment,replace);
 
 		index = memory_insert(timestamp, key, value);
 		found_page = create_page(index, true);
 
 		return found_page;
+
 	}else{
+
 		journaling();
-		return NULL;
+		replace_algorithm(segment, timestamp, key, value);
+
 	}
 }

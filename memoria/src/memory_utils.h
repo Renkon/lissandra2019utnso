@@ -11,7 +11,6 @@
 #include "memoria.h"
 #include "memory_types.h"
 
-
 #include <stdbool.h>
 #include "utils/operation_types.h"
 #include "generic_client.h"
