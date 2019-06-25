@@ -5,6 +5,7 @@
 
 #include "memory_utils.h"
 #include "memory_types.h"
+#include "shared_types/shared_types.h"
 
 #include "generic_config.h"
 #include "generic_console.h"
@@ -17,7 +18,7 @@
 #include "utils/dates.h"
 #include <limits.h>
 #include "utils/numbers.h"
-
+#include "utils/response.h"
 
 typedef struct {
 	int port;
@@ -38,6 +39,7 @@ memconfig_t g_config;
 extern char* g_config_keys[];
 extern int g_config_keys_size;
 
+void init_server_callbacks();
 void create_dummy();
 
 //GLOBAL STATMENTS

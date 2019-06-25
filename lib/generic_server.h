@@ -13,6 +13,7 @@
 #include "utils/network.h"
 #include "utils/operation_types.h"
 #include "utils/network_types.h"
+#include "utils/response.h"
 
 typedef struct {
 	int port;
@@ -23,6 +24,8 @@ typedef struct {
 	int socket;
 	process_t process;
 } conn_args_t;
+
+void (*g_server_callbacks[_LAST])(void*, response_t*);
 
 bool init_server(int listen_port, process_t process);
 bool setup_server(void* args);

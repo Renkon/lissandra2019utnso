@@ -4,11 +4,6 @@
 #include <stdbool.h>
 #include "commons/collections/list.h"
 
-typedef struct {
-	long long timestamp;
-	int key;
-	char* value;
-} record_t;
 
 typedef struct {
 	int index;

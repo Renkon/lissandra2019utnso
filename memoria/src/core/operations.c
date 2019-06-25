@@ -1,6 +1,6 @@
 #include "operations.h"
 
-void process_select(select_input_t* input) {
+void process_select(select_input_t* input, response_t* response) {
 	log_i("mm select args: %s %u", input->table_name, (unsigned int)input->key);
 
 	page_t* found_page;
@@ -19,10 +19,6 @@ void process_select(select_input_t* input) {
 		if(found_page != NULL) {
 
 			position = found_page->index;
-			/*return_timestamp = main_memory_timestamp(position);
-			return_key = main_memory_key(position);
-			return_value = main_memory_value(position);*/
-
 			return_timestamp = main_memory_values(position,TIMESTAMP);
 			return_key = main_memory_values(position,KEY);
 			return_value = main_memory_values(position,VALUE);
@@ -51,9 +47,18 @@ void process_select(select_input_t* input) {
 
 		list_destroy(index_list);
 	}
+
+	/*elements_network_t elem_info = elements_select_in_info(input);
+	select_input_t* select_input = malloc(sizeof(select_input_t));
+	select_input->table_name = malloc(strlen(input->table_name) + 1);
+
+	select_input->key = input->key;
+	memcpy(select_input->table_name, input->table_name, strlen(input->table_name) + 1);
+	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, select_input, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input);
+	 */
 }
 
-void process_insert(insert_input_t* input) {
+void process_insert(insert_input_t* input, response_t* response) {
 	log_i("mm insert args: %s %u \"%s\" %ld", input->table_name, (unsigned int) input->key, input->value, input->timestamp);
 	segment_t* found_segment;
 	page_t* found_page;
@@ -105,25 +110,23 @@ void process_insert(insert_input_t* input) {
 	}
 }
 
-void process_create(create_input_t* input) {
+void process_create(create_input_t* input, response_t* response) {
 	log_i("mm create args: %s %i %i %ld", input->table_name, input->consistency, input->partitions, input->compaction_time);
 		// solo se envia al FileSystem la operacion para crear la tabla
 		//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, input, sizeof(input), create_callback);
 }
 
-void process_describe(describe_input_t* input) {
+void process_describe(describe_input_t* input, response_t* response) {
 	log_i("mm describe args: %s", input->table_name);
 	// se envia la operacion al filesystem,deberia retornar lo que el kernel necesite para la operacion
 	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DESCRIBE_IN, input->table_name,strlen(input->table_name), describe_callback);
 
 }
 
-void process_drop(drop_input_t* input) {
+void process_drop(drop_input_t* input, response_t* response) {
 	log_i("mm drop args: %s", input->table_name);
 
 	segment_t* found_segment;
-	page_t* found_page;
-	record_t* modified_record;
 
 	found_segment = get_segment_by_name(g_segment_list,input->table_name);
 
@@ -139,12 +142,15 @@ void process_drop(drop_input_t* input) {
 	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DROP_IN, input->table_name, strlen(input->name), drop_callback);
 }
 
-void process_journal() {
+void process_journal(response_t* response) {
 	log_i("mm journal args none");
 }
 
 void select_callback(void* response) {
 	//creo un socket que invoque una funcion  y dicha funcion info con ese mismo socket...que es un socket?
+	record_t* record = (record_t*) response;
+	// para debuguear
+	int i = 6;
 }
 
 
@@ -154,5 +160,11 @@ void create_callback(void* response) {
 
 void describe_callback(void* response){
 	//se lo pido al FS con la funcion para devolver parametros
+}
+
+void cleanup_select_input(void* input) {
+	select_input_t* select_input = (select_input_t*) input;
+	free(select_input->table_name);
+	free(select_input);
 }
 
