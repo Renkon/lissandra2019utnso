@@ -69,6 +69,9 @@ void delete_pcb(pcb_t* pcb) {
 
 	for (int i = 0; i < list_size(pcb->statements); i++) {
 		statement_t* statement = (statement_t*) list_get(pcb->statements, i);
+		sem_destroy(statement->semaphore);
+		free(statement->semaphore);
+
 		switch (statement->operation) {
 			case SELECT:
 				free(statement->select_input->table_name);

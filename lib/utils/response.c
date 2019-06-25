@@ -6,7 +6,7 @@ response_t* generate_response_object() {
 	response->result = NULL;
 	response->semaphore = malloc(sizeof(sem_t));
 
-	sem_init(response->semaphore, 0, 1);
+	sem_init(response->semaphore, 0, 0);
 
 	return response;
 }
@@ -41,6 +41,8 @@ void destroy_response(response_t* response, socket_operation_t operation) {
 			free(response->result);
 		break;
 	}
+
+	response->result = NULL;
 
 	remove_id(response->id);
 	free(response);

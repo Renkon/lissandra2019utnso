@@ -76,7 +76,7 @@ void planifier_execute(void* arg) {
 void exec_next_statement(int processor) {
 	pcb_t* pcb = (pcb_t*) list_get(g_scheduler_queues.exec, processor);
 	stats_t* event;
-	statement_t* statement = (statement_t*) list_get(pcb->statements, pcb->program_counter++);
+	statement_t* statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
 	// Aca se empieza la ejecucion del statement
 	if (statement->operation <= INSERT) {
@@ -95,8 +95,8 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 	void* input = NULL;
 	socket_operation_t network_operation;
 	elements_network_t element_info;
+	void (*callback)(void*);
 
-	//void (*callback)(int, void*, bool);
 	//pcb_operation_t* pcb_operation = malloc(sizeof(pcb_operation_t));
 	//char* demo_str = string_duplicate("soy un kernel");
 	//do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, SELECT_IN, demo_str, 14, select_callback);
@@ -108,7 +108,7 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 			network_operation = SELECT_IN;
 			input = statement->select_input;
 			element_info = elements_select_in_info(statement->select_input);
-			//callback = on_select;
+			callback = on_select;
 		break;
 		case INSERT:
 			network_operation = INSERT_IN;
@@ -143,22 +143,12 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 		break;
 	}
 
-	do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, network_operation, input, element_info.elements, element_info.elements_size, /* CALLBACK */ NULL, true, NULL);
+	do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, network_operation, input,
+			element_info.elements, element_info.elements_size, callback, true, NULL, pcb);
 
-	// TODO: lo de abajo iria en el callback del request
-	if (statement->operation <= INSERT) {
-		pcb->last_execution_stats->timestamp_end = get_timestamp();
-		log_t("Se ingresa un evento a las estadisticas.");
-		list_add(g_stats_events, pcb->last_execution_stats);
-	}
-	clear_old_stats();
+	sem_wait(statement->semaphore);
 
-	if (pcb->errors) {
-		log_e("Hubo un error al ejecutar un statement. Se cancela ejecucion del proceso con PID %i", pcb->process_id);
-		pcb->program_counter = list_size(pcb->statements);
-	}
-
-	sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
+	// Sigue posterior al callback.
 }
 
 void on_statement_failure(pcb_t* pcb) {
@@ -200,3 +190,44 @@ int get_input_size(operation_t operation, void* input) {
 
 	return 0;
 }
+
+void on_select(void* result, response_t* response) {
+	record_t* record = (record_t*) result;
+
+	// Esto me da asco, pero bueno, perdoname diosito.
+	pcb_t* pcb = (pcb_t*) response;
+	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+
+	if (record->timestamp == -2) {
+		log_i("La tabla que se solicito no existe. El SELECT ha fallado");
+		on_statement_failure(pcb);
+	} else if (record->timestamp == -1) {
+		log_i("La key solicitada no se encuentra en la tabla. El SELECT ha fallado");
+		on_statement_failure(pcb);
+	} else {
+		log_i("RESULTADO SELECT: %s", record->value);
+	}
+
+	if (current_statement->operation <= INSERT) {
+		pcb->last_execution_stats->timestamp_end = get_timestamp();
+		log_t("Se ingresa un evento a las estadisticas.");
+		list_add(g_stats_events, pcb->last_execution_stats);
+	}
+
+	clear_old_stats();
+
+	if (pcb->errors) {
+		log_e("Hubo un error al ejecutar un statement. Se cancela ejecucion del proceso con PID %i", pcb->process_id);
+		pcb->program_counter = list_size(pcb->statements);
+	} else {
+		pcb->program_counter++;
+	}
+
+	sem_post(current_statement->semaphore);
+	sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
+}
+
+void on_insert(void* result, response_t* response);
+void on_create(void* result, response_t* response);
+void on_describe(void* result, response_t* response);
+void on_drop(void* result, response_t* response);

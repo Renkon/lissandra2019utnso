@@ -19,10 +19,9 @@ void process_drop(drop_input_t* input, response_t* response);
 void process_journal(response_t* response);
 
 
-void select_callback(void* response);
-void create_callback(void* response);
-void describe_callback(void* response);
-void select_callback(void* response);
+void select_callback(void* result, response_t* response);
+void create_callback(void* result, response_t* response);
+void describe_callback(void* result, response_t* response);
 
 void cleanup_select_input(void* input);
 
