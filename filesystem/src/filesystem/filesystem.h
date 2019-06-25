@@ -48,10 +48,14 @@ record_t* search_in_tmpc(char* table_directory, int key);
 record_t* search_in_all_tmps(char* table_directory,int key);
 record_t* search_in_partition(char* table_directory, int key);
 record_t* create_tkv(insert_input_t* input);
+void free_tkv(tkv_t* tkv);
 bool value_exceeds_maximun_size(char* value);
 void free_partitions(char* table_directory,t_bitarray* bitmap);
 void free_blocks_of_fs_archive(char* archive_directory, t_bitarray* bitmap);
 void free_block(int block);
 void free_blocks_of_all_tmps(char* table_directory, t_bitarray* bitmap);
+void free_table(table_t* table);
+
+
 
 #endif /* CREATE_CREATE_UTILS_H_ */

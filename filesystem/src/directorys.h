@@ -30,6 +30,7 @@ bool exist_in_directory(char* archive, char* directory);
 t_list* get_tables_list();
 int remove_directory(char *path);
 metadata_t* read_fs_metadata();
-
+FILE* open_block(int block);
+void write_tkv(char* tkv,FILE* block);
 
 #endif /* DIRECTORYS_H_ */

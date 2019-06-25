@@ -52,7 +52,7 @@ bool process_insert(insert_input_t* input) {
 				table_t* new_table = create_table(table_name_upper);
 				list_add(mem_table, new_table);
 			}
-			//Siempre busco la tabla que necesito y despues le inserto la key, por ahora sin orden despues quizas si
+			//Siempre busco la tabla que necesito y despues le inserto la key
 			table_t* table = find_table_in_list(mem_table, table_name_upper);
 			list_add(table->tkvs, tkv);
 			//Se les hace free cuando limpie la memetable despues.
@@ -112,8 +112,8 @@ void process_create(create_input_t* input) {
 }
 
 t_list* process_describe(describe_input_t* input) {
-
-	log_i("fs describe args: %s", input->table_name);
+dump();
+/*	log_i("fs describe args: %s", input->table_name);
 	char* table_dir = get_table_directory();
 	//Si me mandan null muestro la metadata de todas las tablas
 	t_list* metadata_list = list_create();
@@ -159,7 +159,7 @@ t_list* process_describe(describe_input_t* input) {
 	}
 
 	free(table_dir);
-	return metadata_list;
+	return metadata_list;*/
 }
 
 bool process_drop(drop_input_t* input) {

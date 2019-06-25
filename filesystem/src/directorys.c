@@ -193,3 +193,16 @@ metadata_t* read_fs_metadata(){
 	free(metadata_directory);
 	return metadata;
 }
+
+
+FILE* open_block(int block){
+	char* block_directory = create_block_directory(block);
+	FILE* the_block = fopen(block_directory, "wb");
+	free(block_directory);
+	return the_block;
+}
+
+void write_tkv(char* tkv,FILE* block){
+	//Si me entra el tkv en el bloque lo meto asi nomas.
+	fwrite(tkv,1,strlen(tkv)+1,block);
+}

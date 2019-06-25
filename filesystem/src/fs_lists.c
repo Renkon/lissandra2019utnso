@@ -17,7 +17,7 @@ bool table_exist(table_t* table) {
 bool table_not_exist_in_list(t_list* list, char* table_name) {
 	for (int i = 0; i < list->elements_count; i++) {
 		table_t* table = list_get(list, i);
-		if (table->name == table_name) {
+		if (strcmp(table->name,table_name)==0) {
 
 			return false;
 
