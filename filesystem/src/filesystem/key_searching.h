@@ -8,6 +8,7 @@
 #include "filesystem.h"
 #include <limits.h>
 #include "utils/dates.h"
+#include "string.h"
 
 table_metadata_t* read_table_metadata(char* table_directory);
 partition_t* read_fs_archive(char* partition_string);
