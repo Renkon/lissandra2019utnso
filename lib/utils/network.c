@@ -24,8 +24,10 @@ int recv2(int socket, packet_t* packet) {
 	int offset = 0;
 
 	// Primero, hay que traer las cosas del header
-	if ((bytes_read += __recv(socket, partial_buffer, partial_header_size)) <= 0)
+	if ((bytes_read += __recv(socket, partial_buffer, partial_header_size)) <= 0) {
+		free(partial_buffer);
 		return bytes_read; // que no lea basura si no trae bien la data
+	}
 
 	// Tenemos los primeros cuatro parametros del header, el cual tenemos que armar ahora.
 	packet->header.process = (process_t) *partial_buffer;

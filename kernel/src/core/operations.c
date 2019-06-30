@@ -2,7 +2,7 @@
 
 void process_select(select_input_t* input, response_t* response) {
 	pcb_t* pcb = get_new_pcb();
-	statement_t* statement = malloc(sizeof(statement_t));
+	statement_t* statement = generate_statement();
 
 	statement->operation = SELECT;
 	statement->select_input = malloc(sizeof(select_input_t));
@@ -17,7 +17,7 @@ void process_select(select_input_t* input, response_t* response) {
 
 void process_insert(insert_input_t* input, response_t* response) {
 	pcb_t* pcb = get_new_pcb();
-	statement_t* statement = malloc(sizeof(statement_t));
+	statement_t* statement = generate_statement();
 
 	statement->operation = INSERT;
 	statement->insert_input = malloc(sizeof(insert_input_t));
@@ -35,7 +35,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 
 void process_create(create_input_t* input, response_t* response) {
 	pcb_t* pcb = get_new_pcb();
-	statement_t* statement = malloc(sizeof(statement_t));
+	statement_t* statement = generate_statement();
 
 	statement->operation = CREATE;
 	statement->create_input = malloc(sizeof(create_input_t));
@@ -52,7 +52,7 @@ void process_create(create_input_t* input, response_t* response) {
 
 void process_describe(describe_input_t* input, response_t* response) {
 	pcb_t* pcb = get_new_pcb();
-	statement_t* statement = malloc(sizeof(statement_t));
+	statement_t* statement = generate_statement();
 
 	statement->operation = DESCRIBE;
 	statement->describe_input = malloc(sizeof(describe_input_t));
@@ -70,7 +70,7 @@ void process_describe(describe_input_t* input, response_t* response) {
 
 void process_drop(drop_input_t* input, response_t* response) {
 	pcb_t* pcb = get_new_pcb();
-	statement_t* statement = malloc(sizeof(statement_t));
+	statement_t* statement = generate_statement();
 
 	statement->operation = DROP;
 	statement->drop_input = malloc(sizeof(drop_input_t));
@@ -88,6 +88,13 @@ void process_journal(response_t* response) {
 
 void process_add(add_input_t* input) {
 	// TODO: hacer lo del add a un criterio
+}
+
+statement_t* generate_statement() {
+	statement_t* statement = malloc(sizeof(statement_t));
+	statement->semaphore = malloc(sizeof(sem_t));
+	sem_init(statement->semaphore, 0, 0);
+	return statement;
 }
 
 void process_run(run_input_t* input) {
@@ -134,8 +141,8 @@ bool on_inner_run_request(t_list* statements, run_input_t* input, bool free_inpu
 
 	for (int i = 0; i < list_size(file_lines); i++) {
 		free(list_get(file_lines, i));
-		list_destroy(file_lines);
 	}
+	list_destroy(file_lines);
 
 	if (free_input)
 		free(input);
@@ -145,8 +152,9 @@ bool on_inner_run_request(t_list* statements, run_input_t* input, bool free_inpu
 
 void add_statement(t_list* statements, operation_t operation, char* command) {
 	int tokens_size;
+	bool run = false;
 	char** tokens = string_split_ignore_quotes(command, " ", &tokens_size);
-	statement_t* statement = malloc(sizeof(statement_t));
+	statement_t* statement = generate_statement();
 	select_input_t* select_input;
 	insert_input_t* insert_input;
 	create_input_t* create_input;
@@ -223,12 +231,17 @@ void add_statement(t_list* statements, operation_t operation, char* command) {
 			run_input->path = memcpy(run_input->path, tokens[1], strlen(tokens[1]) + 1);
 
 			on_inner_run_request(statements, run_input, true);
-			return;
+			run = true;
 		break;
 		default:
 		break;
 	}
 
-	list_add(statements, statement);
+	if (!run)
+		list_add(statements, statement);
+
+	for (int i = 0; i < tokens_size; i++)
+		free(tokens[i]);
+	free(tokens);
 }
 

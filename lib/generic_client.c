@@ -58,7 +58,8 @@ void kill_connection(int socket) {
 	close(socket);
 }
 
-void do_simple_request(process_t process, char* ip, int port, socket_operation_t operation, void* content, int elements, int* elements_length, void (*callback)(void*), bool success, void (*free_content)(void*)) {
+void do_simple_request(process_t process, char* ip, int port, socket_operation_t operation, void* content, int elements, int* elements_length,
+		void (*callback)(void*, response_t*), bool success, void (*free_content)(void*), response_t* response) {
 	pthread_t thread;
 	client_conn_args_t* args = malloc(sizeof(client_conn_args_t));
 	args->process = process;
@@ -71,6 +72,7 @@ void do_simple_request(process_t process, char* ip, int port, socket_operation_t
 	args->callback = callback;
 	args->success = success;
 	args->free_content = free_content;
+	args->response = response;
 
 	if (pthread_create(&thread, NULL, (void*) do_request, (void*) args)) {
 		log_e("No se pudo inicializar el hilo para la solicitud");
@@ -107,7 +109,7 @@ void do_request(void* arguments) {
 	}
 
 	deserialized_content = deserialize_content(packet->content, packet->header.operation, packet->header.elements, packet->header.elements_size);
-	args->callback(deserialized_content);
+	args->callback(deserialized_content, args->response);
 
 	free_deserialized_content(deserialized_content, packet->header.operation);
 	kill_connection(socket);

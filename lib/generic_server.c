@@ -117,6 +117,8 @@ void handle_request(void* args) {
 			if (payload != NULL)
 				g_server_callbacks[packet->header.operation](payload, response);
 
+			wait_for_response(response);
+
 			// Ya tenemos la response lista aca.
 			element_info = get_out_element_info(packet->header.operation + 1, response->result);
 			free_packet_content(packet);

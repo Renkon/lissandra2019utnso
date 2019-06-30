@@ -19,11 +19,14 @@ void process_drop(drop_input_t* input, response_t* response);
 void process_journal(response_t* response);
 
 
-void select_callback(void* response);
-void create_callback(void* response);
-void describe_callback(void* response);
-void select_callback(void* response);
+void select_callback(void* result, response_t* response);
+void create_callback(void* result, response_t* response);
+void describe_callback(void* result, response_t* response);
+void drop_callback(void* result, response_t* response);
 
 void cleanup_select_input(void* input);
+void cleanup_drop_input(void* input);
+void cleanup_describe_input(void* input);
+void cleanup_create_input(void* input);
 
 #endif /* CORE_OPERATIONS3_H_ */
