@@ -22,6 +22,8 @@ typedef enum {
 	JOURNAL_OUT,
 	GOSSIP_IN,
 	GOSSIP_OUT,
+	VALUE_IN,
+	VALUE_OUT,
 	_LAST
 } socket_operation_t;
 

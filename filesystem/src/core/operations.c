@@ -231,4 +231,10 @@ void process_drop(drop_input_t* input, response_t* response) {
 		set_response(response, drop_status);
 }
 
+void process_value(void* unused, response_t* response) {
+	int* value = malloc(sizeof(int));
+	memcpy(value, &(g_config.max_value_size), sizeof(int));
+	set_response(response, value);
+}
+
 

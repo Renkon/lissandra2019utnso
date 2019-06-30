@@ -177,3 +177,12 @@ void cleanup_select_input(void* input) {
 	free(select_input);
 }
 
+void get_value_from_filesystem() {
+	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, VALUE_IN, NULL, 0, NULL, get_value_callback, true, NULL, NULL);
+}
+
+void get_value_callback(void* result, response_t* response) {
+	int* value = (int*) result;
+	log_i("Me llego un value del FS. VALOR: %i", *value);
+}
+

@@ -19,6 +19,7 @@ int main(void) {
 	init_main_memory();
 	setup_response_id_generator();
 	create_dummy();
+	get_value_from_filesystem();
 	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY, get_callbacks());
 	destroy_logger();
 	return 0;
