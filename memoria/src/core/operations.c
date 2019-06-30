@@ -155,6 +155,7 @@ void select_callback(void* result, response_t* response) {
 	if (response != NULL) {
 		// Vamos a copiar el objeto record, asi se lo podemos devolver
 		record_t* new_record = malloc(sizeof(record_t));
+		new_record->table_name = strdup(record->table_name);
 		new_record->key = record->key;
 		new_record->timestamp = record->timestamp;
 		new_record->value = strdup(record->value);

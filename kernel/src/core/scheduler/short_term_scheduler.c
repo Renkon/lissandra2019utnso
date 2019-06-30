@@ -199,13 +199,13 @@ void on_select(void* result, response_t* response) {
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
 	if (record->timestamp == -2) {
-		log_i("La tabla que se solicito no existe. El SELECT ha fallado");
+		log_i("La tabla %s no existe. El SELECT ha fallado", record->table_name);
 		on_statement_failure(pcb);
 	} else if (record->timestamp == -1) {
-		log_i("La key solicitada no se encuentra en la tabla. El SELECT ha fallado");
+		log_i("La key solicitada no se encuentra en la tabla %s. El SELECT ha fallado", record->table_name);
 		on_statement_failure(pcb);
 	} else {
-		log_i("RESULTADO SELECT: %s", record->value);
+		log_i("SELECT %i FROM %s: %s", record->key, record->table_name, record->value);
 	}
 
 	if (current_statement->operation <= INSERT) {
