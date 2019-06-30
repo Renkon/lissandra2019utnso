@@ -29,12 +29,15 @@ void destroy_response(response_t* response, socket_operation_t operation) {
 	// El cleanup del result varia segun el tipo
 	switch (operation) {
 		case SELECT_OUT:
+			free(((record_t*) response->result)->table_name);
 			free(((record_t*) response->result)->value);
 			free(response->result);
 		break;
 		case DESCRIBE_OUT:
-			for (int i = 0; i < list_size((t_list*) response->result); i++)
+			for (int i = 0; i < list_size((t_list*) response->result); i++) {
+				free(((table_metadata_t*) list_get((t_list*) response->result, i))->table_name);
 				free(list_get((t_list*) response->result, i));
+			}
 			list_destroy((t_list*) response->result);
 		break;
 		default:

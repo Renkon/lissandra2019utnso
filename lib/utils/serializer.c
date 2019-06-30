@@ -14,9 +14,11 @@ elements_network_t elements_select_in_info(void* input) {
 
 elements_network_t elements_select_out_info(void* input) {
 	record_t* record = (record_t*) input;
-	elements_network_t element_info = init_elements_info(3);
+	elements_network_t element_info = init_elements_info(4);
 	int* iterator = element_info.elements_size;
 
+	*iterator = strlen(record->table_name) + 1;
+	iterator++;
 	*iterator = sizeof(long long);
 	iterator++;
 	*iterator = sizeof(int);
@@ -91,11 +93,15 @@ elements_network_t elements_describe_in_info(void* input) {
 }
 
 elements_network_t elements_describe_out_info(void* input) {
+	table_metadata_t* table_metadata;
 	t_list* describe_list = (t_list*) input;
-	elements_network_t element_info = init_elements_info(3 * list_size(describe_list));
+	elements_network_t element_info = init_elements_info(4 * list_size(describe_list));
 	int* iterator = element_info.elements_size;
 
 	for (int i = 0; i < list_size(describe_list); i++) {
+		table_metadata = (table_metadata_t*) list_get(describe_list, i);
+		*iterator = strlen(table_metadata->table_name) + 1;
+		iterator++;
 		*iterator = sizeof(consistency_t);
 		iterator++;
 		*iterator = sizeof(int);
@@ -224,8 +230,12 @@ void serialize_content(void* to, socket_operation_t operation, void* from) {
 		case SELECT_OUT:
 			record_select = (record_t*) from;
 
+			elem_length = strlen(record_select->table_name) + 1;
+			memcpy(to_ptr, record_select->table_name, elem_length);
+			offset += elem_length;
+
 			elem_length = sizeof(long long);
-			memcpy(to_ptr, &(record_select->timestamp), elem_length);
+			memcpy(to_ptr + offset, &(record_select->timestamp), elem_length);
 			offset += elem_length;
 
 			elem_length = sizeof(int);
@@ -295,6 +305,10 @@ void serialize_content(void* to, socket_operation_t operation, void* from) {
 			metadata_describe = (t_list*) from;
 			for (int i = 0; i < list_size(metadata_describe); i++) {
 				metadata = (table_metadata_t*) list_get(metadata_describe, i);
+
+				elem_length = strlen(metadata->table_name) + 1;
+				memcpy(to_ptr + offset, metadata->table_name, elem_length);
+				offset += elem_length;
 
 				elem_length = sizeof(consistency_t);
 				memcpy(to_ptr + offset, &(metadata->consistency), elem_length);
@@ -368,12 +382,16 @@ void* deserialize_content(void* from, socket_operation_t operation, int elements
 		case SELECT_OUT:
 			record_select = malloc(sizeof(record_t));
 			length = elements_size[0];
-			record_select->timestamp = *((long long*)(from + offset));
+			record_select->table_name = malloc(length);
+			memcpy(record_select->table_name, from + offset, length);
 			offset += length;
 			length = elements_size[1];
-			record_select->key = *((int*)(from + offset));
+			record_select->timestamp = *((long long*)(from + offset));
 			offset += length;
 			length = elements_size[2];
+			record_select->key = *((int*)(from + offset));
+			offset += length;
+			length = elements_size[3];
 			record_select->value = malloc(length);
 			memcpy(record_select->value, from + offset, length);
 			return record_select;
@@ -433,15 +451,19 @@ void* deserialize_content(void* from, socket_operation_t operation, int elements
 		break;
 		case DESCRIBE_OUT:
 			metadata_describe = list_create();
-			for (int i = 0; i < elements; i = i + 3) {
+			for (int i = 0; i < elements; i = i + 4) {
 				metadata = malloc(sizeof(table_metadata_t));
 				length = elements_size[i];
-				metadata->consistency = *((consistency_t*)(from + offset));
+				metadata->table_name = malloc(length);
+				memcpy(metadata->table_name, from + offset, length);
 				offset += length;
 				length = elements_size[i + 1];
-				metadata->partitions = *((int*)(from + offset));
+				metadata->consistency = *((consistency_t*)(from + offset));
 				offset += length;
 				length = elements_size[i + 2];
+				metadata->partitions = *((int*)(from + offset));
+				offset += length;
+				length = elements_size[i + 3];
 				metadata->compaction_time = *((long*)(from + offset));
 				offset += length;
 				list_add(metadata_describe, metadata);
@@ -487,6 +509,7 @@ void free_deserialized_content(void* content, socket_operation_t operation) {
 			free(content);
 		break;
 		case SELECT_OUT:
+			free(((record_t*) content)->table_name);
 			free(((record_t*) content)->value);
 			free(content);
 		break;
@@ -511,8 +534,10 @@ void free_deserialized_content(void* content, socket_operation_t operation) {
 		break;
 		case DESCRIBE_OUT:
 			describe_list = (t_list*) content;
-			for (int i = 0; i < list_size(describe_list); i++)
+			for (int i = 0; i < list_size(describe_list); i++) {
+				free(((table_metadata_t*) list_get(describe_list, i))->table_name);
 				free(list_get(describe_list, i));
+			}
 			list_destroy(describe_list);
 		break;
 		case DROP_IN:
