@@ -26,6 +26,8 @@ elements_network_t elements_drop_in_info(void* input);
 elements_network_t elements_drop_out_info(void* input);
 elements_network_t elements_journal_in_info(void* input);
 elements_network_t elements_journal_out_info(void* input);
+elements_network_t elements_value_in_info(void* input);
+elements_network_t elements_value_out_info(void* input);
 elements_network_t init_elements_info(int elements);
 elements_network_t get_out_element_info(socket_operation_t operation, void* input);
 void serialize_content(void* to, socket_operation_t operation, void* from);

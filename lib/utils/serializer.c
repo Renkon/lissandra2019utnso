@@ -139,6 +139,19 @@ elements_network_t elements_journal_out_info(void* input) {
 	return element_info;
 }
 
+elements_network_t elements_value_in_info(void* input) {
+	return init_elements_info(0);
+}
+
+elements_network_t elements_value_out_info(void* input) {
+	elements_network_t element_info = init_elements_info(1);
+	int* iterator = element_info.elements_size;
+
+	*iterator = sizeof(int);
+
+	return element_info;
+}
+
 elements_network_t init_elements_info(int elements) {
 	elements_network_t element_info;
 	element_info.elements = elements;
@@ -171,6 +184,8 @@ elements_network_t get_out_element_info(socket_operation_t operation, void* inpu
 		case JOURNAL_OUT:
 			return elements_journal_out_info(input);
 		break;
+		case VALUE_OUT:
+			return elements_value_out_info(input);
 		default:
 			return init_elements_info(0);
 		break;
@@ -190,6 +205,7 @@ void serialize_content(void* to, socket_operation_t operation, void* from) {
 	drop_input_t* drop;
 	int* drop_response;
 	int* journal_response;
+	int* value_response;
 	char* to_ptr = (char*) to;
 	int offset = 0;
 	int elem_length;
@@ -241,7 +257,7 @@ void serialize_content(void* to, socket_operation_t operation, void* from) {
 			insert_response = (int*) from;
 
 			elem_length = sizeof(int);
-			memcpy(to_ptr, &insert_response, elem_length);
+			memcpy(to_ptr, insert_response, elem_length);
 		break;
 		case CREATE_IN:
 			create = (create_input_t*) from;
@@ -265,7 +281,7 @@ void serialize_content(void* to, socket_operation_t operation, void* from) {
 			create_response = (int*) from;
 
 			elem_length = sizeof(int);
-			memcpy(to_ptr, &create_response, elem_length);
+			memcpy(to_ptr, create_response, elem_length);
 		break;
 		case DESCRIBE_IN:
 			describe = (describe_input_t*) from;
@@ -302,13 +318,19 @@ void serialize_content(void* to, socket_operation_t operation, void* from) {
 			drop_response = (int*) from;
 
 			elem_length = sizeof(int);
-			memcpy(to_ptr, &drop_response, elem_length);
+			memcpy(to_ptr, drop_response, elem_length);
 		break;
 		case JOURNAL_OUT:
 			journal_response = (int*) from;
 
 			elem_length = sizeof(int);
-			memcpy(to_ptr, &journal_response, elem_length);
+			memcpy(to_ptr, journal_response, elem_length);
+		break;
+		case VALUE_OUT:
+			value_response = (int*) from;
+
+			elem_length = sizeof(int);
+			memcpy(to_ptr, value_response, elem_length);
 		break;
 		default:
 		break;
@@ -328,6 +350,7 @@ void* deserialize_content(void* from, socket_operation_t operation, int elements
 	drop_input_t* drop;
 	int* drop_response;
 	int* journal_response;
+	int* value_response;
 	int offset = 0;
 	int length;
 
@@ -441,6 +464,10 @@ void* deserialize_content(void* from, socket_operation_t operation, int elements
 			memcpy(journal_response, from, elements_size[0]);
 			return journal_response;
 		break;
+		case VALUE_OUT:
+			value_response = malloc(sizeof(int));
+			memcpy(value_response, from, elements_size[0]);
+			return value_response;
 		default:
 		break;
 	}
@@ -450,6 +477,9 @@ void* deserialize_content(void* from, socket_operation_t operation, int elements
 
 void free_deserialized_content(void* content, socket_operation_t operation) {
 	t_list* describe_list;
+
+	if (content == NULL)
+		return;
 
 	switch (operation) {
 		case SELECT_IN:
@@ -493,6 +523,9 @@ void free_deserialized_content(void* content, socket_operation_t operation) {
 			free(content);
 		break;
 		case JOURNAL_OUT:
+			free(content);
+		break;
+		case VALUE_OUT:
 			free(content);
 		break;
 		default:
