@@ -529,7 +529,8 @@ void free_deserialized_content(void* content, socket_operation_t operation) {
 			free(content);
 		break;
 		case DESCRIBE_IN:
-			free(((describe_input_t*) content)->table_name);
+			if (((describe_input_t*) content)->table_name != NULL)
+				free(((describe_input_t*) content)->table_name);
 			free(content);
 		break;
 		case DESCRIBE_OUT:

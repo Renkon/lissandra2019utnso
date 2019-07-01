@@ -93,7 +93,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 
 void process_create(create_input_t* input, response_t* response) {
 	log_i("fs create args: %s %i %i %ld", input->table_name, input->consistency,input->partitions, input->compaction_time);
-	int* create_status = sizeof(int);
+	int* create_status = malloc(sizeof(int));
 	char* table_name_upper = to_uppercase(input->table_name);
 	char* bitmap_dir = get_bitmap_directory();
 	t_bitarray* bitmap = read_bitmap(bitmap_dir);
