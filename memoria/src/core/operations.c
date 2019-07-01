@@ -132,6 +132,8 @@ void process_describe(describe_input_t* input, response_t* response) {
 	describe_input_t* describe_input = malloc(sizeof(describe_input_t));
 	if (input->table_name != NULL)
 		describe_input->table_name = strdup(input->table_name);
+	else
+		describe_input->table_name = NULL;
 
 	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DESCRIBE_IN, describe_input, elem_info.elements, elem_info.elements_size,
 			describe_callback, true, cleanup_describe_input, response);
@@ -197,9 +199,7 @@ void create_callback(void* result, response_t* response) {
 
 void describe_callback(void* result, response_t* response){
 	t_list* results = (t_list*) result;
-	t_list* new_results = list_create();
 	table_metadata_t* table_metadata;
-	table_metadata_t* new_table_metadata;
 	char* consistency;
 
 	for (int i = 0; i < list_size(results); i++) {
@@ -213,6 +213,9 @@ void describe_callback(void* result, response_t* response){
 	}
 
 	if (response != NULL) {
+		t_list* new_results = list_create();
+		table_metadata_t* new_table_metadata;
+
 		for (int i = 0; i < list_size(results); i++) {
 			table_metadata = (table_metadata_t*) list_get(results, i);
 			new_table_metadata = malloc(sizeof(table_metadata_t));
@@ -223,6 +226,8 @@ void describe_callback(void* result, response_t* response){
 
 			list_add(new_results, new_table_metadata);
 		}
+
+		set_response(response, new_results);
 	}
 }
 
