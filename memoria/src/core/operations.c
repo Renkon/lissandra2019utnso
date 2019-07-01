@@ -165,22 +165,41 @@ void process_journal(response_t* response) {
 }
 
 void select_callback(void* result, response_t* response) {
+	// Falla conexion?
+	if (result == NULL) {
+		log_w("No se pudo seleccionar un valor del filesystem");
+	}
+
 	record_t* record = (record_t*) result;
 
 	if (response != NULL) {
 		// Vamos a copiar el objeto record, asi se lo podemos devolver
 		record_t* new_record = malloc(sizeof(record_t));
-		new_record->table_name = strdup(record->table_name);
-		new_record->key = record->key;
-		new_record->timestamp = record->timestamp;
-		new_record->value = strdup(record->value);
+		if (result != NULL) {
+			new_record->table_name = strdup(record->table_name);
+			new_record->key = record->key;
+			new_record->timestamp = record->timestamp;
+			new_record->value = strdup(record->value);
+		} else {
+			new_record->table_name = strdup("ERROR");
+			new_record->key = -3;
+			new_record->timestamp = -3;
+			new_record->value = strdup("-3");
+		}
 		set_response(response, new_record);
 	}
 }
 
 
 void create_callback(void* result, response_t* response) {
-	int* output = (int*) result;
+	int* output;
+
+	if (result == NULL) {
+		output = malloc(sizeof(int));
+		*output = -3;
+	} else {
+		output = (int*) result;
+	}
 
 	if (*output == 0) {
 		log_i("Se ha creado una tabla satisfactoriamente");
@@ -188,6 +207,8 @@ void create_callback(void* result, response_t* response) {
 		log_e("La tabla que se intenta crear ya existe");
 	} else if (*output == -2) {
 		log_e("No hay bloques en el FS para crear la tabla");
+	} else if (*output == -3) {
+		log_e("Hubo un error de red al ir a crear la tabla");
 	}
 
 	if (response != NULL) {
@@ -195,6 +216,9 @@ void create_callback(void* result, response_t* response) {
 		*new_result = *output;
 		set_response(response, new_result);
 	}
+
+	if (result == NULL)
+		free(output);
 }
 
 void describe_callback(void* result, response_t* response){
@@ -202,31 +226,36 @@ void describe_callback(void* result, response_t* response){
 	table_metadata_t* table_metadata;
 	char* consistency;
 
-	for (int i = 0; i < list_size(results); i++) {
-		table_metadata = (table_metadata_t*) list_get(results, i);
-		consistency = get_consistency_name(table_metadata->consistency);
+	if (result == NULL) {
+		log_e("Hubo un error de red al hacer el DESCRIBE");
+	} else {
+		for (int i = 0; i < list_size(results); i++) {
+			table_metadata = (table_metadata_t*) list_get(results, i);
+			consistency = get_consistency_name(table_metadata->consistency);
 
-		log_i("Metadata de tabla %s", table_metadata->table_name);
-		log_i("Tiempo de compactacion: %ld", table_metadata->compaction_time);
-		log_i("Consistencia: %s", consistency);
-		log_i("Cantidad de particiones: %i", table_metadata->partitions);
+			log_i("Metadata de tabla %s", table_metadata->table_name);
+			log_i("Tiempo de compactacion: %ld", table_metadata->compaction_time);
+			log_i("Consistencia: %s", consistency);
+			log_i("Cantidad de particiones: %i", table_metadata->partitions);
+		}
 	}
 
 	if (response != NULL) {
 		t_list* new_results = list_create();
 		table_metadata_t* new_table_metadata;
 
-		for (int i = 0; i < list_size(results); i++) {
-			table_metadata = (table_metadata_t*) list_get(results, i);
-			new_table_metadata = malloc(sizeof(table_metadata_t));
-			new_table_metadata->table_name = strdup(table_metadata->table_name);
-			new_table_metadata->compaction_time = table_metadata->compaction_time;
-			new_table_metadata->consistency = table_metadata->consistency;
-			new_table_metadata->partitions = table_metadata->partitions;
+		if (result != NULL) {
+			for (int i = 0; i < list_size(results); i++) {
+				table_metadata = (table_metadata_t*) list_get(results, i);
+				new_table_metadata = malloc(sizeof(table_metadata_t));
+				new_table_metadata->table_name = strdup(table_metadata->table_name);
+				new_table_metadata->compaction_time = table_metadata->compaction_time;
+				new_table_metadata->consistency = table_metadata->consistency;
+				new_table_metadata->partitions = table_metadata->partitions;
 
-			list_add(new_results, new_table_metadata);
+				list_add(new_results, new_table_metadata);
+			}
 		}
-
 		set_response(response, new_results);
 	}
 }
@@ -255,7 +284,11 @@ void get_value_from_filesystem() {
 }
 
 void get_value_callback(void* result, response_t* response) {
-	int* value = (int*) result;
-	log_i("Me llego un value del FS. VALOR: %i", *value);
+	if (result == NULL) {
+		log_w("No me llego un value del FS. ¿Esta caido?");
+	} else {
+		int* value = (int*) result;
+		log_i("Me llego un value del FS. VALOR: %i", *value);
+	}
 }
 

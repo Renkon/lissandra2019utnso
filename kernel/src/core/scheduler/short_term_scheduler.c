@@ -158,7 +158,10 @@ void on_select(void* result, response_t* response) {
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
-	if (record->timestamp == -2) {
+	if (record->timestamp == -3) {
+		log_e("Hubo un error de red al querer ir a buscar un valor. El SELECT ha fallado");
+		pcb->errors = true;
+	} else if (record->timestamp == -2) {
 		log_e("La tabla %s no existe. El SELECT ha fallado", record->table_name);
 		pcb->errors = true;
 	} else if (record->timestamp == -1) {
@@ -205,7 +208,10 @@ void on_create(void* result, response_t* response) {
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 	input = current_statement->create_input;
 
-	if (*status == -2) {
+	if (*status == -3) {
+		log_e("Hubo un error de red al querer crear la tabla %s. El CREATE ha fallado", input->table_name);
+		pcb->errors = true;
+	} else if (*status == -2) {
 		log_e("No hay bloques suficientes para crear la tabla %s con %i particiones. El CREATE ha fallado", input->table_name, input->partitions);
 		pcb->errors = true;
 	} else if (*status == -1) {
@@ -226,7 +232,8 @@ void on_describe(void* result, response_t* response) {
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
 	if (list_size(metadata_list) == 0) {
-		log_i("No se encontraron tablas al hacer el DESCRIBE.");
+		log_w("No se encontraron tablas al hacer el DESCRIBE.");
+		log_w("Puede ser que la tabla no exista, o que haya fallado la solicitud al filesystem");
 	} else {
 		for (int i = 0; i < list_size(metadata_list); i++) {
 			table_metadata_t* metadata = (table_metadata_t*) list_get(metadata_list, i);

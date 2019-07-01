@@ -22,4 +22,6 @@ void on_describe(void* result, response_t* response);
 void on_drop(void* result, response_t* response);
 void on_journal(void* result, response_t* response);
 
+void post_exec_statement(pcb_t* pcb, statement_t* current_statement);
+
 #endif /* CORE_SCHEDULER_SHORT_TERM_SCHEDULER_H_ */
