@@ -207,7 +207,7 @@ void describe_callback(void* result, response_t* response){
 		consistency = get_consistency_name(table_metadata->consistency);
 
 		log_i("Metadata de tabla %s", table_metadata->table_name);
-		log_i("Tiempo de compactacion: %i", table_metadata->compaction_time);
+		log_i("Tiempo de compactacion: %ld", table_metadata->compaction_time);
 		log_i("Consistencia: %s", consistency);
 		log_i("Cantidad de particiones: %i", table_metadata->partitions);
 	}
