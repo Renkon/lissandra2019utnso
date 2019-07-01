@@ -167,7 +167,7 @@ void process_journal(response_t* response) {
 void select_callback(void* result, response_t* response) {
 	// Falla conexion?
 	if (result == NULL) {
-		log_w("No se pudo seleccionar un valor del filesystem");
+		log_e("No se pudo seleccionar un valor del filesystem");
 	}
 
 	record_t* record = (record_t*) result;

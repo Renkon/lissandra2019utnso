@@ -158,7 +158,10 @@ void on_select(void* result, response_t* response) {
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
-	if (record->timestamp == -3) {
+	if (record == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El SELECT ha fallado");
+		pcb->errors = true;
+	} else if (record->timestamp == -3) {
 		log_e("Hubo un error de red al querer ir a buscar un valor. El SELECT ha fallado");
 		pcb->errors = true;
 	} else if (record->timestamp == -2) {
@@ -188,8 +191,12 @@ void on_insert(void* result, response_t* response) {
 
 	// TODO: logica del insert aca
 	// Debajo deberia ir lo del insert
-	log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
-
+	if (status == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+		pcb->errors = true;
+	} else {
+		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+	}
 
 	pcb->last_execution_stats->timestamp_end = get_timestamp();
 	log_t("Se ingresa un evento a las estadisticas.");
@@ -207,8 +214,10 @@ void on_create(void* result, response_t* response) {
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 	input = current_statement->create_input;
-
-	if (*status == -3) {
+	if (status == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El CREATE ha fallado");
+		pcb->errors = true;
+	} else if (*status == -3) {
 		log_e("Hubo un error de red al querer crear la tabla %s. El CREATE ha fallado", input->table_name);
 		pcb->errors = true;
 	} else if (*status == -2) {
@@ -231,17 +240,22 @@ void on_describe(void* result, response_t* response) {
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
-	if (list_size(metadata_list) == 0) {
-		log_w("No se encontraron tablas al hacer el DESCRIBE.");
-		log_w("Puede ser que la tabla no exista, o que haya fallado la solicitud al filesystem");
+	if (metadata_list == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El DESCRIBE ha fallado");
+		pcb->errors = true;
 	} else {
-		for (int i = 0; i < list_size(metadata_list); i++) {
-			table_metadata_t* metadata = (table_metadata_t*) list_get(metadata_list, i);
-			char* consistency = get_consistency_name(metadata->consistency);
-			log_i("Metadata de la tabla %s", metadata->table_name);
-			log_i("  -> Tiempo de compactacion: %ld", metadata->compaction_time);
-			log_i("  -> Consistencia: %s", consistency);
-			log_i("  -> Cantidad de particiones: %i", metadata->partitions);
+		if (list_size(metadata_list) == 0) {
+			log_w("No se encontraron tablas al hacer el DESCRIBE.");
+			log_w("Puede ser que la tabla no exista, o que haya fallado la solicitud al filesystem");
+		} else {
+			for (int i = 0; i < list_size(metadata_list); i++) {
+				table_metadata_t* metadata = (table_metadata_t*) list_get(metadata_list, i);
+				char* consistency = get_consistency_name(metadata->consistency);
+				log_i("Metadata de la tabla %s", metadata->table_name);
+				log_i("  -> Tiempo de compactacion: %ld", metadata->compaction_time);
+				log_i("  -> Consistencia: %s", consistency);
+				log_i("  -> Cantidad de particiones: %i", metadata->partitions);
+			}
 		}
 	}
 
@@ -257,7 +271,12 @@ void on_drop(void* result, response_t* response) {
 
 	// TODO: logica del drop aca
 	// Debajo deberia ir lo del drop
-	log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+	if (status == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+		pcb->errors = true;
+	} else {
+		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+	}
 
 	post_exec_statement(pcb, current_statement);
 }
@@ -271,7 +290,12 @@ void on_journal(void* result, response_t* response) {
 
 	// TODO: logica del journal aca
 	// Debajo deberia ir lo del journal
-	log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+	if (status == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+		pcb->errors = true;
+	} else {
+		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+	}
 
 	post_exec_statement(pcb, current_statement);
 }
