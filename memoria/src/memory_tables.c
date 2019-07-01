@@ -169,3 +169,49 @@ void remove_segment(segment_t* segment){
 	list_remove_and_destroy_element(g_segment_list,position,(void*)destroy_segment);
 }
 
+bool segment_has_page_by_index(segment_t* segment, int index){
+	int i=0;
+	t_list* page_list = segment->page;
+	page_t* comp_page;
+
+	for(;i < list_size(page_list);i++){
+		comp_page = list_get(page_list,i);
+		if(comp_page->index == index){
+			break;
+		}
+	}
+
+	return i<list_size(page_list)?true:false;
+}
+
+char* get_table_name_by_index(int index_in_memory){
+	segment_t* segment;
+	int i = 0;
+	for(;i < list_size(g_segment_list); i++){
+		segment = list_get(g_segment_list,i);
+		if(segment_has_page_by_index(segment,index_in_memory)){
+			break;
+		}
+	}
+
+	if( i < list_size(g_segment_list)){
+		return segment->name;
+	}else{
+		return NULL;
+	}
+}
+
+bool page_modified(page_t* page){
+	return page->modified == true;
+}
+
+void remove_pages_modified(){
+	int i = 0;
+	segment_t* segment;
+
+	for(;i < list_size(g_segment_list);i++){
+		segment = list_get(g_segment_list,i);
+
+		list_remove_and_destroy_by_condition(segment->page,(bool*)page_modified,(void*)destroy_page);
+	}
+}

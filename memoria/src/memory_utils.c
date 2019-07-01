@@ -109,7 +109,7 @@ void eliminate_page_instance_by_index(segment_t* segment, int index){
 	}
 }
 
-t_list* list_add_multi_lists(t_list* pages_indexes, t_list* journal_list){
+t_list* list_add_multi_lists(t_list* pages_indexes){
 	t_list* new_list = list_create();
 	insert_input_t* insert = malloc(sizeof(insert_input_t));
 
@@ -117,7 +117,7 @@ t_list* list_add_multi_lists(t_list* pages_indexes, t_list* journal_list){
 		insert->timestamp = string_to_long_long(main_memory_values(list_get(pages_indexes,i),TIMESTAMP));
 		insert->key = string_to_uint16(main_memory_values(list_get(pages_indexes,i),KEY));
 		insert->value = main_memory_values(list_get(pages_indexes,i),VALUE);
-		insert->table_name;//TODO Con el index encontrar la tabla. :L
+		insert->table_name = get_table_name_by_index(list_get(pages_indexes,i));
 
 		list_add(new_list,insert);
 	}
@@ -129,21 +129,26 @@ void journaling(){
 	t_list* journal = get_pages_by_modified(true);
 	t_list* indexes = list_map(journal,(void*)page_get_index);
 
-	t_list* journal_list = list_add_multi_lists(journal_list,journal);//TODO funcion
+	t_list* journal_list = list_add_multi_lists(journal_list);
 
 	int position;
 
 	for(int i = 0; i < list_size(journal_list); i++){
-		//sending_journal = list_get(journal_list,0);
-		//TODO enviar al FILESYSTEM la peticion de lo que esta asignado en la variable journal.
+		//insert_input_t* sending_journal = list_get(journal_list,i);
+		//elements_network_t elem_info = elements_create_in_info(sending_journal);
+		//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, sending_journal, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input, response);
+
+	}
+
+	remove_pages_modified();
+
+	for(int j = 0; j < list_size(journal); j++){
+		position = list_get(indexes,j);
+		strcpy(main_memory[position],"null");
 	}
 
 	list_destroy(journal);
-
-	for(int j = 0; j < list_size(journal); j++){
-		position = list_get(indexes,0);
-		strcpy(main_memory[position],"null");
-	}
+	list_destroy(indexes);
 }
 
 page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* value){

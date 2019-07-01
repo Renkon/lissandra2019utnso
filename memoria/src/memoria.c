@@ -44,7 +44,7 @@ void create_dummy(){ //TODO renombrar a init_global_segment o algo asi y borrar 
 	segment_t* segment_dummy = create_segment("laposta");
 
 	a = memory_insert(get_timestamp(),65000,"hey");
-	page_t* page_dummy = create_page(a,false);
+	page_t* page_dummy = create_page(a,true);
 
 	list_add(segment_dummy->page,page_dummy);
 	list_add(g_segment_list,segment_dummy);
