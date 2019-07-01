@@ -88,6 +88,7 @@ void do_request(void* arguments) {
 
 	pthread_detach(pthread_self());
 	if ((socket = setup_connection(args->process, args->ip, args->port)) < 0) {
+		free(arguments);
 		return;
 	}
 

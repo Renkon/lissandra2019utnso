@@ -13,7 +13,7 @@ char* get_consistency_name(consistency_t consistency) {
 	switch (consistency) {
 		case STRONG_CONSISTENCY: return "Strong Consistency";
 		case STRONG_HASH_CONSISTENCY: return "Strong Hash Consistency";
-		case EVENTUAL_CONSISTENCY: return "Eventual  Consistency";
+		case EVENTUAL_CONSISTENCY: return "Eventual Consistency";
 		default: return "Desconocido";
 	}
 
