@@ -113,15 +113,28 @@ void process_insert(insert_input_t* input, response_t* response) {
 
 void process_create(create_input_t* input, response_t* response) {
 	log_i("mm create args: %s %i %i %ld", input->table_name, input->consistency, input->partitions, input->compaction_time);
-		// solo se envia al FileSystem la operacion para crear la tabla
-		//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, input, sizeof(input), create_callback);
+
+	elements_network_t elem_info = elements_create_in_info(input);
+	create_input_t* create_input = malloc(sizeof(create_input_t));
+	create_input->table_name = strdup(input->table_name);
+	create_input->compaction_time = input->compaction_time;
+	create_input->consistency = input->consistency;
+	create_input->partitions = input->partitions;
+
+	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, create_input, elem_info.elements, elem_info.elements_size,
+			create_callback, true, cleanup_create_input, response);
 }
 
 void process_describe(describe_input_t* input, response_t* response) {
 	log_i("mm describe args: %s", input->table_name);
-	// se envia la operacion al filesystem,deberia retornar lo que el kernel necesite para la operacion
-	//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DESCRIBE_IN, input->table_name,strlen(input->table_name), describe_callback);
 
+	elements_network_t elem_info = elements_describe_in_info(input);
+	describe_input_t* describe_input = malloc(sizeof(describe_input_t));
+	if (input->table_name != NULL)
+		describe_input->table_name = strdup(input->table_name);
+
+	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DESCRIBE_IN, describe_input, elem_info.elements, elem_info.elements_size,
+			describe_callback, true, cleanup_describe_input, response);
 }
 
 void process_drop(drop_input_t* input, response_t* response) {
@@ -165,17 +178,71 @@ void select_callback(void* result, response_t* response) {
 
 
 void create_callback(void* result, response_t* response) {
-	//lo mismo que el select callback, la funcion con el socket seguro tendre que hacerla polimorfica o weas
+	int* output = (int*) result;
+
+	if (*output == 0) {
+		log_i("Se ha creado una tabla satisfactoriamente");
+	} else if (*output == -1) {
+		log_e("La tabla que se intenta crear ya existe");
+	} else if (*output == -2) {
+		log_e("No hay bloques en el FS para crear la tabla");
+	}
+
+	if (response != NULL) {
+		int* new_result = malloc(sizeof(int));
+		*new_result = *output;
+		set_response(response, new_result);
+	}
 }
 
 void describe_callback(void* result, response_t* response){
-	//se lo pido al FS con la funcion para devolver parametros
+	t_list* results = (t_list*) result;
+	t_list* new_results = list_create();
+	table_metadata_t* table_metadata;
+	table_metadata_t* new_table_metadata;
+	char* consistency;
+
+	for (int i = 0; i < list_size(results); i++) {
+		table_metadata = (table_metadata_t*) list_get(results, i);
+		consistency = get_consistency_name(table_metadata->consistency);
+
+		log_i("Metadata de tabla %s", table_metadata->table_name);
+		log_i("Tiempo de compactacion: %i", table_metadata->compaction_time);
+		log_i("Consistencia: %s", consistency);
+		log_i("Cantidad de particiones: %i", table_metadata->partitions);
+	}
+
+	if (response != NULL) {
+		for (int i = 0; i < list_size(results); i++) {
+			table_metadata = (table_metadata_t*) list_get(results, i);
+			new_table_metadata = malloc(sizeof(table_metadata_t));
+			new_table_metadata->table_name = strdup(table_metadata->table_name);
+			new_table_metadata->compaction_time = table_metadata->compaction_time;
+			new_table_metadata->consistency = table_metadata->consistency;
+			new_table_metadata->partitions = table_metadata->partitions;
+
+			list_add(new_results, new_table_metadata);
+		}
+	}
 }
 
 void cleanup_select_input(void* input) {
 	select_input_t* select_input = (select_input_t*) input;
 	free(select_input->table_name);
 	free(select_input);
+}
+
+void cleanup_create_input(void* input) {
+	create_input_t* create_input = (create_input_t*) input;
+	free(create_input->table_name);
+	free(create_input);
+}
+
+void cleanup_describe_input(void* input) {
+	describe_input_t* describe_input = (describe_input_t*) input;
+	if (describe_input->table_name != NULL)
+		free(describe_input->table_name);
+	free(describe_input);
 }
 
 void get_value_from_filesystem() {
