@@ -19,7 +19,7 @@ bool init_config(char* config_file, void (*callback_created)(t_config*), void (*
 	g_callbacks = NULL;
 
 	thread_args = build_config_args(config_keys, config_size, config_file, callback_updated);
-
+//tercero es la funcion, el cuarto son las weas a mandar
 	if (pthread_create(&config_thread, NULL, (void*) pre_check_config, (void*) thread_args)) {
 			log_e("No se pudo inicializar el hilo de configuracion");
 			return false;

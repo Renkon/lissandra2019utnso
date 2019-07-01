@@ -1,6 +1,21 @@
 #include "compactor.h"
 
+void initialize_dump(){
+	pthread_t config_thread;
+	pthread_create(&config_thread, NULL, (void*) dump_all_tables, NULL);
+
+}
+
+void dump_all_tables(){
+	while(true){
+		dump();
+		usleep(g_config.dump_time);
+	}
+}
+
 void dump(){
+
+	if(mem_table->elements_count>0){
 	//Saco cuantos bloques necesito para dumpear todas las tablas los cuales se calculan como:
 	//tamaño de todos los tkvs/ tamaño de un bloque redondeado hacia arriba.
 	int necessary_blocks = division_rounded_up(length_of_all_tkvs_in_memtable(), fs_metadata->block_size);
@@ -31,6 +46,7 @@ void dump(){
 	free(bitmap->bitarray);
 	free(bitmap);
 	free(bitmap_dir);
+	}
 }
 
 void create_table_tmp(char* table_name,int* blocks,int block_amount,int tkv_size){
@@ -132,8 +148,7 @@ void dump_table(table_t* table, int* blocks, int size_of_blocks) {
 		if (block_size <= 1) {
 			fclose(block);
 			block_index++;
-			int block_open = blocks_for_the_table[block_index];
-			block = open_block(block_open);
+			block = open_block(blocks_for_the_table[block_index]);
 			block_size = fs_metadata->block_size;
 		}
 

@@ -112,8 +112,7 @@ void process_create(create_input_t* input) {
 }
 
 t_list* process_describe(describe_input_t* input) {
-dump();
-/*	log_i("fs describe args: %s", input->table_name);
+log_i("fs describe args: %s", input->table_name);
 	char* table_dir = get_table_directory();
 	//Si me mandan null muestro la metadata de todas las tablas
 	t_list* metadata_list = list_create();
@@ -159,7 +158,7 @@ dump();
 	}
 
 	free(table_dir);
-	return metadata_list;*/
+	return metadata_list;
 }
 
 bool process_drop(drop_input_t* input) {

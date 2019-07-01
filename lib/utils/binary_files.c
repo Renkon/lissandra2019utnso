@@ -6,9 +6,9 @@ t_bitarray* read_bitmap(char* bitmap_directory) {
 	FILE* arch2 = fopen(bitmap_directory, "rb");
 	fread(&bitmap->mode, 1, sizeof(bitmap->mode), arch2);
 	fread(&bitmap->size, 1, sizeof(bitmap->size), arch2);
-	bitmap->bitarray = malloc(sizeof(char) * bitmap->size);
+	bitmap->bitarray = malloc(bitmap->size);
 	fread(bitmap->bitarray, 1, sizeof(bitmap->size), arch2);
-
+	fclose(arch2);
 	return bitmap;
 }
 
@@ -20,6 +20,9 @@ void write_bitmap(t_bitarray *bitmap, char* bitmap_directory) {
 
 	fclose(arch);
 }
+
+
+
 
 
 

@@ -2,7 +2,9 @@
 
 char* create_new_directory(char* old_directory, char* directory_end) {
 	//Con esto creo nuevos directorios, mas que nada para crear de forma mas comoda los path a las nuevas tablas
-	char* new_path = malloc(strlen(old_directory) + strlen(directory_end) + 1);
+	int size_old_directory =strlen(old_directory);
+	int size_directory_end =strlen(directory_end);
+	char* new_path = malloc(size_old_directory + size_directory_end + 1);
 	strcpy(new_path, old_directory);
 	strcat(new_path, directory_end);
 	return new_path;
@@ -64,7 +66,7 @@ char* create_partition_name(int partition_number) {
 }
 
 char* create_block_directory(int block_number) {
-	char* block_name = malloc(digits_in_a_number(block_number) + strlen(".bin") + 1);
+	char* block_name = malloc(digits_in_a_number(block_number) + strlen(".bin")+1);
 	sprintf(block_name, "%d.bin", block_number);
 	char* block_dir = get_block_directory();
 	char* new_dir = create_new_directory(block_dir, block_name);

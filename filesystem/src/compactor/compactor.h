@@ -8,6 +8,7 @@
 #include "utils/numbers.h"
 #include "utils/int_arrays.h"
 
+void dump_all_tables();
 void dump();
 void free_memtable();
 void dump_table(table_t* table, int* blocks, int size_of_blocks);

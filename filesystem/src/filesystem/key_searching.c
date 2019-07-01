@@ -43,10 +43,24 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 		key_found = search_key_in_block(partition->blocks[i], string_key, index, incomplete_tkv_size);
 		index = 0;
 
-		//Me fijo si la funcion encontro esa key
-	/*	if (strcmp(key_found->tkv, "-1;-1;-1") != 0 && !key_found->incomplete) {
-			break;
-		}*/
+		//Me fijo si encontro la key
+	if (strcmp(key_found->tkv, "-1;-1;-1") != 0 && !key_found->incomplete) {
+		char** tkv_found = string_split(key_found->tkv, ";");
+		long long tkv_found_timestamp =string_to_long_long(tkv_found[0]);
+		//Me fijo si esa key tiene timestamp mas grande qque la que encontre antes
+		if(tkv_found_timestamp> key_found_in_block->timestamp){
+			key_found_in_block->timestamp = tkv_found_timestamp;
+			free(correct_key_found->tkv);
+			correct_key_found->tkv = malloc(strlen(key_found->tkv)+1);
+			strcpy(correct_key_found->tkv, key_found->tkv);
+
+		}
+			free(tkv_found[0]);
+			free(tkv_found[1]);
+			free(tkv_found[2]);
+			free(tkv_found);
+
+		}
 
 		//Me fijo si encontro un tkv incompleto
 		if (key_found->incomplete) {
@@ -93,7 +107,6 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 			free(key_found);
 		}
 	}
-	correct_key_found->tkv;
 	convert_to_record(key_found_in_block, correct_key_found);
 	free(key_found->tkv);
 	free(key_found);
@@ -148,10 +161,11 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 	}
 
 	int i = 0;
-
+	int pointer= 0;
 	while (!feof(arch)) {
 		size_t lecture = fread(readed_key, 1, tkv_size(), arch);
-
+		pointer+= strlen(readed_key)+1;
+		fseek(arch,pointer,SEEK_SET);
 		if (readed_key[0] && string_ends_with(readed_key, "\n")) {
 			//Si tiene \n entonces copio este string sin el \n y prengo el flag de incompleto
 			char* substr = string_substring_until(readed_key, strlen(readed_key) - 1);
