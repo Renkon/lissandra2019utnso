@@ -155,6 +155,16 @@ void display_metadata() {
 	}
 }
 
+bool table_exists_in_metadata(char* table_name) {
+	for (int i = 0; i < list_size(g_table_metadata); i++) {
+		table_metadata_t* table_metadata = list_get(g_table_metadata, i);
+		if (string_equals_ignore_case(table_name, table_metadata->table_name))
+			return true;
+	}
+
+	return false;
+}
+
 void free_auto_describe_input(void* input) {
 	free(input);
 }

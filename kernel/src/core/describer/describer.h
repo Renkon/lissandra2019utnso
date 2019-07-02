@@ -35,6 +35,8 @@ void on_post_create(create_input_t* input);
 void on_post_drop(drop_input_t* input);
 void display_metadata();
 
+bool table_exists_in_metadata(char* table_name);
+
 void free_auto_describe_input(void* input);
 
 #endif /* CORE_DESCRIBER_DESCRIBER_H_ */
