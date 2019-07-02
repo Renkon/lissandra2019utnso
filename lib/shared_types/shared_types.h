@@ -4,12 +4,14 @@
 #include "../utils/operation_types.h"
 
 typedef struct {
+	char* table_name;
 	long long timestamp;
 	int key;
 	char* value;
 } record_t;
 
-typedef struct  {
+typedef struct {
+	char* table_name;
 	consistency_t consistency;
 	int partitions;
 	long compaction_time;

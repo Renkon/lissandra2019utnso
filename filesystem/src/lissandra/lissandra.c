@@ -29,4 +29,5 @@ void init_server_callbacks() {
 	g_server_callbacks[CREATE_IN] = process_create;
 	g_server_callbacks[DESCRIBE_IN] = process_describe;
 	g_server_callbacks[DROP_IN] = process_drop;
+	g_server_callbacks[VALUE_IN] = process_value;
 }

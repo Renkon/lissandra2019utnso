@@ -20,6 +20,7 @@ int main(void) {
 	init_main_memory();
 	setup_response_id_generator();
 	create_dummy();
+	get_value_from_filesystem();
 	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY, get_callbacks());
 	destroy_logger();
 	return 0;
@@ -46,27 +47,9 @@ void create_dummy(){ //TODO renombrar a init_global_segment o algo asi y borrar 
 	segment_t* segment_dummy = create_segment("LAPOSTA");
 
 	a = memory_insert(1,65000,"hey");
-	page_t* page_dummy = create_page(a,true);
+	page_t* page_dummy = create_page(a,false);
 
 	list_add(segment_dummy->page,page_dummy);
-	list_add(g_segment_list,segment_dummy);
-
-	b = memory_insert(2,64999,"como");
-	page_t* page_dummy2 = create_page(b,true);
-
-	list_add(segment_dummy->page,page_dummy2);
-	list_add(g_segment_list,segment_dummy);
-
-	c = memory_insert(3,64998,"stas");
-	page_t* page_dummy3 = create_page(c,false);
-
-	list_add(segment_dummy->page,page_dummy3);
-	list_add(g_segment_list,segment_dummy);
-
-	d = memory_insert(4,64997,"yo");
-	page_t* page_dummy4 = create_page(d,false);
-
-	list_add(segment_dummy->page,page_dummy4);
 	list_add(g_segment_list,segment_dummy);
 
 }

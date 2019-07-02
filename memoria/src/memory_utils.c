@@ -107,6 +107,7 @@ void eliminate_page_instance_by_index(segment_t* segment, int index){
 	}else{
 		log_w("NO se encontro la pagina, abortando");//nunca deberia pasar esto xd
 	}
+
 }
 
 t_list* list_add_multi_lists(t_list* pages_indexes){
@@ -122,6 +123,10 @@ t_list* list_add_multi_lists(t_list* pages_indexes){
 		list_add(new_list,insert);
 	}
 
+	free(insert->table_name);
+	free(insert->value);
+	free(insert);
+
 	return new_list;
 }
 
@@ -136,7 +141,7 @@ void journaling(){
 	for(int i = 0; i < list_size(journal_list); i++){
 		//insert_input_t* sending_journal = list_get(journal_list,i);
 		//elements_network_t elem_info = elements_create_in_info(sending_journal);
-		//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, sending_journal, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input, response);
+		//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, sending_journal, elem_info.elements, elem_info.elements_size, insert_callback, true, cleanup_insert_input, NULL);
 
 	}
 
@@ -149,6 +154,7 @@ void journaling(){
 
 	list_destroy(journal);
 	list_destroy(indexes);
+
 }
 
 page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* value){
@@ -162,23 +168,23 @@ page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* 
 
 		t_list* indexes = list_map(not_modified_pages,(void*) page_get_index);
 
-		indexes = list_sorted(indexes, order_by_timestamp);
+		t_list* indexes_sorted = list_sorted(indexes, order_by_timestamp);
 
-		replace = (int) list_get(indexes,0);
+		replace = list_get(indexes_sorted,0);
 
 		eliminate_page_instance_by_index(segment,replace);
 
 		index = memory_insert(timestamp, key, value);
 		found_page = create_page(index, true);
 
-		free(found_page);
-		//destroy(not_modified_pages);
+		list_destroy(not_modified_pages);
 		list_destroy(indexes);
+		list_destroy(indexes_sorted);
 
 		return found_page;
 
 	}else{
-
+		log_i("Memoria llena, iniciando journaling...");
 		journaling();
 		replace_algorithm(segment, timestamp, key, value);
 		//return null;

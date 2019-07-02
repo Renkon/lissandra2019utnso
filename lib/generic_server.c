@@ -114,8 +114,7 @@ void handle_request(void* args) {
 			payload = deserialize_content(packet->content, packet->header.operation, packet->header.elements, packet->header.elements_size);
 			response = generate_response_object();
 
-			if (payload != NULL)
-				g_server_callbacks[packet->header.operation](payload, response);
+			g_server_callbacks[packet->header.operation](payload, response);
 
 			wait_for_response(response);
 

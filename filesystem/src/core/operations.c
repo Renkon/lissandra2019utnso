@@ -32,10 +32,12 @@ void process_select(select_input_t* input, response_t* response) {
 		key_found->value = strdup("-2");
 	}
 
+	key_found->table_name = table_name_upper;
+
 	free(initial_table_dir);
-	free(table_name_upper);
 
 	if (response == NULL) {
+		free(key_found->table_name);
 		free(key_found->value);
 		free(key_found);
 	} else {
@@ -91,7 +93,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 
 void process_create(create_input_t* input, response_t* response) {
 	log_i("fs create args: %s %i %i %ld", input->table_name, input->consistency,input->partitions, input->compaction_time);
-	int* create_status = sizeof(int);
+	int* create_status = malloc(sizeof(int));
 	char* table_name_upper = to_uppercase(input->table_name);
 	char* bitmap_dir = get_bitmap_directory();
 	t_bitarray* bitmap = read_bitmap(bitmap_dir);
@@ -150,6 +152,7 @@ void process_describe(describe_input_t* input, response_t* response) {
 			char* table_name = list_get(table_list , i);
 			char* table_directory = create_new_directory(table_dir, table_name);
 			table_metadata_t* table_metadata = read_table_metadata(table_directory);
+			table_metadata->table_name = strdup(table_name);
 			//Paso de enum a string
 			char* consistency_name = get_consistency_name(table_metadata->consistency);
 			log_i("La tabla %s tiene: \n Un tiempo de compactacion de %ld milisegundos "
@@ -167,25 +170,27 @@ void process_describe(describe_input_t* input, response_t* response) {
 			//Si existe muestro su metadata
 			char* table_directory = create_new_directory(table_dir, table_name_upper);
 			table_metadata_t* table_metadata = read_table_metadata(table_directory);
+			table_metadata->table_name = strdup(table_name_upper);
 			//Paso de enum a string
 			char* consistency_name = get_consistency_name(table_metadata->consistency);
 			log_i("La tabla %s tiene: \n Un tiempo de compactacion de %ld milisegundos "
 					"\n Una consistencia del tipo %s \n Y %d particion/es.", table_name_upper, table_metadata->compaction_time, consistency_name, table_metadata->partitions);
 			free(table_directory);
-			free(table_name_upper);
 			list_add(metadata_list, table_metadata);
 		} else {
 			//Si no existe la tabla  se termina la operacion
 			log_w("La tabla %s no existe. Operacion DESCRIBE cancelada", table_name_upper);
-			free(table_name_upper);
 		}
+		free(table_name_upper);
 	}
 
 	free(table_dir);
 
 	if (response == NULL) {
-		for (int i = 0; i < list_size(metadata_list); i++)
+		for (int i = 0; i < list_size(metadata_list); i++) {
+			free(((table_metadata_t*) list_get(metadata_list, i))->table_name);
 			free(list_get(metadata_list, i));
+		}
 		list_destroy(metadata_list);
 	} else {
 		set_response(response, metadata_list);
@@ -229,6 +234,12 @@ void process_drop(drop_input_t* input, response_t* response) {
 		free(drop_status);
 	else
 		set_response(response, drop_status);
+}
+
+void process_value(void* unused, response_t* response) {
+	int* value = malloc(sizeof(int));
+	memcpy(value, &(g_config.max_value_size), sizeof(int));
+	set_response(response, value);
 }
 
 

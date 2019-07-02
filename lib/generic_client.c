@@ -88,6 +88,14 @@ void do_request(void* arguments) {
 
 	pthread_detach(pthread_self());
 	if ((socket = setup_connection(args->process, args->ip, args->port)) < 0) {
+		if (args->free_content != NULL)
+			args->free_content(args->content);
+		if (args->elements > 0)
+			free(args->elements_length);
+
+		args->callback(NULL, args->response);
+
+		free(arguments);
 		return;
 	}
 
@@ -101,17 +109,16 @@ void do_request(void* arguments) {
 
 	// Recibimos el paquete de respuesta del servidor
 	if (recv2(socket, packet) <= 0) { // Si me devuelve 0 o menos, fallo el recv.
-		free_packet_content(packet);
-		free(packet);
 		log_w("El servidor cerro la conexion. Se cancela la request");
+		args->callback(NULL, args->response);
 	} else {
 		successful = packet->header.success;
+		deserialized_content = deserialize_content(packet->content, packet->header.operation, packet->header.elements, packet->header.elements_size);
+		args->callback(deserialized_content, args->response);
+
+		free_deserialized_content(deserialized_content, packet->header.operation);
 	}
 
-	deserialized_content = deserialize_content(packet->content, packet->header.operation, packet->header.elements, packet->header.elements_size);
-	args->callback(deserialized_content, args->response);
-
-	free_deserialized_content(deserialized_content, packet->header.operation);
 	kill_connection(socket);
 	free_packet_content(packet);
 	free(packet);

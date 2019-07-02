@@ -95,7 +95,7 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 	void* input = NULL;
 	socket_operation_t network_operation;
 	elements_network_t element_info;
-	void (*callback)(void*);
+	void (*callback)(void*, response_t*);
 
 	//pcb_operation_t* pcb_operation = malloc(sizeof(pcb_operation_t));
 	//char* demo_str = string_duplicate("soy un kernel");
@@ -114,30 +114,30 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 			network_operation = INSERT_IN;
 			input = statement->insert_input;
 			element_info = elements_insert_in_info(statement->insert_input);
-			//callback = on_insert;
+			callback = on_insert;
 		break;
 		case CREATE:
 			network_operation = CREATE_IN;
 			input = statement->create_input;
 			element_info = elements_create_in_info(statement->create_input);
-			//callback = on_create;
+			callback = on_create;
 		break;
 		case DESCRIBE:
 			network_operation = DESCRIBE_IN;
 			input = statement->describe_input;
 			element_info = elements_describe_in_info(statement->describe_input);
-			//callback = on_describe;
+			callback = on_describe;
 		break;
 		case DROP:
 			network_operation = DROP_IN;
 			input = statement->drop_input;
 			element_info = elements_drop_in_info(statement->drop_input);
-			//callback = on_drop;
+			callback = on_drop;
 		break;
 		case JOURNAL:
 			network_operation = JOURNAL_IN;
 			element_info = elements_journal_in_info(NULL);
-			//callback = on_journal;
+			callback = on_journal;
 		break;
 		default:
 		break;
@@ -151,46 +151,6 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 	// Sigue posterior al callback.
 }
 
-void on_statement_failure(pcb_t* pcb) {
-	pcb->errors = true;
-}
-
-int get_input_size(operation_t operation, void* input) {
-	select_input_t* select_input;
-	insert_input_t* insert_input;
-	create_input_t* create_input;
-	describe_input_t* describe_input;
-	drop_input_t* drop_input;
-
-	switch (operation) {
-		case SELECT:
-			select_input = (select_input_t*) input;
-			return strlen(select_input->table_name) + sizeof(uint16_t) + 1;
-		break;
-		case INSERT:
-			insert_input = (insert_input_t*) input;
-			return sizeof(uint16_t) + sizeof(long long) + strlen(insert_input->table_name) + strlen(insert_input->value) + 2;
-		break;
-		case CREATE:
-			create_input = (create_input_t*) input;
-			return sizeof(consistency_t) + sizeof(int) + sizeof(long) + strlen(create_input->table_name) + 1;
-		break;
-		case DESCRIBE:
-			describe_input = (describe_input_t*) input;
-			int describe_length = strlen(describe_input->table_name);
-			return describe_length + (describe_length == 0) ? 0 : 1;
-		break;
-		case DROP:
-			drop_input = (drop_input_t*) input;
-			return strlen(drop_input->table_name) + 1;
-		break;
-		default:
-		break;
-	}
-
-	return 0;
-}
-
 void on_select(void* result, response_t* response) {
 	record_t* record = (record_t*) result;
 
@@ -198,24 +158,149 @@ void on_select(void* result, response_t* response) {
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
-	if (record->timestamp == -2) {
-		log_i("La tabla que se solicito no existe. El SELECT ha fallado");
-		on_statement_failure(pcb);
+	if (record == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El SELECT ha fallado");
+		pcb->errors = true;
+	} else if (record->timestamp == -3) {
+		log_e("Hubo un error de red al querer ir a buscar un valor. El SELECT ha fallado");
+		pcb->errors = true;
+	} else if (record->timestamp == -2) {
+		log_e("La tabla %s no existe. El SELECT ha fallado", record->table_name);
+		pcb->errors = true;
 	} else if (record->timestamp == -1) {
-		log_i("La key solicitada no se encuentra en la tabla. El SELECT ha fallado");
-		on_statement_failure(pcb);
+		log_e("La key solicitada no se encuentra en la tabla %s. El SELECT ha fallado", record->table_name);
+		pcb->errors = true;
 	} else {
-		log_i("RESULTADO SELECT: %s", record->value);
+		log_i("SELECT %i FROM %s: %s", record->key, record->table_name, record->value);
 	}
 
-	if (current_statement->operation <= INSERT) {
-		pcb->last_execution_stats->timestamp_end = get_timestamp();
-		log_t("Se ingresa un evento a las estadisticas.");
-		list_add(g_stats_events, pcb->last_execution_stats);
-	}
-
+	pcb->last_execution_stats->timestamp_end = get_timestamp();
+	log_t("Se ingresa un evento a las estadisticas.");
+	list_add(g_stats_events, pcb->last_execution_stats);
 	clear_old_stats();
 
+	post_exec_statement(pcb, current_statement);
+}
+
+void on_insert(void* result, response_t* response) {
+	int* status = (int*) result;
+
+	// Esto me da asco, pero bueno, perdoname diosito x2.
+	pcb_t* pcb = (pcb_t*) response;
+	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+
+	// TODO: logica del insert aca
+	// Debajo deberia ir lo del insert
+	if (status == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+		pcb->errors = true;
+	} else {
+		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+	}
+
+	pcb->last_execution_stats->timestamp_end = get_timestamp();
+	log_t("Se ingresa un evento a las estadisticas.");
+	list_add(g_stats_events, pcb->last_execution_stats);
+	clear_old_stats();
+
+	post_exec_statement(pcb, current_statement);
+}
+
+void on_create(void* result, response_t* response) {
+	int* status = (int*) result;
+	create_input_t* input;
+
+	// Esto me da asco, pero bueno, perdoname diosito x3.
+	pcb_t* pcb = (pcb_t*) response;
+	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+	input = current_statement->create_input;
+	if (status == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El CREATE ha fallado");
+		pcb->errors = true;
+	} else if (*status == -3) {
+		log_e("Hubo un error de red al querer crear la tabla %s. El CREATE ha fallado", input->table_name);
+		pcb->errors = true;
+	} else if (*status == -2) {
+		log_e("No hay bloques suficientes para crear la tabla %s con %i particiones. El CREATE ha fallado", input->table_name, input->partitions);
+		pcb->errors = true;
+	} else if (*status == -1) {
+		log_e("La tabla %s ya existe en el sistema. El CREATE ha fallado", input->table_name);
+		pcb->errors = true;
+	} else {
+		log_i("Se creo la tabla %s satisfactoriamente", input->table_name);
+	}
+
+	post_exec_statement(pcb, current_statement);
+}
+
+void on_describe(void* result, response_t* response) {
+	t_list* metadata_list = (t_list*) result;
+
+	// Esto me da asco, pero bueno, perdoname diosito x4.
+	pcb_t* pcb = (pcb_t*) response;
+	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+
+	if (metadata_list == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El DESCRIBE ha fallado");
+		pcb->errors = true;
+	} else {
+		if (list_size(metadata_list) == 0) {
+			log_w("No se encontraron tablas al hacer el DESCRIBE.");
+			log_w("Puede ser que la tabla no exista, o que haya fallado la solicitud al filesystem");
+		} else {
+			for (int i = 0; i < list_size(metadata_list); i++) {
+				table_metadata_t* metadata = (table_metadata_t*) list_get(metadata_list, i);
+				char* consistency = get_consistency_name(metadata->consistency);
+				log_i("Metadata de la tabla %s", metadata->table_name);
+				log_i("  -> Tiempo de compactacion: %ld", metadata->compaction_time);
+				log_i("  -> Consistencia: %s", consistency);
+				log_i("  -> Cantidad de particiones: %i", metadata->partitions);
+			}
+		}
+	}
+
+	post_exec_statement(pcb, current_statement);
+}
+
+void on_drop(void* result, response_t* response) {
+	int* status = (int*) result;
+
+	// Esto me da asco, pero bueno, perdoname diosito x5.
+	pcb_t* pcb = (pcb_t*) response;
+	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+
+	// TODO: logica del drop aca
+	// Debajo deberia ir lo del drop
+	if (status == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+		pcb->errors = true;
+	} else {
+		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+	}
+
+	post_exec_statement(pcb, current_statement);
+}
+
+void on_journal(void* result, response_t* response) {
+	int* status = (int*) result;
+
+	// Esto me da asco, pero bueno, perdoname diosito x6.
+	pcb_t* pcb = (pcb_t*) response;
+	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+
+	// TODO: logica del journal aca
+	// Debajo deberia ir lo del journal
+	if (status == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+		pcb->errors = true;
+	} else {
+		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+	}
+
+	post_exec_statement(pcb, current_statement);
+}
+
+void post_exec_statement(pcb_t* pcb, statement_t* current_statement) {
 	if (pcb->errors) {
 		log_e("Hubo un error al ejecutar un statement. Se cancela ejecucion del proceso con PID %i", pcb->process_id);
 		pcb->program_counter = list_size(pcb->statements);
@@ -226,8 +311,3 @@ void on_select(void* result, response_t* response) {
 	sem_post(current_statement->semaphore);
 	sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
 }
-
-void on_insert(void* result, response_t* response);
-void on_create(void* result, response_t* response);
-void on_describe(void* result, response_t* response);
-void on_drop(void* result, response_t* response);

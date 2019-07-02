@@ -22,10 +22,10 @@ segment_t* get_segment_by_name(t_list* list, char* table_name) {
 }
 
 int get_position_by_index(t_list* page_list, int index){
-	int i;
+	int i = 0;
 	page_t* page;
 
-	for(; i < list_size(page_list); i++){
+	for(; i < page_list->elements_count; i++){
 		page = list_get(page_list,i);
 		if(page->index == index){
 			break;
@@ -77,6 +77,8 @@ page_t* get_page_by_index(segment_t* segment, int index) {
 	 	}
 	}
 
+	//free(page_found);
+
 	return NULL;
 }
 
@@ -105,17 +107,15 @@ segment_t* create_segment(char* table_name) {
 }
 
 t_list* get_pages_by_modified(bool modified){
-	segment_t* segment;
 	t_list* page_list;
-	page_t* page;
 	t_list* modified_pages_list = list_create();
 
-	for(int i = 0; i < list_size(g_segment_list); i++){
-		segment = list_get(g_segment_list,i);
-		page_list = segment->page;
+	for(int i = 0; i < g_segment_list->elements_count; i++){
+		segment_t* segmento = list_get(g_segment_list,i);
+		page_list = segmento->page;
 
-		for(int j = 0; j < list_size(page_list); j++){
-			page = list_get(page_list,j);
+		for(int j = 0; j < page_list->elements_count; j++){
+			page_t* page = list_get(page_list,j);
 
 			if(page->modified == modified){
 				list_add(modified_pages_list,page);
@@ -123,8 +123,7 @@ t_list* get_pages_by_modified(bool modified){
 		}
 	}
 
-	free(segment);
-	free(page_list);
+	//list_destroy_and_destroy_elements(page_list,(void*)destroy_page);
 
 	return modified_pages_list;
 }

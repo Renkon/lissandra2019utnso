@@ -18,8 +18,6 @@ void process_insert(insert_input_t* input, response_t* response);
 void process_create(create_input_t* input, response_t* response);
 void process_describe(describe_input_t* input, response_t* response);
 void process_drop(drop_input_t* input, response_t* response);
-
-
-
+void process_value(void* unused, response_t* response);
 
 #endif /* CORE_OPERATIONS2_H_ */
