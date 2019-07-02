@@ -41,9 +41,29 @@ void on_describe_update_triggered(void* untyped_args) {
 	// Caso individual. Me fijo si es insert (upsert = true), o delete.
 	if (args->single) {
 		table_metadata_t* affected_metadata = (table_metadata_t*) list_get(args->metadata_list, 0);
-		if (args->upsert) { // Es insert?
-			// Bueno, inserto la metadata.
-			list_add(g_table_metadata, affected_metadata);
+		if (args->upsert) { // Es insert o update?
+			// Me fijo que no exista
+			int found = -1;
+			for (int i = 0; i < list_size(g_table_metadata); i++) {
+				table_metadata_t* existing_metadata = list_get(g_table_metadata, i);
+				if (string_equals_ignore_case(affected_metadata->table_name, existing_metadata->table_name)) {
+					found = i;
+					break;
+				}
+			}
+
+			if (found == -1) {
+				list_add(g_table_metadata, affected_metadata);
+			} else {
+				table_metadata_t* new_metadata = list_get(g_table_metadata, found);
+				free(new_metadata->table_name);
+				new_metadata->table_name = affected_metadata->table_name;
+				new_metadata->compaction_time = affected_metadata->compaction_time;
+				new_metadata->consistency = affected_metadata->consistency;
+				new_metadata->partitions = affected_metadata->partitions;
+				free(affected_metadata);
+			}
+
 		} else { // Es delete!
 			// Bueno, lo borro!
 			for (int i = 0; i < list_size(g_table_metadata); i++) {
