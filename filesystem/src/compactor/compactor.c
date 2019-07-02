@@ -1,5 +1,48 @@
 #include "compactor.h"
 
+void compaction(char* table_name){
+	partition_t* tmpc =get_all_blocks_from_all_tmps(table_name);
+	create_tmp(table_name,tmpc->blocks,tmpc->number_of_blocks,tmpc->size,0);
+	//Matar todos los tmps;
+	free(tmpc->blocks);
+	free(tmpc);
+}
+
+
+partition_t* get_all_blocks_from_all_tmps (char* table_name){
+	char* initial_table_dir = get_table_directory();
+	char* table_directory = create_new_directory(initial_table_dir,table_name);
+	int tmp_number = 1;
+	char* tmp_name = get_tmp_name(tmp_number);
+	int all_blocks_size = 0;
+	int all_tkv_size=0;
+	int* all_blocks = malloc(sizeof(int));
+	partition_t* tmpc = malloc(sizeof(partition_t));
+
+	while (exist_in_directory(tmp_name, table_directory)) {
+		char* tmp_dir = get_tmp_directory(table_directory, tmp_number);
+		partition_t* partition = read_fs_archive(tmp_dir );
+		all_blocks =  int_array_concat(all_blocks,all_blocks_size,partition->blocks,partition->number_of_blocks);
+		all_blocks_size+=partition->number_of_blocks;
+		all_tkv_size += partition->size;
+		tmp_number++;
+		free(tmp_dir);
+		free(tmp_name);
+		tmp_name = get_tmp_name(tmp_number);
+	}
+
+	tmpc->number_of_blocks = all_blocks_size;
+	tmpc->size = all_tkv_size;
+	tmpc->blocks = malloc(sizeof(int)*all_blocks_size);
+	memcpy(tmpc->blocks,all_blocks,sizeof(int)*all_blocks_size);
+	free(tmp_name);
+	free(initial_table_dir);
+	free(table_directory);
+	free(all_blocks);
+	return tmpc;
+}
+
+
 void initialize_dump(){
 	pthread_t config_thread;
 	pthread_create(&config_thread, NULL, (void*) dump_all_tables, NULL);
@@ -14,6 +57,7 @@ void dump_all_tables(){
 }
 
 void dump(){
+
 	if(mem_table->elements_count>0){
 	//Saco cuantos bloques necesito para dumpear todas las tablas los cuales se calculan como:
 	//tamaño de todos los tkvs/ tamaño de un bloque redondeado hacia arriba.
@@ -38,7 +82,7 @@ void dump(){
 		}
 		write_bitmap(bitmap, bitmap_dir);
 	}else{
-		log_e("No hay bloques suficientes como para dumpear todas las tablas de la memtable. Dumpeo cancelado");
+		log_w("No hay bloques suficientes como para dumpear todas las tablas de la memtable. Dumpeo cancelado");
 	}
 
 	free_memtable();
@@ -48,7 +92,7 @@ void dump(){
 	}
 }
 
-void create_table_tmp(char* table_name,int* blocks,int block_amount,int tkv_size){
+void create_tmp(char* table_name,int* blocks,int block_amount,int tkv_size,int tmp_flag){
 	char* initial_table_dir = get_table_directory();
 	int tmp_number = 1;
 	char* tmp_name = get_tmp_name(tmp_number);
@@ -61,11 +105,18 @@ void create_table_tmp(char* table_name,int* blocks,int block_amount,int tkv_size
 		tmp_name = get_tmp_name(tmp_number);
 	}
 	char* tmp_dir = get_tmp_directory(table_directory, tmp_number);
+	if(tmp_flag == 0 ){
+		free(tmp_dir);
+		tmp_dir = get_tmpc_directory(table_directory);
+
+	}
 	partition_t* partition = malloc(sizeof(partition_t));
 	partition->number_of_blocks = block_amount;
 	partition->size = tkv_size;
 	partition->blocks = malloc(block_amount*sizeof(int));
 	memcpy(partition->blocks,blocks,block_amount*sizeof(int));
+
+
 
 	FILE* arch = fopen(	tmp_dir, "wb");
 	fwrite(&partition->number_of_blocks, 1, sizeof(partition->number_of_blocks), arch);
@@ -78,14 +129,12 @@ void create_table_tmp(char* table_name,int* blocks,int block_amount,int tkv_size
 	free(tmp_name);
 	free(table_name_upper);
 	free(table_directory);
-	free(partition->blocks);
-	free(partition);
 }
 
 void free_memtable(){
 	//Destruyo la lista y todos sus elementos
 	for(int i=0;i<mem_table->elements_count;i++){
-		table_t* table = list_get(mem_table,i);
+		table_t* table =list_get(mem_table,i);
 		free_table(table);
 
 	}
@@ -100,7 +149,7 @@ void dump_table(table_t* table, int* blocks, int size_of_blocks) {
 	//Hacer una funcion que saque los primeros n bloques del array y los devuelva (pero que tenga efecto)
 	int* blocks_for_the_table = array_take(blocks, size_of_blocks,blocks_amount);
 	//CREAR TMP
-	create_table_tmp(table->name,blocks_for_the_table,blocks_amount,size_of_all_tkvs_from_table);
+	create_tmp(table->name,blocks_for_the_table,blocks_amount,size_of_all_tkvs_from_table,1);
 	int block_size = fs_metadata->block_size;
 	int block_index = 0;
 	//Abro el .bin del primer bloque
@@ -185,3 +234,4 @@ int length_of_all_tkvs_in_memtable(){
 	}
 	return total_length;
 }
+

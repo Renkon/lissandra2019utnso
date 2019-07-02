@@ -17,4 +17,10 @@ int* array_take (int* arr, size_t size,size_t take_size){
 	return array;
 }
 
-
+int* int_array_concat(int* array1,int size1,int* array2,int size2){
+	int* total = malloc(sizeof(int)*(size1+size2));
+	memcpy(total,array1,sizeof(int)*size1);
+	memcpy(total+size1,array2,sizeof(int)*size2);
+	free(array1);
+	return total;
+}

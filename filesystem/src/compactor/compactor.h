@@ -15,5 +15,7 @@ void dump_table(table_t* table, int* blocks, int size_of_blocks);
 int search_free_blocks_for_table(t_list* tkvs);
 int tkv_total_length(t_list* tkvs);
 int length_of_all_tkvs_in_memtable();
-void create_table_tmp(char* table_name,int* blocks,int block_amount,int tkv_size);
+void compaction(char* table_name);
+partition_t* get_all_blocks_from_all_tmps (char* table_name);
+void create_tmp(char* table_name,int* blocks,int block_amount,int tkv_size,int tmp_flag);
 #endif /* COMPACTOR_COMPACTOR_H_ */
