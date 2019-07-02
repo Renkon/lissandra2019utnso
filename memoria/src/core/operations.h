@@ -8,22 +8,28 @@
 #include "generic_logger.h"
 #include <stdbool.h>
 #include "../memory_utils.h"
+#include "commons/collections/list.h"
+#include "utils/response.h"
+#include "utils/serializer.h"
+
+void process_select(select_input_t* input, response_t* response);
+void process_insert(insert_input_t* input, response_t* response);
+void process_create(create_input_t* input, response_t* response);
+void process_describe(describe_input_t* input, response_t* response);
+void process_drop(drop_input_t* input, response_t* response);
+void process_journal(response_t* response);
 
 
+void select_callback(void* result, response_t* response);
+void create_callback(void* result, response_t* response);
+void describe_callback(void* result, response_t* response);
 
-void process_select(select_input_t* input);
-void process_insert(insert_input_t* input);
-void process_create(create_input_t* input);
-void process_describe(describe_input_t* input);
-void process_drop(drop_input_t* input);
-void process_journal();
+void cleanup_select_input(void* input);
+void cleanup_create_input(void* input);
+void cleanup_describe_input(void* input);
 
-
-void select_callback(void* response);
-void create_callback(void* response);
-void describe_callback(void* response);
-void select_callback(void* response);
-
-
+/* Ir a buscar el value */
+void get_value_from_filesystem();
+void get_value_callback(void* result, response_t* response);
 
 #endif /* CORE_OPERATIONS3_H_ */

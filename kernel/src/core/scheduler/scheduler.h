@@ -13,25 +13,7 @@
 #include "short_term_scheduler.h"
 #include "long_term_scheduler.h"
 #include "../statistics/stats.h"
-
-typedef enum {
-	NEW,
-	READY,
-	EXEC,
-	EXIT
-} t_state;
-
-typedef struct {
-	int process_id;
-	t_state state;
-	int program_counter;
-	int quantum;
-	t_list* statements;
-	bool errors;
-	bool __recently_ready;
-	int processor;
-	stats_t* last_execution_stats;
-} pcb_t;
+#include "pcb.h"
 
 typedef struct {
 	t_list* new;

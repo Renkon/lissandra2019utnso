@@ -9,13 +9,17 @@
 #include "utils/file.h"
 #include "scheduler/scheduler.h"
 #include "statistics/metrics.h"
+#include "semaphore.h"
+#include "utils/response.h"
+#include "scheduler/statement.h"
 
-void process_select(select_input_t* input);
-void process_insert(insert_input_t* input);
-void process_create(create_input_t* input);
-void process_describe(describe_input_t* input);
-void process_drop(drop_input_t* input);
-void process_journal();
+void process_select(select_input_t* input, response_t* response);
+void process_insert(insert_input_t* input, response_t* response);
+void process_create(create_input_t* input, response_t* response);
+void process_describe(describe_input_t* input, response_t* response);
+void process_drop(drop_input_t* input, response_t* response);
+void process_journal(response_t* response);
+statement_t* generate_statement();
 void process_add(add_input_t* input);
 void process_run(run_input_t* input);
 void process_metrics();

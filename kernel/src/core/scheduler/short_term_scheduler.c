@@ -76,7 +76,7 @@ void planifier_execute(void* arg) {
 void exec_next_statement(int processor) {
 	pcb_t* pcb = (pcb_t*) list_get(g_scheduler_queues.exec, processor);
 	stats_t* event;
-	statement_t* statement = (statement_t*) list_get(pcb->statements, pcb->program_counter++);
+	statement_t* statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
 	// Aca se empieza la ejecucion del statement
 	if (statement->operation <= INSERT) {
@@ -87,13 +87,227 @@ void exec_next_statement(int processor) {
 		event->event_type = statement->operation == SELECT ? SELECT_EVENT : INSERT_EVENT;
 		pcb->last_execution_stats = event;
 	}
+
+	exec_remote(pcb, statement);
+}
+
+void exec_remote(pcb_t* pcb, statement_t* statement) {
+	void* input = NULL;
+	socket_operation_t network_operation;
+	elements_network_t element_info;
+	void (*callback)(void*, response_t*);
+
+	//pcb_operation_t* pcb_operation = malloc(sizeof(pcb_operation_t));
+	//char* demo_str = string_duplicate("soy un kernel");
+	//do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, SELECT_IN, demo_str, 14, select_callback);
 	//select_input_t* input = statement->select_input;
 	// Esto deberia ir en el callback
 	// Aca deberiamos tener el PCB
+	switch (statement->operation) {
+		case SELECT:
+			network_operation = SELECT_IN;
+			input = statement->select_input;
+			element_info = elements_select_in_info(statement->select_input);
+			callback = on_select;
+		break;
+		case INSERT:
+			network_operation = INSERT_IN;
+			input = statement->insert_input;
+			element_info = elements_insert_in_info(statement->insert_input);
+			callback = on_insert;
+		break;
+		case CREATE:
+			network_operation = CREATE_IN;
+			input = statement->create_input;
+			element_info = elements_create_in_info(statement->create_input);
+			callback = on_create;
+		break;
+		case DESCRIBE:
+			network_operation = DESCRIBE_IN;
+			input = statement->describe_input;
+			element_info = elements_describe_in_info(statement->describe_input);
+			callback = on_describe;
+		break;
+		case DROP:
+			network_operation = DROP_IN;
+			input = statement->drop_input;
+			element_info = elements_drop_in_info(statement->drop_input);
+			callback = on_drop;
+		break;
+		case JOURNAL:
+			network_operation = JOURNAL_IN;
+			element_info = elements_journal_in_info(NULL);
+			callback = on_journal;
+		break;
+		default:
+		break;
+	}
+
+	do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, network_operation, input,
+			element_info.elements, element_info.elements_size, callback, true, NULL, pcb);
+
+	sem_wait(statement->semaphore);
+
+	// Sigue posterior al callback.
+}
+
+void on_select(void* result, response_t* response) {
+	record_t* record = (record_t*) result;
+
+	// Esto me da asco, pero bueno, perdoname diosito.
+	pcb_t* pcb = (pcb_t*) response;
+	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+
+	if (record == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El SELECT ha fallado");
+		pcb->errors = true;
+	} else if (record->timestamp == -3) {
+		log_e("Hubo un error de red al querer ir a buscar un valor. El SELECT ha fallado");
+		pcb->errors = true;
+	} else if (record->timestamp == -2) {
+		log_e("La tabla %s no existe. El SELECT ha fallado", record->table_name);
+		pcb->errors = true;
+	} else if (record->timestamp == -1) {
+		log_e("La key solicitada no se encuentra en la tabla %s. El SELECT ha fallado", record->table_name);
+		pcb->errors = true;
+	} else {
+		log_i("SELECT %i FROM %s: %s", record->key, record->table_name, record->value);
+	}
+
 	pcb->last_execution_stats->timestamp_end = get_timestamp();
 	log_t("Se ingresa un evento a las estadisticas.");
-	clear_old_stats();
 	list_add(g_stats_events, pcb->last_execution_stats);
+	clear_old_stats();
 
+	post_exec_statement(pcb, current_statement);
+}
+
+void on_insert(void* result, response_t* response) {
+	int* status = (int*) result;
+
+	// Esto me da asco, pero bueno, perdoname diosito x2.
+	pcb_t* pcb = (pcb_t*) response;
+	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+
+	// TODO: logica del insert aca
+	// Debajo deberia ir lo del insert
+	if (status == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+		pcb->errors = true;
+	} else {
+		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+	}
+
+	pcb->last_execution_stats->timestamp_end = get_timestamp();
+	log_t("Se ingresa un evento a las estadisticas.");
+	list_add(g_stats_events, pcb->last_execution_stats);
+	clear_old_stats();
+
+	post_exec_statement(pcb, current_statement);
+}
+
+void on_create(void* result, response_t* response) {
+	int* status = (int*) result;
+	create_input_t* input;
+
+	// Esto me da asco, pero bueno, perdoname diosito x3.
+	pcb_t* pcb = (pcb_t*) response;
+	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+	input = current_statement->create_input;
+	if (status == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El CREATE ha fallado");
+		pcb->errors = true;
+	} else if (*status == -3) {
+		log_e("Hubo un error de red al querer crear la tabla %s. El CREATE ha fallado", input->table_name);
+		pcb->errors = true;
+	} else if (*status == -2) {
+		log_e("No hay bloques suficientes para crear la tabla %s con %i particiones. El CREATE ha fallado", input->table_name, input->partitions);
+		pcb->errors = true;
+	} else if (*status == -1) {
+		log_e("La tabla %s ya existe en el sistema. El CREATE ha fallado", input->table_name);
+		pcb->errors = true;
+	} else {
+		log_i("Se creo la tabla %s satisfactoriamente", input->table_name);
+	}
+
+	post_exec_statement(pcb, current_statement);
+}
+
+void on_describe(void* result, response_t* response) {
+	t_list* metadata_list = (t_list*) result;
+
+	// Esto me da asco, pero bueno, perdoname diosito x4.
+	pcb_t* pcb = (pcb_t*) response;
+	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+
+	if (metadata_list == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El DESCRIBE ha fallado");
+		pcb->errors = true;
+	} else {
+		if (list_size(metadata_list) == 0) {
+			log_w("No se encontraron tablas al hacer el DESCRIBE.");
+			log_w("Puede ser que la tabla no exista, o que haya fallado la solicitud al filesystem");
+		} else {
+			for (int i = 0; i < list_size(metadata_list); i++) {
+				table_metadata_t* metadata = (table_metadata_t*) list_get(metadata_list, i);
+				char* consistency = get_consistency_name(metadata->consistency);
+				log_i("Metadata de la tabla %s", metadata->table_name);
+				log_i("  -> Tiempo de compactacion: %ld", metadata->compaction_time);
+				log_i("  -> Consistencia: %s", consistency);
+				log_i("  -> Cantidad de particiones: %i", metadata->partitions);
+			}
+		}
+	}
+
+	post_exec_statement(pcb, current_statement);
+}
+
+void on_drop(void* result, response_t* response) {
+	int* status = (int*) result;
+
+	// Esto me da asco, pero bueno, perdoname diosito x5.
+	pcb_t* pcb = (pcb_t*) response;
+	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+
+	// TODO: logica del drop aca
+	// Debajo deberia ir lo del drop
+	if (status == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+		pcb->errors = true;
+	} else {
+		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+	}
+
+	post_exec_statement(pcb, current_statement);
+}
+
+void on_journal(void* result, response_t* response) {
+	int* status = (int*) result;
+
+	// Esto me da asco, pero bueno, perdoname diosito x6.
+	pcb_t* pcb = (pcb_t*) response;
+	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+
+	// TODO: logica del journal aca
+	// Debajo deberia ir lo del journal
+	if (status == NULL) {
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+		pcb->errors = true;
+	} else {
+		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+	}
+
+	post_exec_statement(pcb, current_statement);
+}
+
+void post_exec_statement(pcb_t* pcb, statement_t* current_statement) {
+	if (pcb->errors) {
+		log_e("Hubo un error al ejecutar un statement. Se cancela ejecucion del proceso con PID %i", pcb->process_id);
+		pcb->program_counter = list_size(pcb->statements);
+	} else {
+		pcb->program_counter++;
+	}
+
+	sem_post(current_statement->semaphore);
 	sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
 }

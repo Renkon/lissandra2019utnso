@@ -1,7 +1,5 @@
 #include "filesystem.h"
 
-
-
 int create_table_folder(char* table_name) {
 	//Creo el nuevo directorio donde va a estar la nueva tabla
 	char* table_dir = get_table_directory();
