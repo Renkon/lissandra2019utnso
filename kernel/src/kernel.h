@@ -20,6 +20,7 @@ typedef struct {
 	int metadata_refresh;
 	int execution_delay;
 	int lts_delay;
+	int metrics_display;
 } knconfig_t;
 
 knconfig_t g_config;

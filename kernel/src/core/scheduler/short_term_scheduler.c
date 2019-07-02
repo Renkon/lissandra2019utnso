@@ -228,6 +228,7 @@ void on_create(void* result, response_t* response) {
 		pcb->errors = true;
 	} else {
 		log_i("Se creo la tabla %s satisfactoriamente", input->table_name);
+		on_post_create(input);
 	}
 
 	post_exec_statement(pcb, current_statement);
@@ -256,6 +257,8 @@ void on_describe(void* result, response_t* response) {
 				log_i("  -> Consistencia: %s", consistency);
 				log_i("  -> Cantidad de particiones: %i", metadata->partitions);
 			}
+
+			on_post_describe(metadata_list, list_size(metadata_list) == 1, true);
 		}
 	}
 
@@ -276,6 +279,7 @@ void on_drop(void* result, response_t* response) {
 		pcb->errors = true;
 	} else {
 		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+		on_post_describe(current_statement->drop_input, true, false);
 	}
 
 	post_exec_statement(pcb, current_statement);
