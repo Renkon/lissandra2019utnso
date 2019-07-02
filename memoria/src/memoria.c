@@ -17,6 +17,7 @@ int main(void) {
 	init_server_callbacks();
 	init_server(g_config.port, MEMORY);
 	init_main_memory();
+	init_gossiping();
 	setup_response_id_generator();
 	create_dummy();
 	get_value_from_filesystem();

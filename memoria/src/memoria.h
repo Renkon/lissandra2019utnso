@@ -18,6 +18,7 @@
 #include <limits.h>
 #include "utils/numbers.h"
 #include "utils/response.h"
+#include "gossiping/gossiping.h"
 
 typedef struct {
 	int port;
