@@ -31,6 +31,9 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 	//Le seteo -1 para que si no la encuentra, devuelva esta "key invalida"
 	key_found_in_block->timestamp = -1;
 	tkv_t* key_found;
+	tkv_t* correct_key_found = malloc(sizeof(tkv_t));
+	correct_key_found ->tkv = malloc(strlen("-1;-1;-1")+1);
+	strcpy(correct_key_found->tkv,"-1;-1;-1");
 	partition_t* partition = read_fs_archive(fs_archive_path);
 	char* string_key = string_itoa(key);
 	int index = 0;
@@ -40,9 +43,23 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 		key_found = search_key_in_block(partition->blocks[i], string_key, index, incomplete_tkv_size);
 		index = 0;
 
-		//Me fijo si la funcion encontro esa key
-		if (strcmp(key_found->tkv, "-1;-1;-1") != 0 && !key_found->incomplete) {
-			break;
+		//Me fijo si encontro la key
+	if (strcmp(key_found->tkv, "-1;-1;-1") != 0 && !key_found->incomplete) {
+		char** tkv_found = string_split(key_found->tkv, ";");
+		long long tkv_found_timestamp =string_to_long_long(tkv_found[0]);
+		//Me fijo si esa key tiene timestamp mas grande qque la que encontre antes
+		if(tkv_found_timestamp> key_found_in_block->timestamp){
+			key_found_in_block->timestamp = tkv_found_timestamp;
+			free(correct_key_found->tkv);
+			correct_key_found->tkv = malloc(strlen(key_found->tkv)+1);
+			strcpy(correct_key_found->tkv, key_found->tkv);
+
+		}
+			free(tkv_found[0]);
+			free(tkv_found[1]);
+			free(tkv_found[2]);
+			free(tkv_found);
+
 		}
 
 		//Me fijo si encontro un tkv incompleto
@@ -66,14 +83,13 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 
 			index = 1;
 			char** tkv = string_split(key_found->tkv, ";");
-			if (strcmp(tkv[1], string_key) == 0) {
-				free(tkv[0]);
-				free(tkv[1]);
-				free(tkv[2]);
-				free(tkv);
-				break;
+			long long tkv_timestamp = string_to_long_long(tkv[0]);
+			if (strcmp(tkv[1], string_key) == 0 && tkv_timestamp > key_found_in_block->timestamp) {
+					key_found_in_block ->timestamp = tkv_timestamp;
+					free(correct_key_found->tkv);
+					correct_key_found->tkv = malloc(strlen(key_found->tkv)+1);
+					strcpy(correct_key_found->tkv,key_found->tkv);
 			}
-
 			free(tkv[0]);
 			free(tkv[1]);
 			free(tkv[2]);
@@ -82,6 +98,7 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 			//Seteo el tkv al default porque si la key que estaba cortada no es la que busco y se terminan los bloques
 			//EStaria devolviendo esa key que no es y si de casualidad tiene el timestamp mas grande devolveria ese
 			strcpy(key_found->tkv, "-1;-1;-1");
+
 		}
 
 		// limpiamos en cada iteracion
@@ -90,10 +107,11 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 			free(key_found);
 		}
 	}
-
-	convert_to_record(key_found_in_block, key_found);
+	convert_to_record(key_found_in_block, correct_key_found);
 	free(key_found->tkv);
 	free(key_found);
+	free(correct_key_found->tkv);
+	free(correct_key_found);
 	free(partition->blocks);
 	free(partition);
 	free(string_key);
@@ -130,6 +148,7 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 	key_found_in_block->tkv = malloc(tkv_size());
 	//Le seteo -1 para que si no la encuentra, devuelva este "tkv invalido"
 	strcpy(key_found_in_block->tkv, "-1;-1;-1");
+	long long key_found_timestamp = -1;
 	key_found_in_block->incomplete = false;
 	FILE* arch = fopen(block_directory, "rb");
 
@@ -142,10 +161,11 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 	}
 
 	int i = 0;
-
+	int pointer= 0;
 	while (!feof(arch)) {
 		size_t lecture = fread(readed_key, 1, tkv_size(), arch);
-
+		pointer+= strlen(readed_key)+1;
+		fseek(arch,pointer,SEEK_SET);
 		if (readed_key[0] && string_ends_with(readed_key, "\n")) {
 			//Si tiene \n entonces copio este string sin el \n y prengo el flag de incompleto
 			char* substr = string_substring_until(readed_key, strlen(readed_key) - 1);
@@ -161,14 +181,11 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 		}
 
 		char** tkv = string_split(readed_key, ";");
-		if (strcmp(tkv[1], key) == 0) {
+		long long tkv_timestamp =string_to_long_long(tkv[0]);
+		if (strcmp(tkv[1], key) == 0 && tkv_timestamp > key_found_timestamp){
 			//SI encuentro la key entonces paro el while y la devuelvo
 			strcpy(key_found_in_block->tkv, readed_key);
-			free(tkv[0]);
-			free(tkv[1]);
-			free(tkv[2]);
-			free(tkv);
-			break;
+			key_found_timestamp = tkv_timestamp;
 		}
 
 		free(tkv[0]);

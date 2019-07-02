@@ -68,7 +68,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 				table_t* new_table = create_table(table_name_upper);
 				list_add(mem_table, new_table);
 			}
-			//Siempre busco la tabla que necesito y despues le inserto la key, por ahora sin orden despues quizas si
+			//Siempre busco la tabla que necesito y despues le inserto la key
 			table_t* table = find_table_in_list(mem_table, table_name_upper);
 			list_add(table->tkvs, tkv);
 			//Se les hace free cuando limpie la memetable despues.
@@ -97,6 +97,7 @@ void process_create(create_input_t* input, response_t* response) {
 	char* table_name_upper = to_uppercase(input->table_name);
 	char* bitmap_dir = get_bitmap_directory();
 	t_bitarray* bitmap = read_bitmap(bitmap_dir);
+	//Creo un array  de tantos bloques como particiones pida
 	int blocks[(input->partitions)];
 
 	//Quiero saber si hay tantos bloques libres como particiones asi que busco cuantos bloques libres hay

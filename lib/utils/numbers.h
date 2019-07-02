@@ -7,5 +7,7 @@
 #include <stdio.h>
 
 int digits_in_a_number(long long number);
+unsigned int division_rounded_up(unsigned int dividend, unsigned int divisor);
+int abs(int number);
 
 #endif /* UTILS_NUMBERS_H_ */

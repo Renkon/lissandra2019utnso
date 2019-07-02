@@ -1,7 +1,5 @@
 #include "filesystem.h"
 
-
-
 int create_table_folder(char* table_name) {
 	//Creo el nuevo directorio donde va a estar la nueva tabla
 	char* table_dir = get_table_directory();
@@ -31,7 +29,7 @@ void create_partitions(int partitions, char* table_name, int* blocks) {
 		partition_t* partition = malloc(sizeof(partition_t));
 		partition->number_of_blocks = 1;
 		partition->blocks = malloc(sizeof(int));
-		partition->blocks[0] = blocks[i] + 1;
+		partition->blocks[0] = blocks[i];
 		partition->size = 0;
 
 		fwrite(&partition->number_of_blocks, 1, sizeof(partition->number_of_blocks), arch);
@@ -89,7 +87,7 @@ int assign_free_blocks(t_bitarray* bitmap, int* blocks, int partitions_amount) {
 			} else {
 				//Si encontre un bloque lo guardo en mi array de bloques y aumento el contador de bloques
 				blocks_amount++;
-				blocks[i] = block;
+				blocks[i] = block+1;
 			}
 		}
 	}
@@ -212,11 +210,27 @@ record_t* search_in_partition(char* table_directory, int key) {
 
 record_t* create_tkv(insert_input_t* input) {
 	tkv_t* tkv = malloc(sizeof(tkv_t));
-	tkv->tkv = malloc(digits_in_a_number(input->timestamp)+digits_in_a_number(input->key)+strlen(input->value)+3);
+	tkv->tkv = malloc(digits_in_a_number(input->timestamp) + digits_in_a_number(input->key) + strlen(input->value) + 3);
 	sprintf(tkv->tkv, "%lld;%d;%s", input->timestamp, input->key, input->value);
 	return tkv;
 }
 
+void free_tkv(tkv_t* tkv){
+	free(tkv->tkv);
+	free(tkv);
+}
+
+void free_table(table_t* table){
+	free(table->name);
+	for(int i=0; i<table->tkvs->elements_count;i++){
+
+		tkv_t* tkv = list_get(table->tkvs,i);
+		free_tkv(tkv);
+
+	}
+	list_destroy(table->tkvs);
+	free(table);
+}
 bool value_exceeds_maximun_size(char* value){
 	return strlen(value) > g_config.max_value_size;
 }

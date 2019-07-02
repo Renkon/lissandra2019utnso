@@ -8,9 +8,12 @@
 #include <stdio.h>
 
 #include "utils/numbers.h"
-#include "lissandra/lissandra.h"
+#include "filesystem/filesystem.h"
+#include <commons/collections/list.h>
+#include "fs_lists.h"
 
 char* get_tmpc_name;
+
 
 char* get_table_directory();
 char* get_block_directory();
@@ -26,6 +29,8 @@ char* create_block_directory (int block_number);
 bool exist_in_directory(char* archive, char* directory);
 t_list* get_tables_list();
 int remove_directory(char *path);
-
+metadata_t* read_fs_metadata();
+FILE* open_block(int block);
+void write_tkv(char* tkv,FILE* block);
 
 #endif /* DIRECTORYS_H_ */
