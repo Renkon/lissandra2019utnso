@@ -15,26 +15,39 @@ void process_select(select_input_t* input, response_t* response) {
 	strcpy(upper_table_name,input->table_name);
 	string_to_upper(upper_table_name);
 
-	found_segment = get_segment_by_name(g_segment_list, upper_table_name);
+		found_segment = get_segment_by_name(g_segment_list, upper_table_name);
 
-	if (found_segment != NULL) {
+		if (found_segment != NULL) {
 
-		index_list = list_map(found_segment->page, (void*) page_get_index);
-		found_page = get_page_by_key(found_segment, index_list, input->key);
-		if(found_page != NULL) {
+			index_list = list_map(found_segment->page, (void*) page_get_index);
+			found_page = get_page_by_key(found_segment, index_list, input->key);
+			if(found_page != NULL) {
 
-			position = found_page->index;
-			return_timestamp = main_memory_values(position,TIMESTAMP);
-			return_key = main_memory_values(position,KEY);
-			return_value = main_memory_values(position,VALUE);
+				position = found_page->index;
+				return_timestamp = main_memory_values(position,TIMESTAMP);
+				return_key = main_memory_values(position,KEY);
+				return_value = main_memory_values(position,VALUE);
 
-			log_i("Clave %s encontrada en la tabla %s ! Su valor es: %s ", return_key, found_segment->name, return_value);
+				log_i("Clave %s encontrada en la tabla %s ! Su valor es: %s ", return_key, found_segment->name, return_value);
 
-			free(return_timestamp);
-			free(return_key);
-			free(return_value);
-		} else {
-			log_w("No se encontro la pagina en MEMORIA. Solicitando al FILESYSTEM");
+				free(return_timestamp);
+				free(return_key);
+				free(return_value);
+			} else {
+				log_w("No se encontro la pagina en MEMORIA. Solicitando al FILESYSTEM");
+
+				elements_network_t elem_info = elements_select_in_info(input);
+				select_input_t* select_input = malloc(sizeof(select_input_t));
+				select_input->table_name = upper_table_name;
+
+				select_input->key = input->key;
+
+				do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, select_input, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input, response);
+
+				};
+			list_destroy(index_list);
+		}else{
+			log_w("No se encontro el segmento en MEMORIA. Solicitando al FILESYSTEM");
 
 			elements_network_t elem_info = elements_select_in_info(input);
 			select_input_t* select_input = malloc(sizeof(select_input_t));
@@ -43,20 +56,7 @@ void process_select(select_input_t* input, response_t* response) {
 			select_input->key = input->key;
 
 			do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, select_input, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input, response);
-
-			};
-		list_destroy(index_list);
-	}else{
-		log_w("No se encontro el segmento en MEMORIA. Solicitando al FILESYSTEM");
-
-		elements_network_t elem_info = elements_select_in_info(input);
-		select_input_t* select_input = malloc(sizeof(select_input_t));
-		select_input->table_name = upper_table_name;
-
-		select_input->key = input->key;
-
-		do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, select_input, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input, response);
-	}
+		}
 
 }
 

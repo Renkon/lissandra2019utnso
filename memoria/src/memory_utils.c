@@ -152,22 +152,28 @@ void journaling(){
 }
 
 page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* value){
-	t_list* not_modified_pages = get_pages_by_modified(false);
+
 	int index;
 	page_t* found_page;
+	int replace;
+	t_list* not_modified_pages = get_pages_by_modified(false);
 
-	if(list_size(not_modified_pages) != 0){
+	if(!list_is_empty(not_modified_pages)){
 
 		t_list* indexes = list_map(not_modified_pages,(void*) page_get_index);
 
-		indexes = list_sorted(indexes,order_by_timestamp);
+		indexes = list_sorted(indexes, order_by_timestamp);
 
-		int replace = list_get(indexes,0);
+		replace = (int) list_get(indexes,0);
 
 		eliminate_page_instance_by_index(segment,replace);
 
 		index = memory_insert(timestamp, key, value);
 		found_page = create_page(index, true);
+
+		free(found_page);
+		//destroy(not_modified_pages);
+		list_destroy(indexes);
 
 		return found_page;
 
@@ -175,6 +181,6 @@ page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* 
 
 		journaling();
 		replace_algorithm(segment, timestamp, key, value);
-
+		//return null;
 	}
 }
