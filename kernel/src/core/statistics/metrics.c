@@ -72,7 +72,7 @@ void process_metrics() {
 
 void process_metrics_continuously() {
 	while (true) {
-		usleep(30000 * 1000);
+		usleep(g_config.metrics_display * 1000);
 		process_metrics();
 	}
 }

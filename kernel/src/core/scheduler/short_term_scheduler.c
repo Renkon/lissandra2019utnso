@@ -143,12 +143,42 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 		break;
 	}
 
-	do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, network_operation, input,
-			element_info.elements, element_info.elements_size, callback, true, NULL, pcb);
+	// Toda esta asquerosidad es para validar que este en el describe la tabla que queremos usar.
+	if ((statement->operation == SELECT && !table_exists_in_metadata(statement->select_input->table_name))
+		|| (statement->operation == INSERT && !table_exists_in_metadata(statement->insert_input->table_name))
+		|| (statement->operation == DROP && !table_exists_in_metadata(statement->drop_input->table_name))) {
+		char* table_name;
 
-	sem_wait(statement->semaphore);
+		free(element_info.elements_size);
 
-	// Sigue posterior al callback.
+		if (statement->operation == SELECT)
+			table_name = statement->select_input->table_name;
+		else if (statement->operation == INSERT)
+			table_name = statement->insert_input->table_name;
+		else
+			table_name = statement->drop_input->table_name;
+
+		if (statement->operation <= INSERT) {
+			pcb->last_execution_stats->timestamp_end = get_timestamp();
+			log_t("Se ingresa un evento a las estadisticas.");
+			list_add(g_stats_events, pcb->last_execution_stats);
+			clear_old_stats();
+		}
+
+		log_e("No se pudo realizar la operacion con la tabla %s. No esta en la metadata de tablas.", table_name);
+		log_e("Hubo un error al ejecutar un statement. Se cancela ejecucion del proceso con PID %i", pcb->process_id);
+
+		pcb->errors = true;
+		pcb->program_counter = list_size(pcb->statements);
+		sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
+	} else {
+		do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, network_operation, input,
+				element_info.elements, element_info.elements_size, callback, true, NULL, pcb);
+
+		sem_wait(statement->semaphore);
+
+		// Sigue posterior al callback.
+	}
 }
 
 void on_select(void* result, response_t* response) {
@@ -228,6 +258,7 @@ void on_create(void* result, response_t* response) {
 		pcb->errors = true;
 	} else {
 		log_i("Se creo la tabla %s satisfactoriamente", input->table_name);
+		on_post_create(input);
 	}
 
 	post_exec_statement(pcb, current_statement);
@@ -256,6 +287,8 @@ void on_describe(void* result, response_t* response) {
 				log_i("  -> Consistencia: %s", consistency);
 				log_i("  -> Cantidad de particiones: %i", metadata->partitions);
 			}
+
+			on_post_describe(metadata_list, list_size(metadata_list) == 1, true);
 		}
 	}
 
@@ -272,10 +305,11 @@ void on_drop(void* result, response_t* response) {
 	// TODO: logica del drop aca
 	// Debajo deberia ir lo del drop
 	if (status == NULL) {
-		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El DROP ha fallado");
 		pcb->errors = true;
 	} else {
 		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+		on_post_describe(current_statement->drop_input, true, false);
 	}
 
 	post_exec_statement(pcb, current_statement);
