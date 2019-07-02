@@ -2,6 +2,7 @@
 
 void process_select(select_input_t* input, response_t* response) {
 	log_i("fs select args: %s %u", input->table_name,(unsigned int) input->key);
+	usleep(g_config.delay);
 	record_t* key_found = NULL;
 	char* table_name_upper = to_uppercase(input->table_name);
 	char* initial_table_dir = get_table_directory();
@@ -47,6 +48,7 @@ void process_select(select_input_t* input, response_t* response) {
 
 void process_insert(insert_input_t* input, response_t* response) {
 	log_i("fs insert args: %s %u \"%s\" %lld", input->table_name, (unsigned int) input->key, input->value, input->timestamp);
+	usleep(g_config.delay);
 	int* insert_status = malloc(sizeof(int));
 	char* table_name_upper = to_uppercase(input->table_name);
 	char* table_directory = get_table_directory();
@@ -93,6 +95,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 
 void process_create(create_input_t* input, response_t* response) {
 	log_i("fs create args: %s %i %i %ld", input->table_name, input->consistency,input->partitions, input->compaction_time);
+	usleep(g_config.delay);
 	int* create_status = malloc(sizeof(int));
 	char* table_name_upper = to_uppercase(input->table_name);
 	char* bitmap_dir = get_bitmap_directory();
@@ -143,6 +146,7 @@ void process_create(create_input_t* input, response_t* response) {
 
 void process_describe(describe_input_t* input, response_t* response) {
 	log_i("fs describe args: %s", input->table_name);
+	usleep(g_config.delay);
 	char* table_dir = get_table_directory();
 	//Si me mandan null muestro la metadata de todas las tablas
 	t_list* metadata_list = list_create();
@@ -200,6 +204,7 @@ void process_describe(describe_input_t* input, response_t* response) {
 
 void process_drop(drop_input_t* input, response_t* response) {
 	log_i("fs drop args: %s", input->table_name);
+	usleep(g_config.delay);
 	int* drop_status = malloc(sizeof(int));
 	char* table_dir = get_table_directory();
 	char* bitmap_directory = get_bitmap_directory();
