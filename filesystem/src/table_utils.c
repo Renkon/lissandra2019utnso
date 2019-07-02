@@ -7,5 +7,4 @@ table_t* create_table(char* name){
 	strcpy(new_table->name, name);
 	new_table->tkvs = list_create();
 	return new_table;
-
 }

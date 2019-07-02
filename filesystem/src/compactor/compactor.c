@@ -14,7 +14,6 @@ void dump_all_tables(){
 }
 
 void dump(){
-
 	if(mem_table->elements_count>0){
 	//Saco cuantos bloques necesito para dumpear todas las tablas los cuales se calculan como:
 	//tamaño de todos los tkvs/ tamaño de un bloque redondeado hacia arriba.
@@ -39,7 +38,7 @@ void dump(){
 		}
 		write_bitmap(bitmap, bitmap_dir);
 	}else{
-		log_w("No hay bloques suficientes como para dumpear todas las tablas de la memtable. Dumpeo cancelado");
+		log_e("No hay bloques suficientes como para dumpear todas las tablas de la memtable. Dumpeo cancelado");
 	}
 
 	free_memtable();
@@ -79,12 +78,14 @@ void create_table_tmp(char* table_name,int* blocks,int block_amount,int tkv_size
 	free(tmp_name);
 	free(table_name_upper);
 	free(table_directory);
+	free(partition->blocks);
+	free(partition);
 }
 
 void free_memtable(){
 	//Destruyo la lista y todos sus elementos
 	for(int i=0;i<mem_table->elements_count;i++){
-		table_t* table =list_get(mem_table,i);
+		table_t* table = list_get(mem_table,i);
 		free_table(table);
 
 	}

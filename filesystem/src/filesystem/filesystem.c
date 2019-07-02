@@ -212,7 +212,7 @@ record_t* search_in_partition(char* table_directory, int key) {
 
 record_t* create_tkv(insert_input_t* input) {
 	tkv_t* tkv = malloc(sizeof(tkv_t));
-	tkv->tkv = malloc(digits_in_a_number(input->timestamp)+digits_in_a_number(input->key)+strlen(input->value)+3);
+	tkv->tkv = malloc(digits_in_a_number(input->timestamp) + digits_in_a_number(input->key) + strlen(input->value) + 3);
 	sprintf(tkv->tkv, "%lld;%d;%s", input->timestamp, input->key, input->value);
 	return tkv;
 }
@@ -231,7 +231,7 @@ void free_table(table_t* table){
 
 	}
 	list_destroy(table->tkvs);
-
+	free(table);
 }
 bool value_exceeds_maximun_size(char* value){
 	return strlen(value) > g_config.max_value_size;
