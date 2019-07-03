@@ -17,4 +17,12 @@ typedef struct {
 	long compaction_time;
 } table_metadata_t;
 
+typedef struct {
+	int id;
+	char* ip;
+	int port;
+	bool alive;
+	long long timestamp;
+} memory_t;
+
 #endif /* SHARED_TYPES_SHARED_TYPES_H_ */

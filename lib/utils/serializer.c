@@ -158,6 +158,29 @@ elements_network_t elements_value_out_info(void* input) {
 	return element_info;
 }
 
+elements_network_t elements_gossip_info(void* input) {
+	memory_t* memory;
+	t_list* memories = (t_list*) input;
+	elements_network_t element_info = init_elements_info(5 * list_size(memories));
+	int* iterator = element_info.elements_size;
+
+	for (int i = 0; i < list_size(memories); i++) {
+		memory = (memory_t*) list_get(memories, i);
+		*iterator = sizeof(int);
+		iterator++;
+		*iterator = strlen(memory->ip) + 1;
+		iterator++;
+		*iterator = sizeof(int);
+		iterator++;
+		*iterator = sizeof(bool);
+		iterator++;
+		*iterator = sizeof(long long);
+		iterator++;
+	}
+
+	return element_info;
+}
+
 elements_network_t init_elements_info(int elements) {
 	elements_network_t element_info;
 	element_info.elements = elements;
@@ -192,6 +215,10 @@ elements_network_t get_out_element_info(socket_operation_t operation, void* inpu
 		break;
 		case VALUE_OUT:
 			return elements_value_out_info(input);
+		break;
+		case GOSSIP_OUT:
+			return elements_gossip_info(input);
+		break;
 		default:
 			return init_elements_info(0);
 		break;

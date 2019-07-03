@@ -2,9 +2,9 @@
 
 
 // Las keys de configuracion de memoria
-char* g_config_keys[] = { "PUERTO", "IP_FS", "PUERTO_FS", "IP_SEEDS", "PUERTO_SEEDS","RETARDO_MEM",
-"RETARDO_FS","TAM_MEM","RETARDO_JOURNAL","RETARDO_GOSSIPING","MEMORY_NUMBER"};
-int g_config_keys_size = 11;
+char* g_config_keys[] = { "IP", "PUERTO", "IP_FS", "PUERTO_FS", "IP_SEEDS", "PUERTO_SEEDS","RETARDO_MEM",
+		"RETARDO_FS", "TAM_MEM", "RETARDO_JOURNAL", "RETARDO_GOSSIPING", "MEMORY_NUMBER"};
+int g_config_keys_size = 12;
 
 int main(void) {
 	if (!init_logger("memoria.log", "Memoria", true, LOG_LEVEL_TRACE))

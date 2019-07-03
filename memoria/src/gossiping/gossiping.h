@@ -1,5 +1,8 @@
 #include "commons/collections/list.h"
+#include "generic_client.h"
 #include "../config.h"
+#include "utils/network_types.h"
+#include "shared_types/shared_types.h"
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
