@@ -90,7 +90,10 @@ bool order_by_timestamp(int first_i,int second_i){
 	long long t1 = string_to_long_long(timestamp_1);
 	long long t2 = string_to_long_long(timestamp_2);
 
-	return t1>t2;
+	free(timestamp_1);
+	free(timestamp_2);
+
+	return t1<t2;
 
 }
 

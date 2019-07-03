@@ -92,7 +92,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 				if (!memory_full()) {//Aun hay paginas disponibles, inserto en el segmento una nueva pagina
 
 					index = memory_insert(input->timestamp, input->key, input->value);
-					found_page = create_page(index, true);
+					found_page = create_page(index, false);
 					list_add(found_segment->page, found_page);
 
 					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", input->key, input->value, input->timestamp, found_segment->name);
@@ -204,7 +204,13 @@ void select_callback(void* result, response_t* response) {
 		break;
 	default:
 		log_i("Oops");
-		//TODO insert en la memoria principal
+		insert_input_t* insert_input = malloc(sizeof(insert_input_t*));
+		insert_input->table_name = record->table_name;
+		insert_input->timestamp = record->timestamp;
+		insert_input->value = record->value;
+		insert_input->key = record->key;
+		process_insert(insert_input,NULL);
+
 	}
 
 	if (response != NULL) { //me llega desde el kernel
