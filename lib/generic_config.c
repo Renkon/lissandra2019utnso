@@ -183,7 +183,10 @@ t_list* init_str_array_config_value(char* key, t_config* config) {
 
 t_list* init_int_array_config_value(char* key, t_config* config) {
 	t_list* str_values = init_str_array_config_value(key, config);
-	t_list* values = list_map(str_values, (void*) atol);
+	t_list* values = list_map(str_values, (void*) string_to_int_ptr);
+	for (int i = 0; i < list_size(str_values); i++) {
+		free(list_get(str_values, i));
+	}
 	list_destroy(str_values);
 	return values;
 }

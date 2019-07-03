@@ -18,5 +18,6 @@ void gossip_continuously() {
 }
 
 void gossip() {
+	// Le mando la solicitud de gossiping a cada una de mis memorias
 
 }
