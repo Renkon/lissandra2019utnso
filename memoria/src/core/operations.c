@@ -163,7 +163,7 @@ void process_drop(drop_input_t* input, response_t* response) {
 	if(found_segment != NULL){
 		remove_segment(found_segment);
 
-		log_i("Se borro satisfactoriamente la tabla %s", upper_table_name);
+		log_i("Se borro satisfactoriamente la tabla %s. Enviamos peticion al Filesystem!", upper_table_name);
 	}else{
 		log_w("No se encontro la tabla en memoria, se procede a enviar la peticion al FileSystem");
 	}
@@ -189,6 +189,7 @@ void process_journal(response_t* response) {
 
 void select_callback(void* result, response_t* response) {
 	// Falla conexion?
+	record_t* alpha_record;
 	if (result == NULL) {
 		log_e("No se pudo seleccionar un valor del filesystem");
 	}
@@ -197,21 +198,57 @@ void select_callback(void* result, response_t* response) {
 
 	switch (record->timestamp){
 	case -1:
-		log_w("No existe el registro solicitado.");
+		log_e("No existe el registro solicitado. Cancelando operacion");
 		break;
 	case -2:
-		log_w("No existe la tabla solicituda.");
+		log_e("No existe la tabla solicituda. Cancelando operacion");
 		break;
 	default:
-		log_i("Oops");
-		insert_input_t* insert_input = malloc(sizeof(insert_input_t*));
-		insert_input->table_name = record->table_name;
-		insert_input->timestamp = record->timestamp;
-		insert_input->value = record->value;
-		insert_input->key = record->key;
-		process_insert(insert_input,NULL);
 
+		alpha_record= malloc(sizeof(record_t));
+		alpha_record->table_name = strdup(record->table_name);
+		alpha_record->key = record->key;
+		alpha_record->timestamp = record->timestamp;
+		alpha_record->value = strdup(record->value);
+		//log_i("Clave %s encontrada en la tabla %s ! Su valor es: %s ", alpha_record->key, alpha_record->table_name, alpha_record->value);
+		log_i("Agregando en memoria el nuevo registro...");
+
+		char* upper_table_name = strdup(alpha_record->table_name);
+		string_to_upper(upper_table_name);
+		page_t*	found_page;
+		int index;
+		t_list* index_list;
+		segment_t* found_segment = get_segment_by_name(g_segment_list, upper_table_name);
+
+		if (found_segment != NULL) {
+			index_list = list_map(found_segment->page, (void*) page_get_index);
+			found_page = get_page_by_key(found_segment, index_list, alpha_record->key);
+				if (!memory_full()) {
+					index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
+					found_page = create_page(index, false);
+					list_add(found_segment->page, found_page);
+					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
+				} else {
+					found_page = replace_algorithm(found_segment,alpha_record->timestamp, alpha_record->key, alpha_record->value);
+					list_add(found_segment->page, found_page);
+					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo.", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
+					}
+			list_destroy(index_list);
+		}else {
+			found_segment = create_segment(upper_table_name);
+			index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
+			found_page = create_page(index, true);
+			list_add(found_segment->page, found_page);
+			list_add(g_segment_list, found_segment);
+
+			log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", alpha_record->key, record->value, alpha_record->timestamp, found_segment->name);
+		}
+		free(upper_table_name);
+		free(alpha_record->table_name);
+		free(alpha_record->value);
+		free(alpha_record);
 	}
+
 
 	if (response != NULL) { //me llega desde el kernel
 		// Vamos a copiar el objeto record, asi se lo podemos devolver
@@ -331,18 +368,31 @@ void describe_callback(void* result, response_t* response){
 }
 
 void drop_callback(void* result, response_t* response){
-	int* drop_status = (int*) result;
+	int* drop_status;
 
-	if(drop_status == 0){
-		log_i("La tabla se borro satisfactoriamente.");
+	if(result == NULL){
+		drop_status = malloc(sizeof(int));
+		*drop_status = -5;
 	}else{
+		drop_status = (int*) result;
+	}
+
+	if(*drop_status == 0){
+		log_i("La tabla se borro satisfactoriamente.");
+	}else if(*drop_status == -1){
 		log_w("La tabla no existe. Operacion DROP cancelada");
+	}else if(*drop_status == -5){
+		log_e("Hubo un error de red al ir a crear la tabla");
 	}
 
 	if (response != NULL) {
 		int* new_status = malloc(sizeof(int));
 		*new_status = *drop_status;
 		set_response(response, new_status);
+	}
+
+	if(result == NULL){
+		free(drop_status);
 	}
 }
 
@@ -389,7 +439,7 @@ void get_value_callback(void* result, response_t* response) {
 	} else {
 		int* value = (int*) result;
 		log_i("Me llego un value del FS. VALOR: %i", *value);
-		//total_page_count = *value;
+		total_page_count = *value;
 	}
 }
 
