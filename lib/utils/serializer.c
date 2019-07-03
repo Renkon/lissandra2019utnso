@@ -236,6 +236,8 @@ void serialize_content(void* to, socket_operation_t operation, void* from) {
 	t_list* metadata_describe;
 	table_metadata_t* metadata;
 	drop_input_t* drop;
+	t_list* memories;
+	memory_t* memory;
 	int* drop_response;
 	int* journal_response;
 	int* value_response;
@@ -373,6 +375,33 @@ void serialize_content(void* to, socket_operation_t operation, void* from) {
 			elem_length = sizeof(int);
 			memcpy(to_ptr, value_response, elem_length);
 		break;
+		case GOSSIP_IN:
+		case GOSSIP_OUT:
+			memories = (t_list*) from;
+			for (int i = 0; i < list_size(memories); i++) {
+				memory = (memory_t*) list_get(memories, i);
+
+				elem_length = sizeof(int);
+				memcpy(to_ptr + offset, &(memory->id), elem_length);
+				offset += elem_length;
+
+				elem_length = strlen(memory->ip) + 1;
+				memcpy(to_ptr + offset, memory->ip, elem_length);
+				offset += elem_length;
+
+				elem_length = sizeof(int);
+				memcpy(to_ptr + offset, &(memory->port), elem_length);
+				offset += elem_length;
+
+				elem_length = sizeof(bool);
+				memcpy(to_ptr + offset, &(memory->alive), elem_length);
+				offset += elem_length;
+
+				elem_length = sizeof(long long);
+				memcpy(to_ptr + offset, &(memory->timestamp), elem_length);
+				offset += elem_length;
+			}
+		break;
 		default:
 		break;
 	}
@@ -389,6 +418,8 @@ void* deserialize_content(void* from, socket_operation_t operation, int elements
 	t_list* metadata_describe;
 	table_metadata_t* metadata;
 	drop_input_t* drop;
+	t_list* memories;
+	memory_t* memory;
 	int* drop_response;
 	int* journal_response;
 	int* value_response;
@@ -517,6 +548,32 @@ void* deserialize_content(void* from, socket_operation_t operation, int elements
 			value_response = malloc(sizeof(int));
 			memcpy(value_response, from, elements_size[0]);
 			return value_response;
+		break;
+		case GOSSIP_IN:
+		case GOSSIP_OUT:
+			memories = list_create();
+			for (int i = 0; i < elements; i = i + 5) {
+				memory = malloc(sizeof(memory_t));
+				length = elements_size[i];
+				memory->id = *((int*)(from + offset));
+				offset += length;
+				length = elements_size[i + 1];
+				memory->ip = malloc(length);
+				memcpy(memory->ip, from + offset, length);
+				offset += length;
+				length = elements_size[i + 2];
+				memory->port = *((int*)(from + offset));
+				offset += length;
+				length = elements_size[i + 3];
+				memory->alive = *((bool*)(from + offset));
+				offset += length;
+				length = elements_size[i + 4];
+				memory->timestamp = *((long long*)(from + offset));
+				offset += length;
+				list_add(memories, memory);
+			}
+			return memories;
+		break;
 		default:
 		break;
 	}
@@ -526,6 +583,7 @@ void* deserialize_content(void* from, socket_operation_t operation, int elements
 
 void free_deserialized_content(void* content, socket_operation_t operation) {
 	t_list* describe_list;
+	t_list* memories;
 
 	if (content == NULL)
 		return;
@@ -580,6 +638,15 @@ void free_deserialized_content(void* content, socket_operation_t operation) {
 		break;
 		case VALUE_OUT:
 			free(content);
+		break;
+		case GOSSIP_IN:
+		case GOSSIP_OUT:
+			memories = (t_list*) content;
+			for (int i = 0; i < list_size(memories); i++) {
+				free(((memory_t*) list_get(memories, i))->ip);
+				free(list_get(memories, i));
+			}
+			list_destroy(memories);
 		break;
 		default:
 		break;
