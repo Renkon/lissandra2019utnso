@@ -38,6 +38,7 @@ void init_server_callbacks() {
 	g_server_callbacks[DESCRIBE_IN] = process_describe;
 	g_server_callbacks[DROP_IN] = process_drop;
 	g_server_callbacks[JOURNAL_IN] = process_journal;
+	g_server_callbacks[GOSSIP_IN] = on_gossip;
 }
 
 void create_dummy(){ //TODO renombrar a init_global_segment o algo asi y borrar todo excepto el list_create de la segunda linea.

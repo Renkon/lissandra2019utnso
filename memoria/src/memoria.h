@@ -21,7 +21,7 @@
 #include "gossiping/gossiping.h"
 
 typedef struct {
-	int ip;
+	char* ip;
 	int port;
 	char* filesystem_ip;
 	int filesystem_port;
