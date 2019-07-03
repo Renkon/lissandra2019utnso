@@ -19,11 +19,11 @@ typedef struct {
 	int dump_time;
 } fsconfig_t;
 
-
 fsconfig_t g_config;
 extern char* g_config_keys[];
 extern int g_config_keys_size;
 extern t_list* mem_table;
+metadata_t* fs_metadata;
 
 callbacks_t* get_callbacks();
 void init_server_callbacks();

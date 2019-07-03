@@ -1,10 +1,10 @@
 #include "directorys.h"
 
-char * get_tmpc_name = "A1.tmpc";
-
 char* create_new_directory(char* old_directory, char* directory_end) {
 	//Con esto creo nuevos directorios, mas que nada para crear de forma mas comoda los path a las nuevas tablas
-	char* new_path = malloc(strlen(old_directory) + strlen(directory_end) + 1);
+	int size_old_directory =strlen(old_directory);
+	int size_directory_end =strlen(directory_end);
+	char* new_path = malloc(size_old_directory + size_directory_end + 1);
 	strcpy(new_path, old_directory);
 	strcat(new_path, directory_end);
 	return new_path;
@@ -66,7 +66,7 @@ char* create_partition_name(int partition_number) {
 }
 
 char* create_block_directory(int block_number) {
-	char* block_name = malloc(digits_in_a_number(block_number) + strlen(".bin") + 1);
+	char* block_name = malloc(digits_in_a_number(block_number) + strlen(".bin")+1);
 	sprintf(block_name, "%d.bin", block_number);
 	char* block_dir = get_block_directory();
 	char* new_dir = create_new_directory(block_dir, block_name);
@@ -181,4 +181,30 @@ int remove_directory(char *path)
    }
 
    return r;
+}
+
+metadata_t* read_fs_metadata(){
+	char* metadata_directory =create_new_directory(g_config.mount_point,"Metadata/Metadata.bin");
+	metadata_t* metadata = malloc(sizeof(metadata_t));
+	metadata->magic_number = malloc(strlen("LISSANDRA")+1);
+
+	FILE* arch = fopen(metadata_directory, "rb");
+	fread(&metadata->block_size, 1, sizeof(metadata->block_size), arch);
+	fread(&metadata->blocks, 1, sizeof(metadata->blocks), arch);
+	fread(metadata->magic_number, 1, strlen("LISSANDRA")+1, arch);
+	free(metadata_directory);
+	return metadata;
+}
+
+
+FILE* open_block(int block){
+	char* block_directory = create_block_directory(block);
+	FILE* the_block = fopen(block_directory, "wb");
+	free(block_directory);
+	return the_block;
+}
+
+void write_tkv(char* tkv,FILE* block){
+	//Si me entra el tkv en el bloque lo meto asi nomas.
+	fwrite(tkv,1,strlen(tkv)+1,block);
 }

@@ -9,6 +9,7 @@
 #include "semaphore.h"
 #include "statement.h"
 #include "utils/operation_types.h"
+#include "../describer/describer.h"
 
 void short_term_schedule();
 void planifier_execute(void* arg);
