@@ -9,7 +9,7 @@ void initialize_dump(){
 void dump_all_tables(){
 	while(true){
 		dump();
-		usleep(g_config.dump_time);
+		usleep(g_config.dump_time * 1000);
 	}
 }
 

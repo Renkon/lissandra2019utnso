@@ -6,6 +6,7 @@
 #include "commons/config.h"
 #include "commons/collections/list.h"
 #include "generic_logger.h"
+#include "utils/string.h"
 #include "generic_console.h"
 #include <sys/inotify.h>
 #include <unistd.h>

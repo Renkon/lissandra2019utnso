@@ -40,6 +40,13 @@ void destroy_response(response_t* response, socket_operation_t operation) {
 			}
 			list_destroy((t_list*) response->result);
 		break;
+		case GOSSIP_OUT:
+			for (int i = 0; i < list_size((t_list*) response->result); i++) {
+				free(((memory_t*) list_get((t_list*) response->result, i))->ip);
+				free(list_get((t_list*) response->result, i));
+			}
+			list_destroy((t_list*) response->result);
+		break;
 		default:
 			free(response->result);
 		break;

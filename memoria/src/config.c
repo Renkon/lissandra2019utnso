@@ -1,6 +1,7 @@
 #include "config.h"
 
 void initialize_memory_config(t_config* config) {
+	g_config.ip = init_str_config_value("IP", config);
 	g_config.port = init_int_config_value("PUERTO", config);
 	g_config.filesystem_ip = init_str_config_value("IP_FS", config);
 	g_config.filesystem_port = init_int_config_value("PUERTO_FS", config);

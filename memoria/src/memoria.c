@@ -2,9 +2,9 @@
 
 
 // Las keys de configuracion de memoria
-char* g_config_keys[] = { "PUERTO", "IP_FS", "PUERTO_FS", "IP_SEEDS", "PUERTO_SEEDS","RETARDO_MEM",
-"RETARDO_FS","TAM_MEM","RETARDO_JOURNAL","RETARDO_GOSSIPING","MEMORY_NUMBER"};
-int g_config_keys_size = 11;
+char* g_config_keys[] = { "IP", "PUERTO", "IP_FS", "PUERTO_FS", "IP_SEEDS", "PUERTO_SEEDS","RETARDO_MEM",
+		"RETARDO_FS", "TAM_MEM", "RETARDO_JOURNAL", "RETARDO_GOSSIPING", "MEMORY_NUMBER"};
+int g_config_keys_size = 12;
 
 int main(void) {
 	if (!init_logger("memoria.log", "Memoria", true, LOG_LEVEL_TRACE))
@@ -17,6 +17,7 @@ int main(void) {
 	init_server_callbacks();
 	init_server(g_config.port, MEMORY);
 	init_main_memory();
+	init_gossiping();
 	setup_response_id_generator();
 	create_dummy();
 	get_value_from_filesystem();
@@ -37,6 +38,7 @@ void init_server_callbacks() {
 	g_server_callbacks[DESCRIBE_IN] = process_describe;
 	g_server_callbacks[DROP_IN] = process_drop;
 	g_server_callbacks[JOURNAL_IN] = process_journal;
+	g_server_callbacks[GOSSIP_IN] = on_gossip;
 }
 
 void create_dummy(){ //TODO renombrar a init_global_segment o algo asi y borrar todo excepto el list_create de la segunda linea.
