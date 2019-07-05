@@ -42,40 +42,8 @@ bool memory_full() {
 	return true;
 }
 
-/*char* main_memory_key(int index){ //TODO puedo hacerlo mejor con un enum
-	char** our_array = string_split(main_memory[index], ";");
-	char* value = our_array[1];
 
-	free(our_array[0]);
-	free(our_array[2]);
-	free(our_array);
-
-	return value;
-}
-
-char* main_memory_timestamp(int index){ //TODO puedo hacerlo mejor con un enum
-	char** our_array = string_split(main_memory[index], ";");
-	char* value = our_array[0];
-
-	free(our_array[1]);
-	free(our_array[2]);
-	free(our_array);
-
-	return value;
-}
-
-char* main_memory_value(int index){ //TODO puedo hacerlo mejor con un enum
-	char** our_array = string_split(main_memory[index], ";");
-	char* value = our_array[2];
-
-	free(our_array[0]);
-	free(our_array[1]);
-	free(our_array);
-
-	return value;
-}*/
-
-char* main_memory_values(int index,memory_var_t type){ //TODO puedo hacerlo mejor con un enum
+char* main_memory_values(int index,memory_var_t type){
 	char** our_array = string_split(main_memory[index], ";");
 	char* value = our_array[type];
 	switch( type ){
@@ -113,4 +81,115 @@ void modify_memory_by_index(int index, int key , char* value){
 	strcat(str_tstamp, ";");
 	strcat(str_tstamp, value);
 	strcpy(main_memory[index], str_tstamp);
+}
+
+bool order_by_timestamp(int first_i,int second_i){
+	char* timestamp_1 = main_memory_values(first_i,TIMESTAMP);
+	char* timestamp_2 = main_memory_values(second_i,TIMESTAMP);
+
+	long long t1 = string_to_long_long(timestamp_1);
+	long long t2 = string_to_long_long(timestamp_2);
+
+	free(timestamp_1);
+	free(timestamp_2);
+
+	return t1<t2;
+
+}
+
+void eliminate_page_instance_by_index(segment_t* segment, int index){
+	page_t* page = get_page_by_index(segment, index);
+	int index_in_memory = page->index;
+
+	strcpy(main_memory[index_in_memory],"null");
+
+	int position = get_position_by_index(segment->page,index);
+
+	if(position != -1){
+		list_remove_and_destroy_element(segment->page,position,(void*) destroy_page);
+	}else{
+		log_w("NO se encontro la pagina, abortando");//nunca deberia pasar esto xd
+	}
+
+}
+
+t_list* list_add_multi_lists(t_list* pages_indexes){
+	t_list* new_list = list_create();
+	insert_input_t* insert = malloc(sizeof(insert_input_t));
+
+	for(int i = 0;i < list_size(pages_indexes); i++){
+		insert->timestamp = string_to_long_long(main_memory_values(list_get(pages_indexes,i),TIMESTAMP));
+		insert->key = string_to_uint16(main_memory_values(list_get(pages_indexes,i),KEY));
+		insert->value = main_memory_values(list_get(pages_indexes,i),VALUE);
+		insert->table_name = get_table_name_by_index(list_get(pages_indexes,i));
+
+		list_add(new_list,insert);
+	}
+
+	free(insert->table_name);
+	free(insert->value);
+	free(insert);
+
+	return new_list;
+}
+
+void journaling(){
+	t_list* journal = get_pages_by_modified(true);
+	t_list* indexes = list_map(journal,(void*)page_get_index);
+
+	t_list* journal_list = list_add_multi_lists(journal_list);
+
+	int position;
+
+	for(int i = 0; i < list_size(journal_list); i++){
+		//insert_input_t* sending_journal = list_get(journal_list,i);
+		//elements_network_t elem_info = elements_create_in_info(sending_journal);
+		//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, sending_journal, elem_info.elements, elem_info.elements_size, insert_callback, true, cleanup_insert_input, NULL);
+
+	}
+
+	remove_pages_modified();
+
+	for(int j = 0; j < list_size(journal); j++){
+		position = list_get(indexes,j);
+		strcpy(main_memory[position],"null");
+	}
+
+	list_destroy(journal);
+	list_destroy(indexes);
+
+}
+
+page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* value){
+
+	int index;
+	page_t* found_page;
+	int replace;
+	t_list* not_modified_pages = get_pages_by_modified(false);
+
+	if(!list_is_empty(not_modified_pages)){
+
+		t_list* indexes = list_map(not_modified_pages,(void*) page_get_index);
+
+		t_list* indexes_sorted = list_sorted(indexes, order_by_timestamp);
+
+		replace = list_get(indexes_sorted,0);
+
+		eliminate_page_instance_by_index(segment,replace);
+
+		index = memory_insert(timestamp, key, value);
+		found_page = create_page(index, true);
+
+		list_destroy(not_modified_pages);
+		list_destroy(indexes);
+		list_destroy(indexes_sorted);
+
+		return found_page;
+
+	}else{
+		log_i("Memoria llena, iniciando journaling...");
+		journaling();
+		replace_algorithm(segment, timestamp, key, value);
+		//return null;
+	}
 }

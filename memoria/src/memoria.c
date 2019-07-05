@@ -13,7 +13,8 @@ int main(void) {
 	init_config(MEMCFG, initialize_memory_config, update_memory_config, g_config_keys, g_config_keys_size);
 
 	total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + (4*sizeof(char)) + (3*sizeof(char)); //TODO el size esta hardcodeado, lo pasa las configs de FS
-	total_page_count = g_config.memory_size/total_page_size;
+	//total_page_count = g_config.memory_size/total_page_size;
+	total_page_count = 4;
 	init_server_callbacks();
 	init_server(g_config.port, MEMORY);
 	init_main_memory();
@@ -43,14 +44,16 @@ void init_server_callbacks() {
 
 void create_dummy(){ //TODO renombrar a init_global_segment o algo asi y borrar todo excepto el list_create de la segunda linea.
 	int a;
+	int b,c,d,e;
 	g_segment_list = list_create();
-	segment_t* segment_dummy = create_segment("laposta");
+	segment_t* segment_dummy = create_segment("LAPOSTA");
 
-	a = memory_insert(get_timestamp(),65000,"hey");
+	a = memory_insert(1562099999999,65000,"hey");
 	page_t* page_dummy = create_page(a,false);
 
 	list_add(segment_dummy->page,page_dummy);
 	list_add(g_segment_list,segment_dummy);
+
 }
 
 void init_main_memory(){

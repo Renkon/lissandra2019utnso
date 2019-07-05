@@ -1,4 +1,4 @@
-#include "Podria_crear_bloques_por_menos_dinero?.h"
+#include "block_creator.h"
 
 typedef struct  {
 	int block_size;
@@ -13,7 +13,7 @@ int main(void) {
 	metadata->blocks = 5192;
 	metadata->magic_number = "LISSANDRA";
 
-	char* config_file ="/home/utnso/git/tp-2019-1c-Papito-code-en-Assembler/filesystem/filesystem.cfg";
+	char* config_file ="/home/utnso/Documentos/tp-2019-1c-Papito-code-en-Assembler/filesystem/filesystem.cfg";
 	t_config* config = config_create(config_file);
 	char* punto_montaje = config_get_string_value(config, "PUNTO_MONTAJE");
 	char* directorio_metadata =string_new();

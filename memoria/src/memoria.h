@@ -5,6 +5,7 @@
 
 #include "memory_utils.h"
 #include "memory_types.h"
+#include "shared_types/shared_types.h"
 
 #include "generic_config.h"
 #include "generic_console.h"

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "commons/collections/list.h"
 
+
 typedef struct {
 	int index;
 	bool modified;

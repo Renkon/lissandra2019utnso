@@ -21,6 +21,19 @@ segment_t* get_segment_by_name(t_list* list, char* table_name) {
 	 return i < list_size(list) ? segment_found : NULL;
 }
 
+int get_position_by_index(t_list* page_list, int index){
+	int i = 0;
+	page_t* page;
+
+	for(; i < page_list->elements_count; i++){
+		page = list_get(page_list,i);
+		if(page->index == index){
+			break;
+		}
+	}
+	return i < list_size(page_list)?i:-1;
+}
+
 page_t* get_page_by_key(segment_t* segment, t_list* index_list, int key) {
 	page_t* page_found;
 	int index;
@@ -64,6 +77,8 @@ page_t* get_page_by_index(segment_t* segment, int index) {
 	 	}
 	}
 
+	//free(page_found);
+
 	return NULL;
 }
 
@@ -79,9 +94,123 @@ page_t* create_page(int index, bool modified ) {
 segment_t* create_segment(char* table_name) {
   segment_t* segment = malloc(sizeof(segment_t));
 
-  segment->page = list_create();
-  segment->name = malloc(strlen(table_name)+1);
-  strcpy(segment->name,table_name);
+  char* copia = malloc(strlen(table_name)+1);
+  strcpy(copia,table_name);
+  string_to_upper(copia);
 
+  segment->page = list_create();
+  segment->name = malloc(strlen(copia)+1);
+  strcpy(segment->name,copia);
+
+  free(copia);
   return segment;
+}
+
+t_list* get_pages_by_modified(bool modified){
+	t_list* page_list;
+	t_list* modified_pages_list = list_create();
+
+	for(int i = 0; i < g_segment_list->elements_count; i++){
+		segment_t* segmento = list_get(g_segment_list,i);
+		page_list = segmento->page;
+
+		for(int j = 0; j < page_list->elements_count; j++){
+			page_t* page = list_get(page_list,j);
+
+			if(page->modified == modified){
+				list_add(modified_pages_list,page);
+			}
+		}
+	}
+
+	//list_destroy_and_destroy_elements(page_list,(void*)destroy_page);
+
+	return modified_pages_list;
+}
+
+void destroy_page(page_t* page){
+	free(page);
+}
+
+void destroy_segment(segment_t* segment){
+	free(segment->name);
+	list_destroy_and_destroy_elements(segment->page,(void*)destroy_page);
+}
+
+int get_segment_position_by_name(char* segment_name){
+	int i=0;
+	segment_t* segment;
+
+	for(;i < list_size(g_segment_list);i++){
+		segment = list_get(g_segment_list,i);
+		if(strcmp(segment_name,segment->name)==0){
+			break;
+		}
+	}
+
+	return i < list_size(g_segment_list)?i:-1;
+}
+
+void remove_segment(segment_t* segment){
+
+	t_list* indexes = list_map(segment->page,(void*) page_get_index);
+	int index;
+	int position;
+
+	for(int i = 0; i < list_size(indexes); i++){
+		index = list_get(indexes,i);
+		strcpy(main_memory[index],"null");
+	}
+
+	list_destroy(indexes);
+
+	position = get_segment_position_by_name(segment->name);
+	list_remove_and_destroy_element(g_segment_list,position,(void*)destroy_segment);
+}
+
+bool segment_has_page_by_index(segment_t* segment, int index){
+	int i=0;
+	t_list* page_list = segment->page;
+	page_t* comp_page;
+
+	for(;i < list_size(page_list);i++){
+		comp_page = list_get(page_list,i);
+		if(comp_page->index == index){
+			break;
+		}
+	}
+
+	return i<list_size(page_list)?true:false;
+}
+
+char* get_table_name_by_index(int index_in_memory){
+	segment_t* segment;
+	int i = 0;
+	for(;i < list_size(g_segment_list); i++){
+		segment = list_get(g_segment_list,i);
+		if(segment_has_page_by_index(segment,index_in_memory)){
+			break;
+		}
+	}
+
+	if( i < list_size(g_segment_list)){
+		return segment->name;
+	}else{
+		return NULL;
+	}
+}
+
+bool page_modified(page_t* page){
+	return page->modified == true;
+}
+
+void remove_pages_modified(){
+	int i = 0;
+	segment_t* segment;
+
+	for(;i < list_size(g_segment_list);i++){
+		segment = list_get(g_segment_list,i);
+
+		list_remove_and_destroy_by_condition(segment->page,(bool*)page_modified,(void*)destroy_page);
+	}
 }

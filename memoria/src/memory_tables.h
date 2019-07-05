@@ -19,6 +19,8 @@ segment_t* get_segment_by_name(t_list* list, char* table_name);
 page_t* get_page_by_key(segment_t* segment, t_list* index_list, int key);
 int page_get_index(page_t* page);
 page_t* get_page_by_index(segment_t* segment,int index);
-
+t_list* get_pages_by_modified(bool modified);
+void remove_segment(segment_t* segment);
+void destroy_page(page_t* page);
 
 #endif /* MEMORY_TABLES_H_ */
