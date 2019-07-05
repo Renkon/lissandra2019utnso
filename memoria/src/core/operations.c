@@ -382,7 +382,7 @@ void drop_callback(void* result, response_t* response){
 	}else if(*drop_status == -1){
 		log_w("La tabla no existe. Operacion DROP cancelada");
 	}else if(*drop_status == -2){
-		log_e("Hubo un error de red al ir a crear la tabla");
+		log_e("Hubo un error de red al ir a droppear la tabla");
 	}
 
 	if (response != NULL) {

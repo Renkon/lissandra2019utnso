@@ -309,8 +309,14 @@ void on_drop(void* result, response_t* response) {
 	if (status == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El DROP ha fallado");
 		pcb->errors = true;
+	} else if (*status == -2) {
+		log_e("Hubo un error de red al querer droppear la tabla %s. El DROP ha fallado", current_statement->drop_input->table_name);
+		pcb->errors = true;
+	} else if (*status == -1) {
+		log_e("La tabla %s no existe. El DROP ha fallado", current_statement->drop_input->table_name);
+		pcb->errors = true;
 	} else {
-		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+		log_i("Se dropeo la tabla %s", current_statement->drop_input->table_name);
 		on_post_drop(current_statement->drop_input);
 	}
 
