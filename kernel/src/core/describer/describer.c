@@ -14,6 +14,8 @@ void init_describer() {
 }
 
 void update_describer_continuously() {
+	pthread_detach(pthread_self());
+
 	while (true) {
 		usleep(g_config.metadata_refresh * 1000);
 		update_descriptions();
@@ -100,6 +102,13 @@ void on_describe_update_triggered(void* untyped_args) {
 }
 
 void on_post_describe(t_list* metadata_list, bool single, bool upsert) {
+	if (metadata_list == NULL) {
+		// Me viene una lista vacia
+		// No puedo hacer el describe
+		log_e("No puedo actualizar metadatos porque fallo la solicitud de DESCRIBE");
+		return;
+	}
+
 	// Debo clonar la lista para mandarla
 	update_metadata_args_t* args = malloc(sizeof(update_metadata_args_t));
 	t_list* new_metadata_list = list_create();

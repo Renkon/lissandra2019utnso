@@ -71,6 +71,8 @@ void process_metrics() {
 
 
 void process_metrics_continuously() {
+	pthread_detach(pthread_self());
+
 	while (true) {
 		usleep(g_config.metrics_display * 1000);
 		process_metrics();

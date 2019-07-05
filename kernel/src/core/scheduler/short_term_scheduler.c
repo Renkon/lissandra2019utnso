@@ -62,6 +62,8 @@ void short_term_schedule() {
 }
 
 void planifier_execute(void* arg) {
+	pthread_detach(pthread_self());
+
 	int exec_id = *((int*) arg);
 	sem_t* semaphore_init = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_init, exec_id);
 	sem_t* semaphore_exec = (sem_t*) list_get(g_scheduler_queues.exec_semaphores, exec_id);
@@ -309,7 +311,7 @@ void on_drop(void* result, response_t* response) {
 		pcb->errors = true;
 	} else {
 		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
-		on_post_describe(current_statement->drop_input, true, false);
+		on_post_drop(current_statement->drop_input);
 	}
 
 	post_exec_statement(pcb, current_statement);
