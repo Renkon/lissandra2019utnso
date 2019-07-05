@@ -19,12 +19,20 @@ int setup_connection(process_t process, char* ip, int port) {
 	// Esto tambien es parte del paso 2
 	if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
 		log_w("No se pudo convertir la IP a binario. Se cancela la solicitud");
+		kill_connection(connection_socket);
 		return -2;
 	}
+
+	struct timeval timeout;
+	timeout.tv_sec = 5;
+	timeout.tv_usec = 0;
+
+	setsockopt(connection_socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 
 	// Paso 3: inicializo la conexion
 	if (connect(connection_socket, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
 		log_w("No se pudo realizar la conexion. Se cancela la solicitud");
+		kill_connection(connection_socket);
 		return -3;
 	}
 
@@ -40,6 +48,7 @@ int setup_connection(process_t process, char* ip, int port) {
 
 	if (packet->header.operation != HANDSHAKE_OUT) {
 		log_w("El servidor no respondio el handshake. Se cancela la solicitud");
+		kill_connection(connection_socket);
 		free_packet_content(packet);
 		free(packet);
 		return -4;
