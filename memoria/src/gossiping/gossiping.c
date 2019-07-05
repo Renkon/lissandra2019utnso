@@ -66,6 +66,7 @@ void post_gossip(void* result, response_t* response) {
 				// Esta es la memoria que se cayo
 				original->alive = false;
 				original->timestamp = get_timestamp();
+				break;
 			}
 		}
 	} else {
