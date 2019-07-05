@@ -32,7 +32,7 @@ int memory_insert(long long timestamp, int key, char* value){
 	return -1;
 }
 
-_Bool memory_full() {
+bool memory_full() {
 	for (int i = 0; i < total_page_count; i++) {
 		if (strcmp(main_memory[i], "null") == 0) {
 			return i >= total_page_count;
