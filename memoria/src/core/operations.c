@@ -168,7 +168,7 @@ void process_drop(drop_input_t* input, response_t* response) {
 		log_w("No se encontro la tabla en memoria, se procede a enviar la peticion al FileSystem");
 	}
 
-	elements_network_t elem_info = elements_create_in_info(input);
+	elements_network_t elem_info = elements_drop_in_info(input);
 	drop_input_t* drop_input = malloc(sizeof(drop_input_t));
 
 	drop_input->table_name = upper_table_name;
@@ -372,7 +372,7 @@ void drop_callback(void* result, response_t* response){
 
 	if(result == NULL){
 		drop_status = malloc(sizeof(int));
-		*drop_status = -5;
+		*drop_status = -2;
 	}else{
 		drop_status = (int*) result;
 	}
@@ -381,7 +381,7 @@ void drop_callback(void* result, response_t* response){
 		log_i("La tabla se borro satisfactoriamente.");
 	}else if(*drop_status == -1){
 		log_w("La tabla no existe. Operacion DROP cancelada");
-	}else if(*drop_status == -5){
+	}else if(*drop_status == -2){
 		log_e("Hubo un error de red al ir a crear la tabla");
 	}
 
