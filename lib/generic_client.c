@@ -85,6 +85,7 @@ void do_simple_request(process_t process, char* ip, int port, socket_operation_t
 
 	if (pthread_create(&thread, NULL, (void*) do_request, (void*) args)) {
 		log_e("No se pudo inicializar el hilo para la solicitud");
+		free(args);
 	}
 }
 
