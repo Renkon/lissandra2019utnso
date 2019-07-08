@@ -9,11 +9,11 @@ typedef struct  {
 int main(void) {
 	metadata_t* metadata = malloc(sizeof(metadata_t));
 
-	metadata->block_size = 64;
+	metadata->block_size = 5;
 	metadata->blocks = 5192;
 	metadata->magic_number = "LISSANDRA";
-
-	char* config_file ="/home/utnso/Documentos/tp-2019-1c-Papito-code-en-Assembler/filesystem/filesystem.cfg";
+	//ESTO CAMBIA DEPENDIENDO LA PERSONA
+	char* config_file ="/home/utnso/git/tp-2019-1c-Papito-code-en-Assembler/filesystem/filesystem.cfg";
 	t_config* config = config_create(config_file);
 	char* punto_montaje = config_get_string_value(config, "PUNTO_MONTAJE");
 	char* directorio_metadata =string_new();

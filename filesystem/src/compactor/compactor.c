@@ -2,11 +2,126 @@
 
 void compaction(char* table_name){
 	partition_t* tmpc =get_all_blocks_from_all_tmps(table_name);
+	//Creo el tmpc
 	create_tmp(table_name,tmpc->blocks,tmpc->number_of_blocks,tmpc->size,0);
-	//Matar todos los tmps;
+	//Matar todos los tmps todo;
+	t_list* tmpc_tkvs = create_tkv_list(tmpc);
 	free(tmpc->blocks);
 	free(tmpc);
 }
+
+
+t_list*  create_tkv_list(partition_t* partition) {
+	record_t* key_found_in_block = malloc(sizeof(record_t));
+	//Le seteo -1 para que si no la encuentra, devuelva esta "key invalida"
+	key_found_in_block->timestamp = -1;
+	tkv_t* key_found;
+	tkv_t* correct_key_found = malloc(sizeof(tkv_t));
+	correct_key_found ->tkv = malloc(strlen("-1;-1;-1")+1);
+	strcpy(correct_key_found->tkv,"-1;-1;-1");
+	int index = 0;
+	int incomplete_tkv_size = 0;
+	t_list* tkvs = list_create();
+
+	for (int i = 0; i < partition->number_of_blocks; i++) {
+		key_found = add_records_from_block(partition->blocks[i], index, incomplete_tkv_size, tkvs);
+		index = 0;
+
+		//Me fijo si encontro un tkv incompleto
+		if (key_found->incomplete) {
+			while (key_found->incomplete) {
+				key_found->incomplete = false;
+				char* continuation = read_first_tkv_in_block(partition->blocks[i + 1]);
+				incomplete_tkv_size = strlen(continuation)+1;
+				//Busco la siguiente parte y la concateno
+				tkv_append(key_found,continuation);
+				if (string_ends_with(key_found->tkv, "\n")) {
+					char* substr = string_substring_until(key_found->tkv, strlen(key_found->tkv) - 1);
+					strcpy(key_found->tkv, substr);
+					key_found->incomplete = true;
+					i++;
+					free(substr);
+				}
+
+				free(continuation);
+			}
+			index = 1;
+			//Una vez  reconstruido el tkv lo agrego
+			record_t* record = convert_record(key_found->tkv); //Free? todo
+			list_add(tkvs, record);
+
+		}
+
+		// limpiamos en cada iteracion
+		if (i < partition->number_of_blocks - 1) {
+			free(key_found->tkv);
+			free(key_found);
+		}
+	}
+
+	return tkvs;
+}
+
+
+tkv_t* add_records_from_block(int block, int index, int incomplete_tkv_size,t_list* tkvs) {
+	char* block_directory = create_block_directory(block);
+	tkv_t* key_found_in_block = malloc(sizeof(tkv_t));
+	key_found_in_block->tkv = malloc(tkv_size());
+	//Le seteo -1 para que si no la encuentra, devuelva este "tkv invalido"
+	strcpy(key_found_in_block->tkv, "-1;-1;-1");
+	long long key_found_timestamp = -1;
+	key_found_in_block->incomplete = false;
+	FILE* arch = fopen(block_directory, "rb");
+
+	char* readed_key = calloc(1, tkv_size());
+
+	//SI mando index en 1 me salteo el primer read
+	//Porque asi leo la parte del tkv anterior que ya lei
+	if (index == 1) {
+		fread(readed_key, 1, incomplete_tkv_size, arch);
+	}
+
+	int i = 0;
+	int pointer= 0;
+	while (!feof(arch)) {
+		size_t lecture = fread(readed_key, 1, tkv_size(), arch);
+		pointer+= strlen(readed_key)+1;
+		fseek(arch,pointer,SEEK_SET);
+		if (readed_key[0] && string_ends_with(readed_key, "\n")) {
+			//Si tiene \n entonces copio este string sin el \n y prengo el flag de incompleto
+			char* substr = string_substring_until(readed_key, strlen(readed_key) - 1);
+			strcpy(key_found_in_block->tkv, substr);
+			key_found_in_block->incomplete = true;
+			free(substr);
+			break;
+		}
+
+		if (lecture == 0) {
+			//Si el bloque no tiene nada entonces corto todorl.
+			break;
+		}
+
+		record_t* record = convert_record(readed_key); //Free? todo
+		list_add(tkvs, record);
+	}
+
+	fclose(arch);
+	free(readed_key);
+	free(block_directory);
+	return key_found_in_block;
+
+}
+
+record_t* convert_record(char* tkv_string){
+	record_t* record = malloc(sizeof(record_t));
+	char** tkv = string_split(tkv_string, ";");
+	record->value = malloc(strlen(tkv[2])+1);
+	strcpy(record->value,tkv[2]);
+	 record->key =string_to_uint16(tkv[1]);
+	 record->timestamp = string_to_long_long(tkv[0]);
+	 return record;
+}
+
 
 
 partition_t* get_all_blocks_from_all_tmps (char* table_name){
@@ -28,6 +143,8 @@ partition_t* get_all_blocks_from_all_tmps (char* table_name){
 		tmp_number++;
 		free(tmp_dir);
 		free(tmp_name);
+		free(partition->blocks);
+		free(partition);
 		tmp_name = get_tmp_name(tmp_number);
 	}
 
@@ -126,6 +243,8 @@ void create_tmp(char* table_name,int* blocks,int block_amount,int tkv_size,int t
 	fwrite(&partition->size, 1, sizeof(partition->size), arch);
 
 	fclose(arch);
+	free(partition->blocks);
+	free(partition);
 	free(initial_table_dir);
 	free(tmp_dir);
 	free(tmp_name);
