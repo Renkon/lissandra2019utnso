@@ -10,8 +10,8 @@ int memory_insert(long long timestamp, int key, char* value){
 	char* str_key;
 	char* str_tstamp;
 
-	for (int i = 0; i < total_page_count; i++) {
-		if (strcmp(main_memory[i], "null") == 0) {
+	for (int i = 0; i < g_total_page_count; i++) {
+		if (strcmp(g_main_memory+(i*g_total_page_size), "null") == 0) {
 			str_key = string_itoa(key);
 			str_tstamp = string_from_format("%lld", timestamp);
 			str_tstamp = realloc(str_tstamp, strlen(str_tstamp) + strlen(str_key) + strlen(value) + 3);
@@ -21,11 +21,11 @@ int memory_insert(long long timestamp, int key, char* value){
 			strcat(str_tstamp, ";");
 			strcat(str_tstamp, value);
 
-			strcpy(main_memory[i], str_tstamp);
+			strcpy(g_main_memory+(i*g_total_page_size), str_tstamp);
 
 			free(str_key);
 			free(str_tstamp);
-			return i;
+			return (i*g_total_page_size);
 		}
 	}
 
@@ -33,9 +33,9 @@ int memory_insert(long long timestamp, int key, char* value){
 }
 
 bool memory_full() {
-	for (int i = 0; i < total_page_count; i++) {
-		if (strcmp(main_memory[i], "null") == 0) {
-			return i >= total_page_count;
+	for (int i = 0; i < g_total_page_count; i++) {
+		if (strcmp(g_main_memory+(i*g_total_page_size), "null") == 0) {
+			return false;
 		}
 	}
 
@@ -44,7 +44,7 @@ bool memory_full() {
 
 
 char* main_memory_values(int index,memory_var_t type){
-	char** our_array = string_split(main_memory[index], ";");
+	char** our_array = string_split(g_main_memory+index, ";");
 	char* value = our_array[type];
 	switch( type ){
 	case 0:
@@ -80,7 +80,10 @@ void modify_memory_by_index(int index, int key , char* value){
 	strcat(str_tstamp, str_key);
 	strcat(str_tstamp, ";");
 	strcat(str_tstamp, value);
-	strcpy(main_memory[index], str_tstamp);
+	strcpy(g_main_memory+index, str_tstamp);
+
+	free(str_key);
+	free(str_tstamp);
 }
 
 bool order_by_timestamp(int first_i,int second_i){
@@ -97,18 +100,22 @@ bool order_by_timestamp(int first_i,int second_i){
 
 }
 
-void eliminate_page_instance_by_index(segment_t* segment, int index){
-	page_t* page = get_page_by_index(segment, index);
-	int index_in_memory = page->index;
+void eliminate_page_instance_by_index(int index){
+	segment_t* found_segment = get_segment_by_index_global(index);
 
-	strcpy(main_memory[index_in_memory],"null");
+	strcpy(g_main_memory+index,"null");
 
-	int position = get_position_by_index(segment->page,index);
+	int position = get_position_by_index(found_segment->page,index);
 
 	if(position != -1){
-		list_remove_and_destroy_element(segment->page,position,(void*) destroy_page);
+		list_remove_and_destroy_element(found_segment->page,position,(void*) destroy_page);
+
+		if (list_size(found_segment->page) == 0){
+			remove_segment(found_segment);
+		}
+
 	}else{
-		log_w("NO se encontro la pagina, abortando");//nunca deberia pasar esto xd
+		log_e("No se encontro la pagina, abortando");
 	}
 
 }
@@ -117,7 +124,7 @@ t_list* list_add_multi_lists(t_list* pages_indexes){
 	t_list* new_list = list_create();
 	insert_input_t* insert = malloc(sizeof(insert_input_t));
 
-	for(int i = 0;i < list_size(pages_indexes); i++){
+	for(int i = 0 ; i < pages_indexes->elements_count ; i++){
 		insert->timestamp = string_to_long_long(main_memory_values(list_get(pages_indexes,i),TIMESTAMP));
 		insert->key = string_to_uint16(main_memory_values(list_get(pages_indexes,i),KEY));
 		insert->value = main_memory_values(list_get(pages_indexes,i),VALUE);
@@ -152,7 +159,7 @@ void journaling(){
 
 	for(int j = 0; j < list_size(journal); j++){
 		position = list_get(indexes,j);
-		strcpy(main_memory[position],"null");
+		strcpy(g_main_memory[position],"null");
 	}
 
 	list_destroy(journal);
@@ -160,7 +167,7 @@ void journaling(){
 
 }
 
-page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* value){
+page_t* replace_algorithm(long long timestamp,int key, char* value){
 
 	int index;
 	page_t* found_page;
@@ -175,7 +182,7 @@ page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* 
 
 		replace = list_get(indexes_sorted,0);
 
-		eliminate_page_instance_by_index(segment,replace);
+		eliminate_page_instance_by_index(replace);
 
 		index = memory_insert(timestamp, key, value);
 		found_page = create_page(index, true);
@@ -189,7 +196,7 @@ page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* 
 	}else{
 		log_i("Memoria llena, iniciando journaling...");
 		journaling();
-		replace_algorithm(segment, timestamp, key, value);
+		replace_algorithm(timestamp, key, value);
 		//return null;
 	}
 }
