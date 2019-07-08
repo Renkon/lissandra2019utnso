@@ -73,7 +73,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 	strcpy(upper_table_name,input->table_name);
 	string_to_upper(upper_table_name);
 
-	if(strlen(input->value) <= 4){ //TODO Lo debemos traer de las configs del FS
+	if(strlen(input->value) <= value_size){
 
 		found_segment = get_segment_by_name(g_segment_list, upper_table_name);
 
@@ -109,7 +109,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 		} else { //No existe la tabla, la creo e inserto el valor
 			found_segment = create_segment(upper_table_name);
 			index = memory_insert(input->timestamp, input->key, input->value);
-			found_page = create_page(index, true);
+			found_page = create_page(index, false);
 			list_add(found_segment->page, found_page);
 			list_add(g_segment_list, found_segment);
 
@@ -435,11 +435,11 @@ void get_value_from_filesystem() {
 void get_value_callback(void* result, response_t* response) {
 	if (result == NULL) {
 		log_w("No me llego un value del FS. ¿Esta caido?");
-		//total_page_count = 4;
+		value_size = 4;
 	} else {
 		int* value = (int*) result;
 		log_i("Me llego un value del FS. VALOR: %i", *value);
-		total_page_count = *value;
+		value_size = *value;
 	}
 }
 

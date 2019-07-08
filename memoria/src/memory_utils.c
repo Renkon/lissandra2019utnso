@@ -11,7 +11,7 @@ int memory_insert(long long timestamp, int key, char* value){
 	char* str_tstamp;
 
 	for (int i = 0; i < total_page_count; i++) {
-		if (strcmp(main_memory[i], "null") == 0) {
+		if (strcmp(main_memory+(i*total_page_size), "null") == 0) {
 			str_key = string_itoa(key);
 			str_tstamp = string_from_format("%lld", timestamp);
 			str_tstamp = realloc(str_tstamp, strlen(str_tstamp) + strlen(str_key) + strlen(value) + 3);
@@ -21,11 +21,11 @@ int memory_insert(long long timestamp, int key, char* value){
 			strcat(str_tstamp, ";");
 			strcat(str_tstamp, value);
 
-			strcpy(main_memory[i], str_tstamp);
+			strcpy(main_memory+(i*total_page_size), str_tstamp);
 
 			free(str_key);
 			free(str_tstamp);
-			return i;
+			return (i*total_page_size);
 		}
 	}
 
@@ -34,7 +34,7 @@ int memory_insert(long long timestamp, int key, char* value){
 
 bool memory_full() {
 	for (int i = 0; i < total_page_count; i++) {
-		if (strcmp(main_memory[i], "null") == 0) {
+		if (strcmp(main_memory+(i*total_page_size), "null") == 0) {
 			return i >= total_page_count;
 		}
 	}
@@ -44,7 +44,7 @@ bool memory_full() {
 
 
 char* main_memory_values(int index,memory_var_t type){
-	char** our_array = string_split(main_memory[index], ";");
+	char** our_array = string_split(main_memory+index, ";");
 	char* value = our_array[type];
 	switch( type ){
 	case 0:
@@ -80,7 +80,7 @@ void modify_memory_by_index(int index, int key , char* value){
 	strcat(str_tstamp, str_key);
 	strcat(str_tstamp, ";");
 	strcat(str_tstamp, value);
-	strcpy(main_memory[index], str_tstamp);
+	strcpy(main_memory+index, str_tstamp);
 }
 
 bool order_by_timestamp(int first_i,int second_i){
@@ -101,7 +101,7 @@ void eliminate_page_instance_by_index(segment_t* segment, int index){
 	page_t* page = get_page_by_index(segment, index);
 	int index_in_memory = page->index;
 
-	strcpy(main_memory[index_in_memory],"null");
+	strcpy(main_memory+index_in_memory,"null");
 
 	int position = get_position_by_index(segment->page,index);
 
@@ -117,7 +117,7 @@ t_list* list_add_multi_lists(t_list* pages_indexes){
 	t_list* new_list = list_create();
 	insert_input_t* insert = malloc(sizeof(insert_input_t));
 
-	for(int i = 0;i < list_size(pages_indexes); i++){
+	for(int i = 0 ; i < pages_indexes->elements_count ; i++){
 		insert->timestamp = string_to_long_long(main_memory_values(list_get(pages_indexes,i),TIMESTAMP));
 		insert->key = string_to_uint16(main_memory_values(list_get(pages_indexes,i),KEY));
 		insert->value = main_memory_values(list_get(pages_indexes,i),VALUE);

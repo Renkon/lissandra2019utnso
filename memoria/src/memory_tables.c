@@ -159,7 +159,7 @@ void remove_segment(segment_t* segment){
 
 	for(int i = 0; i < list_size(indexes); i++){
 		index = list_get(indexes,i);
-		strcpy(main_memory[index],"null");
+		strcpy(main_memory+index,"null");
 	}
 
 	list_destroy(indexes);

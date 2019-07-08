@@ -11,17 +11,17 @@ int main(void) {
 		return 1;
 
 	init_config(MEMCFG, initialize_memory_config, update_memory_config, g_config_keys, g_config_keys_size);
-
-	total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + (4*sizeof(char)) + (3*sizeof(char)); //TODO el size esta hardcodeado, lo pasa las configs de FS
-	//total_page_count = g_config.memory_size/total_page_size;
-	total_page_count = 4;
 	init_server_callbacks();
 	init_server(g_config.port, MEMORY);
-	init_main_memory();
 	init_gossiping();
 	setup_response_id_generator();
-	create_dummy();
+	init_global_segment_list();
 	get_value_from_filesystem();
+
+	total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + (value_size*sizeof(char)) + (3*sizeof(char));
+	total_page_count = g_config.memory_size/total_page_size;
+	init_main_memory();
+	add_dummy();
 	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY, get_callbacks());
 	destroy_logger();
 	return 0;
@@ -42,25 +42,25 @@ void init_server_callbacks() {
 	g_server_callbacks[GOSSIP_IN] = on_gossip;
 }
 
-void create_dummy(){ //TODO renombrar a init_global_segment o algo asi y borrar todo excepto el list_create de la segunda linea.
-	int a;
-	int b,c,d,e;
+void init_global_segment_list(){
 	g_segment_list = list_create();
-	segment_t* segment_dummy = create_segment("LAPOSTA");
 
-	a = memory_insert(1562099999999,65000,"hey");
+}
+
+void add_dummy(){
+	int a;
+	segment_t* segment_dummy = create_segment("LAPOSTA");
+	a = memory_insert(1569999999999,65000,"hey");
 	page_t* page_dummy = create_page(a,false);
 
 	list_add(segment_dummy->page,page_dummy);
 	list_add(g_segment_list,segment_dummy);
-
 }
 
 void init_main_memory(){
-	main_memory = (char**) malloc(total_page_count * sizeof(char*));
+	main_memory = (char*) malloc(g_config.memory_size);
 	for(int i = 0; i < total_page_count; i++){
-		main_memory[i] = (char*) malloc(total_page_size);
-		strcpy(main_memory[i], "null");
+		strcpy(main_memory+(i*total_page_size),"null");
 	}
 }
 
