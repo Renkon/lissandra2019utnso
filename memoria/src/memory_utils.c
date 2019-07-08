@@ -141,7 +141,7 @@ t_list* list_add_multi_lists(t_list* pages_indexes){
 }
 
 void journaling(){
-	t_list* journal = get_pages_by_modified(true);
+	/*t_list* journal = get_pages_by_modified(true);
 	t_list* indexes = list_map(journal,(void*)page_get_index);
 
 	t_list* journal_list = list_add_multi_lists(journal_list);
@@ -164,7 +164,7 @@ void journaling(){
 
 	list_destroy(journal);
 	list_destroy(indexes);
-
+	*/
 }
 
 page_t* replace_algorithm(long long timestamp,int key, char* value){
@@ -198,5 +198,47 @@ page_t* replace_algorithm(long long timestamp,int key, char* value){
 		journaling();
 		replace_algorithm(timestamp, key, value);
 		//return null;
+	}
+}
+
+void init_value_checker() {
+	pthread_t value_thread;
+
+	if (pthread_create(&value_thread, NULL, (void*) check_value, NULL)) {
+		log_e("No se pudo inicializar el hilo de gossiping");
+	}
+}
+
+void check_value() {
+	pthread_detach(pthread_self());
+	while (true) {
+		get_value_from_filesystem();
+		usleep(g_config.value_delay * 1000);
+	}
+}
+
+void get_value_from_filesystem() {
+	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, VALUE_IN, NULL, 0, NULL, get_value_callback, true, NULL, NULL);
+}
+
+void get_value_callback(void* result, response_t* response) {
+	if (result == NULL) {
+		log_w("El filesystem no respondio la solicitud del TAMAÑO_VALUE");
+		if (g_value_size == -1) {
+			log_e("No se pudo obtener el TAMAÑO_VALUE del filesystem, me cerrare.");
+			exit(1);
+		}
+	} else {
+		int* value = (int*) result;
+		log_t("Request del VALUE al fs devolvio: %i", *value);
+
+		if (*value != g_value_size) {
+			log_t("Se cambio el tamaño maximo de los registros");
+			g_value_size = *value;
+			g_total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + g_value_size + 3;
+			g_total_page_count = g_config.memory_size/g_total_page_size;
+
+			journaling();
+		}
 	}
 }

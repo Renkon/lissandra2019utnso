@@ -13,6 +13,7 @@ void initialize_memory_config(t_config* config) {
 	g_config.journal_delay = init_int_config_value("RETARDO_JOURNAL", config);
 	g_config.gossip_delay = init_int_config_value("RETARDO_GOSSIPING", config);
 	g_config.memory_number = init_int_config_value("MEMORY_NUMBER", config);
+	g_config.value_delay = init_int_config_value("VALUE_DELAY", config);
 }
 
 void update_memory_config(t_config* config) {
@@ -20,5 +21,6 @@ void update_memory_config(t_config* config) {
 	g_config.filesystem_delay = update_int_config_value(g_config.filesystem_delay, "RETARDO_FS", config);
 	g_config.journal_delay = update_int_config_value(g_config.journal_delay, "RETARDO_JOURNAL", config);
 	g_config.gossip_delay = update_int_config_value(g_config.gossip_delay, "RETARDO_GOSSIPING", config);
+	g_config.value_delay = update_int_config_value(g_config.value_delay, "VALUE_DELAY", config);
 }
 

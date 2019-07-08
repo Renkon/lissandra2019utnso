@@ -3,8 +3,8 @@
 
 // Las keys de configuracion de memoria
 char* g_config_keys[] = { "IP", "PUERTO", "IP_FS", "PUERTO_FS", "IP_SEEDS", "PUERTO_SEEDS","RETARDO_MEM",
-		"RETARDO_FS", "TAM_MEM", "RETARDO_JOURNAL", "RETARDO_GOSSIPING", "MEMORY_NUMBER"};
-int g_config_keys_size = 12;
+		"RETARDO_FS", "TAM_MEM", "RETARDO_JOURNAL", "RETARDO_GOSSIPING", "MEMORY_NUMBER", "VALUE_DELAY"};
+int g_config_keys_size = 13;
 
 int main(void) {
 	if (!init_logger("memoria.log", "Memoria", true, LOG_LEVEL_TRACE))
@@ -13,15 +13,11 @@ int main(void) {
 	init_config(MEMCFG, initialize_memory_config, update_memory_config, g_config_keys, g_config_keys_size);
 	init_server_callbacks();
 	init_server(g_config.port, MEMORY);
+	init_value_checker();
 	init_gossiping();
 	setup_response_id_generator();
 	init_global_segment_list();
-	get_value_from_filesystem();
-
-	g_value_size = 4;
-	g_total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + g_value_size + 3;
-	g_total_page_count = g_config.memory_size/g_total_page_size;
-
+	g_value_size = -1;
 	init_main_memory();
 	add_dummy();
 	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY, get_callbacks());

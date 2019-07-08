@@ -435,22 +435,7 @@ void cleanup_create_input(void* input) {
 void cleanup_describe_input(void* input) {
 	describe_input_t* describe_input = (describe_input_t*) input;
 	if (describe_input->table_name != NULL)
-	free(describe_input->table_name);
+		free(describe_input->table_name);
 	free(describe_input);
-}
-
-void get_value_from_filesystem() {
-	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, VALUE_IN, NULL, 0, NULL, get_value_callback, true, NULL, NULL);
-}
-
-void get_value_callback(void* result, response_t* response) {
-	if (result == NULL) {
-		log_w("No me llego un value del FS. ¿Esta caido?");
-		g_value_size = 4;
-	} else {
-		int* value = (int*) result;
-		log_i("Me llego un value del FS. VALOR: %i", *value);
-		g_value_size = *value;
-	}
 }
 
