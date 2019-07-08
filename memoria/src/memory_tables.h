@@ -22,5 +22,6 @@ page_t* get_page_by_index(segment_t* segment,int index);
 t_list* get_pages_by_modified(bool modified);
 void remove_segment(segment_t* segment);
 void destroy_page(page_t* page);
+page_t* get_page_by_index_global(int index);
 
 #endif /* MEMORY_TABLES_H_ */

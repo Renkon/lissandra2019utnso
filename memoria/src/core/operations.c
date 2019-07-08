@@ -98,7 +98,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", input->key, input->value, input->timestamp, found_segment->name);
 				} else { //Ya no hay paginas disponibles, uso el algoritmo de reemplazo
 
-					found_page = replace_algorithm(found_segment,input->timestamp, input->key, input->value);
+					found_page = replace_algorithm(input->timestamp, input->key, input->value);
 					list_add(found_segment->page, found_page);
 
 					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo.", input->key, input->value, input->timestamp, found_segment->name);
@@ -108,11 +108,14 @@ void process_insert(insert_input_t* input, response_t* response) {
 			list_destroy(index_list);
 		} else { //No existe la tabla, la creo e inserto el valor
 			found_segment = create_segment(upper_table_name);
-			index = memory_insert(input->timestamp, input->key, input->value);
-			found_page = create_page(index, false);
+			if (!memory_full()){
+				index = memory_insert(input->timestamp, input->key, input->value);
+				found_page = create_page(index, false);
+			} else {
+				found_page = replace_algorithm(input->timestamp, input->key, input->value);
+			}
 			list_add(found_segment->page, found_page);
 			list_add(g_segment_list, found_segment);
-
 			log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", input->key, input->value, input->timestamp, found_segment->name);
 		};
 	}else{
@@ -175,9 +178,6 @@ void process_drop(drop_input_t* input, response_t* response) {
 
 	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DROP_IN, drop_input, elem_info.elements, elem_info.elements_size, drop_callback, true, cleanup_drop_input, response);
 
-
-	free(found_segment);
-
 }
 
 void process_journal(response_t* response) {
@@ -190,65 +190,64 @@ void process_journal(response_t* response) {
 void select_callback(void* result, response_t* response) {
 	// Falla conexion?
 	record_t* alpha_record;
-	if (result == NULL) {
-		log_e("No se pudo seleccionar un valor del filesystem");
-	}
-
 	record_t* record = (record_t*) result;
 
-	switch (record->timestamp){
-	case -1:
-		log_e("No existe el registro solicitado. Cancelando operacion");
-		break;
-	case -2:
-		log_e("No existe la tabla solicituda. Cancelando operacion");
-		break;
-	default:
+	if (result == NULL) {
+		log_e("No se pudo seleccionar un valor del filesystem");
+	} else {
+		switch (record->timestamp){
+		case -1:
+			log_e("No existe el registro solicitado. Cancelando operacion");
+			break;
+		case -2:
+			log_e("No existe la tabla solicituda. Cancelando operacion");
+			break;
+		default:
 
-		alpha_record= malloc(sizeof(record_t));
-		alpha_record->table_name = strdup(record->table_name);
-		alpha_record->key = record->key;
-		alpha_record->timestamp = record->timestamp;
-		alpha_record->value = strdup(record->value);
-		//log_i("Clave %s encontrada en la tabla %s ! Su valor es: %s ", alpha_record->key, alpha_record->table_name, alpha_record->value);
-		log_i("Agregando en memoria el nuevo registro...");
+			alpha_record= malloc(sizeof(record_t));
+			alpha_record->table_name = strdup(record->table_name);
+			alpha_record->key = record->key;
+			alpha_record->timestamp = record->timestamp;
+			alpha_record->value = strdup(record->value);
+			//log_i("Clave %s encontrada en la tabla %s ! Su valor es: %s ", alpha_record->key, alpha_record->table_name, alpha_record->value);
+			log_i("Agregando en memoria el nuevo registro...");
 
-		char* upper_table_name = strdup(alpha_record->table_name);
-		string_to_upper(upper_table_name);
-		page_t*	found_page;
-		int index;
-		t_list* index_list;
-		segment_t* found_segment = get_segment_by_name(g_segment_list, upper_table_name);
+			char* upper_table_name = strdup(alpha_record->table_name);
+			string_to_upper(upper_table_name);
+			page_t*	found_page;
+			int index;
+			t_list* index_list;
+			segment_t* found_segment = get_segment_by_name(g_segment_list, upper_table_name);
 
-		if (found_segment != NULL) {
-			index_list = list_map(found_segment->page, (void*) page_get_index);
-			found_page = get_page_by_key(found_segment, index_list, alpha_record->key);
-				if (!memory_full()) {
-					index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
-					found_page = create_page(index, false);
-					list_add(found_segment->page, found_page);
-					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
-				} else {
-					found_page = replace_algorithm(found_segment,alpha_record->timestamp, alpha_record->key, alpha_record->value);
-					list_add(found_segment->page, found_page);
-					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo.", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
-					}
-			list_destroy(index_list);
-		}else {
-			found_segment = create_segment(upper_table_name);
-			index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
-			found_page = create_page(index, true);
-			list_add(found_segment->page, found_page);
-			list_add(g_segment_list, found_segment);
+			if (found_segment != NULL) {
+				index_list = list_map(found_segment->page, (void*) page_get_index);
+				found_page = get_page_by_key(found_segment, index_list, alpha_record->key);
+					if (!memory_full()) {
+						index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
+						found_page = create_page(index, false);
+						list_add(found_segment->page, found_page);
+						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
+					} else {
+						found_page = replace_algorithm(alpha_record->timestamp, alpha_record->key, alpha_record->value);
+						list_add(found_segment->page, found_page);
+						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo.", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
+						}
+				list_destroy(index_list);
+			}else {
+				found_segment = create_segment(upper_table_name);
+				index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
+				found_page = create_page(index, true);
+				list_add(found_segment->page, found_page);
+				list_add(g_segment_list, found_segment);
 
-			log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", alpha_record->key, record->value, alpha_record->timestamp, found_segment->name);
+				log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", alpha_record->key, record->value, alpha_record->timestamp, found_segment->name);
+			}
+			free(upper_table_name);
+			free(alpha_record->table_name);
+			free(alpha_record->value);
+			free(alpha_record);
 		}
-		free(upper_table_name);
-		free(alpha_record->table_name);
-		free(alpha_record->value);
-		free(alpha_record);
 	}
-
 
 	if (response != NULL) { //me llega desde el kernel
 		// Vamos a copiar el objeto record, asi se lo podemos devolver

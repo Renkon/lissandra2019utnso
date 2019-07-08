@@ -18,8 +18,10 @@ int main(void) {
 	init_global_segment_list();
 	get_value_from_filesystem();
 
-	total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + (value_size*sizeof(char)) + (3*sizeof(char));
+	value_size = 4;
+	total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + value_size + 3;;
 	total_page_count = g_config.memory_size/total_page_size;
+
 	init_main_memory();
 	add_dummy();
 	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY, get_callbacks());
