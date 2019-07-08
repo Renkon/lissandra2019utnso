@@ -18,9 +18,9 @@ int main(void) {
 	init_global_segment_list();
 	get_value_from_filesystem();
 
-	value_size = 4;
-	total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + value_size + 3;;
-	total_page_count = g_config.memory_size/total_page_size;
+	g_value_size = 4;
+	g_total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + g_value_size + 3;
+	g_total_page_count = g_config.memory_size/g_total_page_size;
 
 	init_main_memory();
 	add_dummy();
@@ -60,9 +60,9 @@ void add_dummy(){
 }
 
 void init_main_memory(){
-	main_memory = (char*) malloc(g_config.memory_size);
-	for(int i = 0; i < total_page_count; i++){
-		strcpy(main_memory+(i*total_page_size),"null");
+	g_main_memory = (char*) malloc(g_config.memory_size);
+	for(int i = 0; i < g_total_page_count; i++){
+		strcpy(g_main_memory+(i*g_total_page_size),"null");
 	}
 }
 

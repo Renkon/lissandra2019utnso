@@ -73,7 +73,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 	strcpy(upper_table_name,input->table_name);
 	string_to_upper(upper_table_name);
 
-	if(strlen(input->value) <= value_size){
+	if(strlen(input->value) <= g_value_size){
 
 		found_segment = get_segment_by_name(g_segment_list, upper_table_name);
 
@@ -434,11 +434,11 @@ void get_value_from_filesystem() {
 void get_value_callback(void* result, response_t* response) {
 	if (result == NULL) {
 		log_w("No me llego un value del FS. ¿Esta caido?");
-		value_size = 4;
+		g_value_size = 4;
 	} else {
 		int* value = (int*) result;
 		log_i("Me llego un value del FS. VALOR: %i", *value);
-		value_size = *value;
+		g_value_size = *value;
 	}
 }
 

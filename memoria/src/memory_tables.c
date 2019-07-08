@@ -73,12 +73,10 @@ page_t* get_page_by_index(segment_t* segment, int index) {
 		page_found = list_get(pages, i);
 
 		if (page_found->index == index) {
-			log_i("index es feo");
 			return i < list_size(pages) ? page_found : NULL;
 	 	}
 	}
 
-	log_i("devolvi null equisde");
 	return NULL;
 }
 
@@ -158,7 +156,7 @@ void remove_segment(segment_t* segment){
 
 	for(int i = 0; i < list_size(indexes); i++){
 		index = list_get(indexes,i);
-		strcpy(main_memory+index,"null");
+		strcpy(g_main_memory+index,"null");
 	}
 
 	list_destroy(indexes);

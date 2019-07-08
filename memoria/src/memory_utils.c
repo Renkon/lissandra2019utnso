@@ -10,8 +10,8 @@ int memory_insert(long long timestamp, int key, char* value){
 	char* str_key;
 	char* str_tstamp;
 
-	for (int i = 0; i < total_page_count; i++) {
-		if (strcmp(main_memory+(i*total_page_size), "null") == 0) {
+	for (int i = 0; i < g_total_page_count; i++) {
+		if (strcmp(g_main_memory+(i*g_total_page_size), "null") == 0) {
 			str_key = string_itoa(key);
 			str_tstamp = string_from_format("%lld", timestamp);
 			str_tstamp = realloc(str_tstamp, strlen(str_tstamp) + strlen(str_key) + strlen(value) + 3);
@@ -21,11 +21,11 @@ int memory_insert(long long timestamp, int key, char* value){
 			strcat(str_tstamp, ";");
 			strcat(str_tstamp, value);
 
-			strcpy(main_memory+(i*total_page_size), str_tstamp);
+			strcpy(g_main_memory+(i*g_total_page_size), str_tstamp);
 
 			free(str_key);
 			free(str_tstamp);
-			return (i*total_page_size);
+			return (i*g_total_page_size);
 		}
 	}
 
@@ -33,8 +33,8 @@ int memory_insert(long long timestamp, int key, char* value){
 }
 
 bool memory_full() {
-	for (int i = 0; i < total_page_count; i++) {
-		if (strcmp(main_memory+(i*total_page_size), "null") == 0) {
+	for (int i = 0; i < g_total_page_count; i++) {
+		if (strcmp(g_main_memory+(i*g_total_page_size), "null") == 0) {
 			return false;
 		}
 	}
@@ -44,7 +44,7 @@ bool memory_full() {
 
 
 char* main_memory_values(int index,memory_var_t type){
-	char** our_array = string_split(main_memory+index, ";");
+	char** our_array = string_split(g_main_memory+index, ";");
 	char* value = our_array[type];
 	switch( type ){
 	case 0:
@@ -80,7 +80,7 @@ void modify_memory_by_index(int index, int key , char* value){
 	strcat(str_tstamp, str_key);
 	strcat(str_tstamp, ";");
 	strcat(str_tstamp, value);
-	strcpy(main_memory+index, str_tstamp);
+	strcpy(g_main_memory+index, str_tstamp);
 
 	free(str_key);
 	free(str_tstamp);
@@ -103,7 +103,7 @@ bool order_by_timestamp(int first_i,int second_i){
 void eliminate_page_instance_by_index(int index){
 	segment_t* found_segment = get_segment_by_index_global(index);
 
-	strcpy(main_memory+index,"null");
+	strcpy(g_main_memory+index,"null");
 
 	int position = get_position_by_index(found_segment->page,index);
 
@@ -159,7 +159,7 @@ void journaling(){
 
 	for(int j = 0; j < list_size(journal); j++){
 		position = list_get(indexes,j);
-		strcpy(main_memory[position],"null");
+		strcpy(g_main_memory[position],"null");
 	}
 
 	list_destroy(journal);
