@@ -19,12 +19,13 @@ unsigned int division_rounded_up(unsigned int dividend, unsigned int divisor){
 }
 
 int abs(int number) {
+	return number < 0 ? -number : number;
+}
 
-	if (number < 0) {
-		return -number;
+int rnd(int min, int max) {
+	if ((max - min) < 0) return -1;
 
-	} else {
-		return number;
-	}
-
+	int divider = (max - min) + 1;
+	int random_result = random() % divider;
+	return random_result + min;
 }

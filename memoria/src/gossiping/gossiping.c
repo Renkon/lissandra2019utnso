@@ -17,7 +17,7 @@ void init_gossiping() {
 	sem_init(&g_mutex_memories, 0, 1);
 
 	if (pthread_create(&gossiping_thread, NULL, (void*) gossip_continuously, NULL)) {
-		log_e("No se pudo inicializar el hilo de describe");
+		log_e("No se pudo inicializar el hilo de gossiping");
 	}
 }
 
@@ -142,7 +142,7 @@ void update_memory(memory_t* memory) {
 	}
 
 	// No lo encontre, lo agrego
-	if (!found) {
+	if (!found && memory->id != -1) {
 		memory_t* new_memory = malloc(sizeof(memory_t));
 		new_memory->id = memory->id;
 		new_memory->ip = strdup(memory->ip);

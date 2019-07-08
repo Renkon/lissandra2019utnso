@@ -9,6 +9,7 @@ void initialize_kernel_config(t_config* config) {
 	g_config.execution_delay = init_int_config_value("SLEEP_EJECUCION", config);
 	g_config.lts_delay = init_int_config_value("LTS_DELAY", config);
 	g_config.metrics_display = init_int_config_value("METRICS_DISPLAY", config);
+	g_config.gossip_refresh = init_int_config_value("GOSSIP_REFRESH", config);
 }
 
 void update_kernel_config(t_config* config) {
@@ -17,4 +18,5 @@ void update_kernel_config(t_config* config) {
 	g_config.execution_delay = update_int_config_value(g_config.execution_delay, "SLEEP_EJECUCION", config);
 	g_config.lts_delay = update_int_config_value(g_config.lts_delay, "LTS_DELAY", config);
 	g_config.metrics_display = update_int_config_value(g_config.metrics_display, "METRICS_DISPLAY", config);
+	g_config.gossip_refresh = update_int_config_value(g_config.gossip_refresh, "GOSSIP_REFRESH", config);
 }

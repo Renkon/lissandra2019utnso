@@ -7,6 +7,7 @@
 #include "commons/collections/list.h"
 #include "shared_types/shared_types.h"
 #include "../../config.h"
+#include "../gossiping/gossiping.h"
 #include "commons/string.h"
 #include "generic_client.h"
 #include "utils/network_types.h"
