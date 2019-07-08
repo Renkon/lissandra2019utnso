@@ -99,10 +99,6 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 	elements_network_t element_info;
 	void (*callback)(void*, response_t*);
 
-	//pcb_operation_t* pcb_operation = malloc(sizeof(pcb_operation_t));
-	//char* demo_str = string_duplicate("soy un kernel");
-	//do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, SELECT_IN, demo_str, 14, select_callback);
-	//select_input_t* input = statement->select_input;
 	// Esto deberia ir en el callback
 	// Aca deberiamos tener el PCB
 	switch (statement->operation) {
@@ -174,6 +170,7 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 		pcb->program_counter = list_size(pcb->statements);
 		sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
 	} else {
+		// TODO: agregar la wea de mandarle solo a la memoria asignada!
 		do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, network_operation, input,
 				element_info.elements, element_info.elements_size, callback, true, NULL, pcb);
 

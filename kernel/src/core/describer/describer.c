@@ -26,7 +26,14 @@ void update_descriptions() {
 	describe_input_t* input = malloc(sizeof(describe_input_t));
 	input->table_name = NULL;
 
-	do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, DESCRIBE_IN, input,
+	memory_t* memory = get_random_memory(true);
+	if (memory == NULL) {
+		log_e("No se puede disparar describe automatizado porque no hay memorias vivas");
+		free(input);
+		return;
+	}
+
+	do_simple_request(KERNEL, memory->ip, memory->port, DESCRIBE_IN, input,
 				0, NULL, update_descriptions_callback, true, free_auto_describe_input, NULL);
 }
 
