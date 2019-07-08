@@ -2,6 +2,7 @@
 
 void process_select(select_input_t* input, response_t* response) {
 	log_i("mm select args: %s %u", input->table_name, (unsigned int)input->key);
+	usleep(g_config.memory_delay * 1000);
 
 	page_t* found_page;
 	segment_t* found_segment;
@@ -43,6 +44,7 @@ void process_select(select_input_t* input, response_t* response) {
 
 				select_input->key = input->key;
 
+				usleep(g_config.filesystem_delay * 1000);
 				do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, select_input, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input, response);
 
 				};
@@ -56,6 +58,7 @@ void process_select(select_input_t* input, response_t* response) {
 
 			select_input->key = input->key;
 
+			usleep(g_config.filesystem_delay * 1000);
 			do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, select_input, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input, response);
 		}
 
@@ -63,6 +66,8 @@ void process_select(select_input_t* input, response_t* response) {
 
 void process_insert(insert_input_t* input, response_t* response) {
 	log_i("mm insert args: %s %u \"%s\" %ld", input->table_name, (unsigned int) input->key, input->value, input->timestamp);
+	usleep(g_config.memory_delay * 1000);
+
 	segment_t* found_segment;
 	page_t* found_page;
 	t_list* index_list;
@@ -127,6 +132,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 
 void process_create(create_input_t* input, response_t* response) {
 	log_i("mm create args: %s %i %i %ld", input->table_name, input->consistency, input->partitions, input->compaction_time);
+	usleep(g_config.memory_delay * 1000);
 
 	elements_network_t elem_info = elements_create_in_info(input);
 	create_input_t* create_input = malloc(sizeof(create_input_t));
@@ -135,12 +141,14 @@ void process_create(create_input_t* input, response_t* response) {
 	create_input->consistency = input->consistency;
 	create_input->partitions = input->partitions;
 
+	usleep(g_config.filesystem_delay * 1000);
 	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, create_input, elem_info.elements, elem_info.elements_size,
 			create_callback, true, cleanup_create_input, response);
 }
 
 void process_describe(describe_input_t* input, response_t* response) {
 	log_i("mm describe args: %s", input->table_name);
+	usleep(g_config.memory_delay * 1000);
 
 	elements_network_t elem_info = elements_describe_in_info(input);
 	describe_input_t* describe_input = malloc(sizeof(describe_input_t));
@@ -149,12 +157,14 @@ void process_describe(describe_input_t* input, response_t* response) {
 	else
 		describe_input->table_name = NULL;
 
+	usleep(g_config.filesystem_delay * 1000);
 	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DESCRIBE_IN, describe_input, elem_info.elements, elem_info.elements_size,
 			describe_callback, true, cleanup_describe_input, response);
 }
 
 void process_drop(drop_input_t* input, response_t* response) {
 	log_i("mm drop args: %s", input->table_name);
+	usleep(g_config.memory_delay * 1000);
 
 	char* upper_table_name = malloc(strlen(input->table_name)+1);
 	strcpy(upper_table_name,input->table_name);
@@ -176,12 +186,14 @@ void process_drop(drop_input_t* input, response_t* response) {
 
 	drop_input->table_name = upper_table_name;
 
+	usleep(g_config.filesystem_delay * 1000);
 	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, DROP_IN, drop_input, elem_info.elements, elem_info.elements_size, drop_callback, true, cleanup_drop_input, response);
 
 }
 
 void process_journal(response_t* response) {
 	log_i("mm journal args none");
+	usleep(g_config.memory_delay * 1000);
 
 	journaling();
 
