@@ -5,6 +5,7 @@
 
 #include "memory_utils.h"
 #include "memory_types.h"
+#include "shared_types/shared_types.h"
 
 #include "generic_config.h"
 #include "generic_console.h"
@@ -18,8 +19,10 @@
 #include <limits.h>
 #include "utils/numbers.h"
 #include "utils/response.h"
+#include "gossiping/gossiping.h"
 
 typedef struct {
+	char* ip;
 	int port;
 	char* filesystem_ip;
 	int filesystem_port;
@@ -32,7 +35,6 @@ typedef struct {
 	int gossip_delay;
 	int memory_number;
 } memconfig_t;
-
 
 memconfig_t g_config;
 extern char* g_config_keys[];

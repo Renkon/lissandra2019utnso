@@ -64,4 +64,10 @@ char* to_uppercase(char* lower_string) {
 	return str_up;
 }
 
+int* string_to_int_ptr(void* str) {
+	int* value = malloc(sizeof(int));
+	*value = atoi((char*) str);
+	return value;
+}
+
 

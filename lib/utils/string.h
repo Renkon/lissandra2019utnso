@@ -14,5 +14,6 @@ int string_to_int(char* str);
 long string_to_long(char* str);
 long long string_to_long_long(char* str);
 char* to_uppercase(char* lower_string);
+int* string_to_int_ptr(void* str);
 
 #endif /* UTILS_STRING_H_ */

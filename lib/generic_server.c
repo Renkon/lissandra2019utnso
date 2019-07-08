@@ -142,7 +142,7 @@ bool valid_source(process_t me, process_t client) {
 	if (me == KERNEL)
 		return false;
 	if (me == MEMORY)
-		return client == KERNEL;
+		return client == KERNEL || client == MEMORY;
 	if (me == FILESYSTEM)
 		return client == MEMORY;
 	return false;

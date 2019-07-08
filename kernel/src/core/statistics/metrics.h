@@ -1,4 +1,5 @@
 #include "stats.h"
+#include "../../config.h"
 #include <stdbool.h>
 #include <pthread.h>
 #include <unistd.h>
