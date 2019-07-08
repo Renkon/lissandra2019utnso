@@ -16,8 +16,11 @@
 #include "generic_client.h"
 #include "utils/operation_types.h"
 #include "core/operations.h"
+#include "utils/response.h"
 #include <commons/bitarray.h>
+#include <pthread.h>
 #include "utils/dates.h"
+#include <unistd.h>
 #include <limits.h>
 #include "utils/numbers.h"
 
@@ -38,6 +41,11 @@ void eliminate_page_instance_by_index(int index);
 void journaling();
 page_t* replace_algorithm(long long timestamp,int key, char* value);
 
+/* Ir a buscar el value */
+void init_value_checker();
+void check_value();
+void get_value_from_filesystem();
+void get_value_callback(void* result, response_t* response);
 
 #endif /* MEMORY_UTILS_H_ */
 

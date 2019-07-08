@@ -34,6 +34,7 @@ typedef struct {
 	int journal_delay;
 	int gossip_delay;
 	int memory_number;
+	int value_delay;
 } memconfig_t;
 
 memconfig_t g_config;

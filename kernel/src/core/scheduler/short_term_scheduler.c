@@ -99,8 +99,6 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 	elements_network_t element_info;
 	void (*callback)(void*, response_t*);
 
-	// Esto deberia ir en el callback
-	// Aca deberiamos tener el PCB
 	switch (statement->operation) {
 		case SELECT:
 			network_operation = SELECT_IN;
@@ -194,11 +192,10 @@ void on_select(void* result, response_t* response) {
 		log_e("Hubo un error de red al querer ir a buscar un valor. El SELECT ha fallado");
 		pcb->errors = true;
 	} else if (record->timestamp == -2) {
-		log_e("La tabla %s no existe. El SELECT ha fallado", record->table_name);
+		log_i("La tabla %s no existe. El SELECT ha fallado", record->table_name);
 		pcb->errors = true;
 	} else if (record->timestamp == -1) {
-		log_e("La key solicitada no se encuentra en la tabla %s. El SELECT ha fallado", record->table_name);
-		pcb->errors = true;
+		log_i("La key solicitada no se encuentra en la tabla %s.", record->table_name);
 	} else {
 		log_i("SELECT %i FROM %s: %s", record->key, record->table_name, record->value);
 	}

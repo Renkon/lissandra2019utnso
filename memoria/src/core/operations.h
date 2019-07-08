@@ -31,8 +31,4 @@ void cleanup_describe_input(void* input);
 void cleanup_create_input(void* input);
 void cleanup_describe_input(void* input);
 
-/* Ir a buscar el value */
-void get_value_from_filesystem();
-void get_value_callback(void* result, response_t* response);
-
 #endif /* CORE_OPERATIONS3_H_ */
