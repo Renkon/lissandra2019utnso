@@ -12,6 +12,7 @@
 #include "core/scheduler/scheduler.h"
 #include "core/statistics/metrics.h"
 #include "core/gossiping/gossiping.h"
+#include "core/memories/memories.h"
 
 typedef struct {
 	char* memory_ip;
