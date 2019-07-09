@@ -122,13 +122,14 @@ void eliminate_page_instance_by_index(int index){
 
 t_list* list_add_multi_lists(t_list* pages_indexes){
 	t_list* new_list = list_create();
-	insert_input_t* insert = malloc(sizeof(insert_input_t));
 
 	for(int i = 0 ; i < pages_indexes->elements_count ; i++){
+		insert_input_t* insert = malloc(sizeof(insert_input_t));
+
 		insert->timestamp = string_to_long_long(main_memory_values(list_get(pages_indexes,i),TIMESTAMP));
 		insert->key = string_to_uint16(main_memory_values(list_get(pages_indexes,i),KEY));
-		insert->value = main_memory_values(list_get(pages_indexes,i),VALUE);
-		insert->table_name = get_table_name_by_index(list_get(pages_indexes,i));
+		insert->value = strdup(main_memory_values(list_get(pages_indexes,i),VALUE));
+		insert->table_name = strdup(get_table_name_by_index(list_get(pages_indexes,i)));
 
 		list_add(new_list,insert);
 	}

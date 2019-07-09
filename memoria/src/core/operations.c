@@ -477,4 +477,5 @@ void cleanup_journal_input(void* input){
 		free(input->value);
 		free(input);
 	}
+	list_destroy(insert_inputs);
 }
