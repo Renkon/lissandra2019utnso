@@ -189,7 +189,7 @@ void on_select(void* result, response_t* response) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El SELECT ha fallado");
 		pcb->errors = true;
 	} else if (record->timestamp == -3) {
-		log_e("Hubo un error de red al querer ir a buscar un valor. El SELECT ha fallado");
+		log_e("Hubo un error de red al querer ir a buscar un valor al FS. El SELECT ha fallado");
 		pcb->errors = true;
 	} else if (record->timestamp == -2) {
 		log_i("La tabla %s no existe. El SELECT ha fallado", record->table_name);
