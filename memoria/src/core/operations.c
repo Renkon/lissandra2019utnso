@@ -471,7 +471,7 @@ void cleanup_describe_input(void* input) {
 
 void cleanup_journal_input(void* input){
 	t_list* insert_inputs = (t_list*) input;
-	for(int i; i < list_size(insert_inputs); i++){
+	for(int i = 0; i < list_size(insert_inputs); i++){
 		insert_input_t* input = list_get(insert_inputs,i);
 		free(input->table_name);
 		free(input->value);

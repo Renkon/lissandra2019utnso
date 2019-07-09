@@ -133,9 +133,9 @@ t_list* list_add_multi_lists(t_list* pages_indexes){
 		list_add(new_list,insert);
 	}
 
-	free(insert->table_name);
-	free(insert->value);
-	free(insert);
+	//free(insert->table_name);
+	//free(insert->value);
+	//free(insert);
 
 	return new_list;
 }
