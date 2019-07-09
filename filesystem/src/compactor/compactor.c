@@ -1,24 +1,180 @@
 #include "compactor.h"
 
 void compaction(char* table_name){
+	char* initial_table_dir = get_table_directory();
+	char* table_directory = create_new_directory(initial_table_dir,table_name);
+	table_metadata_t* table_metadata = read_table_metadata(table_directory);
 	partition_t* tmpc =get_all_blocks_from_all_tmps(table_name);
 	//Creo el tmpc
-	create_tmp(table_name,tmpc->blocks,tmpc->number_of_blocks,tmpc->size,0);
+	create_fs_archive(table_name,tmpc->blocks,tmpc->number_of_blocks,tmpc->size,0,0);
 	//Matar todos los tmps todo;
 	t_list* tmpc_tkvs = create_tkv_list(tmpc);
+	t_list* partition_tkvs = create_partition_tkv_list(table_directory,table_metadata);
+	get_tkvs_to_insert(tmpc_tkvs,partition_tkvs);
+	//Bloqueo tablas todo
+	//Libera bloques de los tmpc y el bin todo
+	//Transformar lista de weas en lista de tkvs string
+	int length_of_all_tkvs = length_of_all_tkvs_in_partitions_to_add(partition_tkvs);
+	int necessary_blocks = division_rounded_up(length_of_all_tkvs, fs_metadata->block_size);
+	int blocks[necessary_blocks];
+	char* bitmap_dir = get_bitmap_directory();
+	sem_wait(bitmap_semaphore);
+	t_bitarray* bitmap = read_bitmap(bitmap_dir);
+	int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
+	create_new_partitions(partition_tkvs,blocks,free_blocks_amount,table_name);
+	//Desbloqueo tablas todo
+	sem_post(bitmap_semaphore);
+	free(bitmap->bitarray);
+	free(bitmap);
+	free(bitmap_dir);
 	free(tmpc->blocks);
 	free(tmpc);
+	free(initial_table_dir);
+	free(table_directory);
+	free(table_metadata);
+	//free la tmpc_tkvs y partition tkvs todo
+}
+
+int length_of_all_tkvs_in_partitions_to_add(t_list* partition_tkvs){
+	int total_length =0;
+	for(int i=0; i<list_size(partition_tkvs); i++){
+			tkvs_per_partition_t* partition = list_get(partition_tkvs,i);
+			total_length+= tkv_total_length(partition->tkvs);
+		}
+
+	return total_length;
+}
+
+void create_partition(tkvs_per_partition_t* partition, int* blocks, int size_of_blocks,char* table_name) {
+	//CAMBIAR TODO
+	int size_of_all_tkvs_from_partition = tkv_total_length(partition->tkvs);
+	int blocks_amount = division_rounded_up(size_of_all_tkvs_from_partition,fs_metadata->block_size);
+	int* blocks_for_the_table = array_take(blocks, size_of_blocks,blocks_amount);
+	create_fs_archive(table_name,blocks_for_the_table,blocks_amount,size_of_all_tkvs_from_partition,1,partition->partition);
+	int block_size = fs_metadata->block_size;
+	int block_index = 0;
+	//Abro el .bin del primer bloque
+	int block_to_open = blocks_for_the_table[block_index];
+	FILE* block = open_block(block_to_open);
+
+	for (int i = 0; i < list_size(partition->tkvs); i++) {
+		tkv_t* readed_tkv = list_get(partition->tkvs, i);
+		int free_space_in_block = block_size - strlen(readed_tkv->tkv);
+		if (free_space_in_block > 0) {
+			//Si me entra el tkv en el bloque lo meto asi nomas.
+			block_size-=strlen(readed_tkv->tkv);
+			write_tkv(readed_tkv->tkv, block);
+		} else {
+			//Si no entra va al la segunda logica de como guardar un tkv
+			int what_the_pionter_moved = 0;
+			//Como voy a mover el puntero del string tengo que saber cuanto se va moviendo para despes dejarlo en 0
+			// Y podes hacerle free en paz.
+			while (true) {
+				//Me fijo si el string entra en el bloque
+				int free_space_in_block2 = block_size - strlen(readed_tkv->tkv);
+				if (free_space_in_block2 >= 0) {
+					//SI entra lo guardo directamente y corto
+					char* tkv_to_write = malloc(strlen(readed_tkv->tkv)+1);
+					strcpy(tkv_to_write,readed_tkv->tkv);
+					write_tkv(tkv_to_write, block);
+					block_size-=strlen(readed_tkv->tkv);
+					readed_tkv->tkv-= what_the_pionter_moved;
+					free(tkv_to_write);
+					break;
+				}
+				//SI no entra entonces guardo lo que si entra con un \n al final y vuelvo a intentar con un nuevo bloque
+				char* tkv_that_enters = string_substring_until(readed_tkv->tkv,block_size - 1);
+				readed_tkv->tkv += block_size - 1;
+				what_the_pionter_moved += block_size - 1;
+				string_append(&tkv_that_enters, "\n");
+				write_tkv(tkv_that_enters,block);
+				fclose(block);
+				block_index++;
+				int block_open = blocks_for_the_table[block_index];
+				block = open_block(block_open);
+				block_size = fs_metadata->block_size;
+			}
+		}
+		//Si mi bloque se lleno o quedo con 1 solo carcter entonces lo cierro y paso al siguiente
+		if (block_size <= 1) {
+			fclose(block);
+			block_index++;
+			block = open_block(blocks_for_the_table[block_index]);
+			block_size = fs_metadata->block_size;
+		}
+
+	}
+	free(blocks_for_the_table);
+	fclose(block);
+}
+
+void create_new_partitions(t_list* partition_tkvs,int* blocks, int size_of_blocks,char*  table_name){
+
+	for(int i=0; i<list_size(partition_tkvs);i++){
+		tkvs_per_partition_t* partition = list_get(partition_tkvs,i);
+		create_partition(partition,blocks,size_of_blocks,table_name);
+	}
+
+}
+
+void get_tkvs_to_insert(t_list* tmpc_tkvs, t_list* partition_tkvs){
+
+	for(int i=0; i<list_size(tmpc_tkvs); i++){
+		record_t* record = list_get(tmpc_tkvs,i);
+		int partition_number = (record->key % list_size(partition_tkvs)) + 1;
+		tkvs_per_partition_t* partition = list_get(partition_tkvs,partition_number-1);
+		add_record_to_partition_list(record,partition);
+
+	}
+
+
+}
+
+void add_record_to_partition_list (record_t* record,tkvs_per_partition_t* partition){
+
+	for(int i=0; i<list_size(partition->tkvs);i++){
+		record_t* record_from_partition = list_get(partition->tkvs,i);
+
+		if(record->key == record_from_partition->key){
+			//Si lo encuentra y la timestamp es menor entonces lo agrego
+			if(record->timestamp > record_from_partition->timestamp){
+				list_remove_and_destroy_element(partition,i,free_record);
+				list_add(partition->tkvs, record);
+				break;
+			}
+		//Si tiene la misma key pero menos timestamp no hago nada
+		break;
+		}
+
+	}
+	//Si no lo encuentra entronces lo agrega al final
+	list_add(partition->tkvs, record);
 }
 
 
+void free_record(record_t* record){
+	free(record->value);
+	free(record);
+}
+
+t_list* create_partition_tkv_list(char* table_directory,table_metadata_t* table_metadata){
+	t_list* partition_tkvs = list_create();
+	for(int i=0; i<table_metadata->partitions;i++){
+		char* partition_dir = create_partition_directory(table_directory, i+1);
+		partition_t* partition = read_fs_archive( partition_dir);
+		tkvs_per_partition_t* partition_for_the_list = malloc(sizeof(tkvs_per_partition_t));
+		partition_for_the_list->partition = i+1;
+		partition_for_the_list->tkvs = create_tkv_list(partition);
+		list_add(partition_tkvs, partition_for_the_list);
+		free(partition_dir);
+		free(partition->blocks);
+		free(partition);
+	}
+	return partition_tkvs;
+}
+
 t_list*  create_tkv_list(partition_t* partition) {
-	record_t* key_found_in_block = malloc(sizeof(record_t));
-	//Le seteo -1 para que si no la encuentra, devuelva esta "key invalida"
-	key_found_in_block->timestamp = -1;
 	tkv_t* key_found;
-	tkv_t* correct_key_found = malloc(sizeof(tkv_t));
-	correct_key_found ->tkv = malloc(strlen("-1;-1;-1")+1);
-	strcpy(correct_key_found->tkv,"-1;-1;-1");
 	int index = 0;
 	int incomplete_tkv_size = 0;
 	t_list* tkvs = list_create();
@@ -47,18 +203,17 @@ t_list*  create_tkv_list(partition_t* partition) {
 			}
 			index = 1;
 			//Una vez  reconstruido el tkv lo agrego
-			record_t* record = convert_record(key_found->tkv); //Free? todo
+			record_t* record = convert_record(key_found->tkv);//Free? todo
 			list_add(tkvs, record);
 
 		}
 
 		// limpiamos en cada iteracion
-		if (i < partition->number_of_blocks - 1) {
+		//if (i < partition->number_of_blocks - 1) {
 			free(key_found->tkv);
 			free(key_found);
-		}
+		//}
 	}
-
 	return tkvs;
 }
 
@@ -119,6 +274,10 @@ record_t* convert_record(char* tkv_string){
 	strcpy(record->value,tkv[2]);
 	 record->key =string_to_uint16(tkv[1]);
 	 record->timestamp = string_to_long_long(tkv[0]);
+	 free(tkv[0]);
+	 free(tkv[1]);
+	 free(tkv[2]);
+	 free(tkv);
 	 return record;
 }
 
@@ -181,11 +340,11 @@ void dump(){
 	//Saco cuantos bloques necesito para dumpear todas las tablas los cuales se calculan como:
 	//tamaño de todos los tkvs/ tamaño de un bloque redondeado hacia arriba.
 	int necessary_blocks = division_rounded_up(length_of_all_tkvs_in_memtable(), fs_metadata->block_size);
-	printf("%d",necessary_blocks);
 	//Creo un array de tantos bloques como los que necesito
 	int blocks[necessary_blocks];
 	char* bitmap_dir = get_bitmap_directory();
 	//Leo el bitmap
+	sem_wait(bitmap_semaphore);
 	t_bitarray* bitmap = read_bitmap(bitmap_dir);
 	//Busco los bloques libres
 	int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
@@ -203,7 +362,7 @@ void dump(){
 	}else{
 		log_w("No hay bloques suficientes como para dumpear todas las tablas de la memtable. Dumpeo cancelado");
 	}
-
+	sem_post(bitmap_semaphore);
 	free_memtable();
 	free(bitmap->bitarray);
 	free(bitmap);
@@ -211,7 +370,7 @@ void dump(){
 	}
 }
 
-void create_tmp(char* table_name,int* blocks,int block_amount,int tkv_size,int tmp_flag){
+void create_fs_archive(char* table_name,int* blocks,int block_amount,int tkv_size,int archive_flag, int partition_number){
 	char* initial_table_dir = get_table_directory();
 	int tmp_number = 1;
 	char* tmp_name = get_tmp_name(tmp_number);
@@ -223,12 +382,24 @@ void create_tmp(char* table_name,int* blocks,int block_amount,int tkv_size,int t
 		free(tmp_name);
 		tmp_name = get_tmp_name(tmp_number);
 	}
-	char* tmp_dir = get_tmp_directory(table_directory, tmp_number);
-	if(tmp_flag == 0 ){
-		free(tmp_dir);
-		tmp_dir = get_tmpc_directory(table_directory);
+	char* 	archive_dir = get_tmp_directory(table_directory, tmp_number);
+	if(archive_flag == 0 ){
+		free(	archive_dir);
+		archive_dir = get_tmpc_directory(table_directory);
 
 	}
+
+	if(archive_flag == 2){
+		free(	archive_dir);
+		archive_dir = malloc(digits_in_a_number(partition_number) + strlen("/.bin") + 1);
+		sprintf(archive_dir, "/%d.bin", partition_number); //Esto transforma de int a string
+		char* partition_route = malloc(strlen(table_directory) + strlen(	archive_dir) + 1);
+		strcpy(partition_route, table_directory);
+		strcat(partition_route, archive_dir);
+
+	}
+
+
 	partition_t* partition = malloc(sizeof(partition_t));
 	partition->number_of_blocks = block_amount;
 	partition->size = tkv_size;
@@ -237,7 +408,7 @@ void create_tmp(char* table_name,int* blocks,int block_amount,int tkv_size,int t
 
 
 
-	FILE* arch = fopen(	tmp_dir, "wb");
+	FILE* arch = fopen(archive_dir, "wb");
 	fwrite(&partition->number_of_blocks, 1, sizeof(partition->number_of_blocks), arch);
 	fwrite(partition->blocks, 1, sizeof(int) * partition->number_of_blocks, arch);
 	fwrite(&partition->size, 1, sizeof(partition->size), arch);
@@ -246,7 +417,7 @@ void create_tmp(char* table_name,int* blocks,int block_amount,int tkv_size,int t
 	free(partition->blocks);
 	free(partition);
 	free(initial_table_dir);
-	free(tmp_dir);
+	free(archive_dir);
 	free(tmp_name);
 	free(table_name_upper);
 	free(table_directory);
@@ -267,10 +438,8 @@ void free_memtable(){
 void dump_table(table_t* table, int* blocks, int size_of_blocks) {
 	int size_of_all_tkvs_from_table = tkv_total_length(table->tkvs);
 	int blocks_amount = division_rounded_up(size_of_all_tkvs_from_table,fs_metadata->block_size);
-	//Hacer una funcion que saque los primeros n bloques del array y los devuelva (pero que tenga efecto)
 	int* blocks_for_the_table = array_take(blocks, size_of_blocks,blocks_amount);
-	//CREAR TMP
-	create_tmp(table->name,blocks_for_the_table,blocks_amount,size_of_all_tkvs_from_table,1);
+	create_fs_archive(table->name,blocks_for_the_table,blocks_amount,size_of_all_tkvs_from_table,1,0);
 	int block_size = fs_metadata->block_size;
 	int block_index = 0;
 	//Abro el .bin del primer bloque
@@ -345,6 +514,7 @@ int tkv_total_length(t_list* tkvs){
 	}
 	return total_length;
 }
+
 
 int length_of_all_tkvs_in_memtable(){
 	int total_length = 0;

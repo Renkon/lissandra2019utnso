@@ -99,11 +99,13 @@ void process_create(create_input_t* input, response_t* response) {
 	int* create_status = malloc(sizeof(int));
 	char* table_name_upper = to_uppercase(input->table_name);
 	char* bitmap_dir = get_bitmap_directory();
+	sem_wait(bitmap_semaphore);
 	t_bitarray* bitmap = read_bitmap(bitmap_dir);
 	//Creo un array  de tantos bloques como particiones pida
 	int blocks[(input->partitions)];
 
 	//Quiero saber si hay tantos bloques libres como particiones asi que busco cuantos bloques libres hay
+	//Poner semaforo todo
 	int free_blocks_amount = assign_free_blocks(bitmap, blocks, input->partitions);
 
 	if (free_blocks_amount == input->partitions) {
@@ -132,7 +134,7 @@ void process_create(create_input_t* input, response_t* response) {
 		log_w("No hay bloques suficientes como para crear la tabla con %d particiones. Operacion CREATE cancelada",input->partitions);
 		*create_status = -2;
 	}
-
+	sem_post(bitmap_semaphore);
 	free(table_name_upper);
 	free(bitmap->bitarray);
 	free(bitmap);
@@ -214,6 +216,7 @@ void process_drop(drop_input_t* input, response_t* response) {
 
 	if (exist_in_directory(input->table_name, table_dir)) {
 		char* table_directory = create_new_directory(table_dir, table_name_upper);
+		sem_wait(bitmap_semaphore);
 		t_bitarray* bitmap = read_bitmap(bitmap_directory);
 		//LIbero los bloques de las particiones
 		free_partitions(table_directory, bitmap);
@@ -223,6 +226,7 @@ void process_drop(drop_input_t* input, response_t* response) {
 		remove_directory(table_directory);
 		//Guardo el bitmap
 		write_bitmap(bitmap, bitmap_directory);
+		sem_post(bitmap_semaphore);
 		log_i("La tabla %s se borro satisfactoriamente.", table_name_upper);
 		free(bitmap->bitarray);
 		free(bitmap);
