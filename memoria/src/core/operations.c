@@ -31,10 +31,20 @@ void process_select(select_input_t* input, response_t* response) {
 
 				log_i("Clave %s encontrada en la tabla %s ! Su valor es: %s ", return_key, found_segment->name, return_value);
 
+				if (response != NULL) {
+					record_t* record = malloc(sizeof(record_t));
+					record->key = string_to_uint16(return_key);
+					record->table_name = strdup(found_segment->name);
+					record->value = strdup(return_value);
+					record->timestamp = string_to_long_long(return_timestamp);
+					set_response(response, record);
+				}
+
 				free(return_timestamp);
 				free(return_key);
 				free(return_value);
 				free(upper_table_name);
+
 			} else {
 				log_w("No se encontro la pagina en MEMORIA. Solicitando al FILESYSTEM");
 
@@ -68,6 +78,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 	log_i("mm insert args: %s %u \"%s\" %ld", input->table_name, (unsigned int) input->key, input->value, input->timestamp);
 	usleep(g_config.memory_delay * 1000);
 
+	int* insert_status = malloc(sizeof(int));
 	segment_t* found_segment;
 	page_t* found_page;
 	t_list* index_list;
@@ -123,9 +134,16 @@ void process_insert(insert_input_t* input, response_t* response) {
 			list_add(g_segment_list, found_segment);
 			log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", input->key, input->value, input->timestamp, found_segment->name);
 		};
+		*insert_status = 0;
 	}else{
 		log_w("El tamaño del value es mayor al maximo disponible, cancelando operacion.");
+		*insert_status = -1;
 	}
+
+	if (response == NULL)
+		free(insert_status);
+	else
+		set_response(response, insert_status);
 
 	free(upper_table_name);
 }
