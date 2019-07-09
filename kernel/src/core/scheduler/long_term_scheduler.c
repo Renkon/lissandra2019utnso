@@ -3,9 +3,12 @@
 void long_term_schedule() {
 	pthread_detach(pthread_self());
 
+	sem_init(&g_lts_semaphore, 0, 0);
+
 	// Este bloque se encarga de liberar los procesos en exit, o de mandar a ready los scripts ya inicializados
 	// Es el LTS, O sea que esta siempre en ejecucion (en idle en el peor de los casos)
 	while (true) {
+		sem_wait(&g_lts_semaphore);
 		usleep(g_config.lts_delay * 1000);
 
 		if (list_size(g_scheduler_queues.new) > 0) {

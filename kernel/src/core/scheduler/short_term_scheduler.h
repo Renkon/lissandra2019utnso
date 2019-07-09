@@ -2,6 +2,7 @@
 #define CORE_SCHEDULER_SHORT_TERM_SCHEDULER_H_
 
 #include "scheduler.h"
+#include "long_term_scheduler.h"
 #include "pcb.h"
 #include "utils/serializer.h"
 #include "../statistics/stats.h"

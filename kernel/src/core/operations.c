@@ -13,6 +13,7 @@ void process_select(select_input_t* input, response_t* response) {
 
 	list_add(pcb->statements, statement);
 	list_add(g_scheduler_queues.new, pcb);
+	sem_post(&g_lts_semaphore);
 }
 
 void process_insert(insert_input_t* input, response_t* response) {
@@ -31,6 +32,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 
 	list_add(pcb->statements, statement);
 	list_add(g_scheduler_queues.new, pcb);
+	sem_post(&g_lts_semaphore);
 }
 
 void process_create(create_input_t* input, response_t* response) {
@@ -48,6 +50,7 @@ void process_create(create_input_t* input, response_t* response) {
 
 	list_add(pcb->statements, statement);
 	list_add(g_scheduler_queues.new, pcb);
+	sem_post(&g_lts_semaphore);
 }
 
 void process_describe(describe_input_t* input, response_t* response) {
@@ -66,6 +69,7 @@ void process_describe(describe_input_t* input, response_t* response) {
 
 	list_add(pcb->statements, statement);
 	list_add(g_scheduler_queues.new, pcb);
+	sem_post(&g_lts_semaphore);
 }
 
 void process_drop(drop_input_t* input, response_t* response) {
@@ -80,10 +84,13 @@ void process_drop(drop_input_t* input, response_t* response) {
 
 	list_add(pcb->statements, statement);
 	list_add(g_scheduler_queues.new, pcb);
+	sem_post(&g_lts_semaphore);
 }
 
 void process_journal(response_t* response) {
 	// TODO: invocar a una memoria para hacer journaling
+
+	sem_post(&g_lts_semaphore);
 }
 
 void process_add(add_input_t* input) {
@@ -101,10 +108,13 @@ void process_run(run_input_t* input) {
 	pcb_t* pcb = get_new_pcb();
 	bool success = on_inner_run_request(pcb->statements, input, false);
 
-	if (!success)
+	if (!success) {
 		delete_pcb(pcb);
-	else
+	}
+	else {
 		list_add(g_scheduler_queues.new, pcb);
+		sem_post(&g_lts_semaphore);
+	}
 }
 
 bool on_inner_run_request(t_list* statements, run_input_t* input, bool free_input) {

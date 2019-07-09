@@ -35,6 +35,7 @@ void short_term_schedule() {
 					pcb->state = EXIT;
 
 					log_t("Proceso %i finalizo su ejecucion", pcb->process_id);
+					sem_post(&g_lts_semaphore);
 				} else if (pcb->quantum >= g_config.quantum) {
 					// Termino su ciclo de quantum
 					list_remove(g_scheduler_queues.exec, i);
