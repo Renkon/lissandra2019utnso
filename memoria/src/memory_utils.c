@@ -44,7 +44,6 @@ bool memory_full() {
 
 
 char* main_memory_values(int index,memory_var_t type){
-	log_i("index %i", index);
 	char** our_array = string_split(g_main_memory+index, ";");
 	char* value = our_array[type];
 	switch( type ){
@@ -250,7 +249,6 @@ void get_value_callback(void* result, response_t* response) {
 }
 
 void init_main_memory(){
-	log_i("size %i , total size %i", g_value_size, g_total_page_size);
 	g_main_memory = (char*) malloc(g_config.memory_size);
 	for(int i = 0; i < g_total_page_count; i++){
 		strcpy(g_main_memory+(i*g_total_page_size),"null");
