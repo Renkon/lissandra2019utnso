@@ -41,5 +41,6 @@ void init_server_callbacks() {
 void init_global_segment_list(){
 	g_segment_list = list_create();
 
+	sem_init(&g_mem_op_semaphore, 0, 1);
 }
 

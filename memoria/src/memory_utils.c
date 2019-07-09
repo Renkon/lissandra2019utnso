@@ -142,6 +142,12 @@ t_list* list_add_multi_lists(t_list* pages_indexes){
 }
 
 void journaling(response_t* response){
+	int sem_val;
+	sem_getvalue(&g_mem_op_semaphore, &sem_val);
+	log_e("valor es %i", sem_val);
+	if (sem_val > 0)
+		sem_wait(&g_mem_op_semaphore);
+
 	t_list* journal = get_pages_by_modified(true);
 	t_list* indexes = list_map(journal,(void*)page_get_index);
 
@@ -155,7 +161,7 @@ void journaling(response_t* response){
 
 }
 
-page_t* replace_algorithm(response_t* response,long long timestamp,int key, char* value){
+page_t* replace_algorithm(response_t* response,long long timestamp,int key, char* value, journal_invocation_t invocation, char* table_name){
 	int index;
 	page_t* found_page;
 	int replace;
@@ -177,14 +183,27 @@ page_t* replace_algorithm(response_t* response,long long timestamp,int key, char
 		list_destroy(not_modified_pages);
 		list_destroy(indexes);
 		list_destroy(indexes_sorted);
-
+		sem_post_neg(&g_mem_op_semaphore);
 		return found_page;
 
 	}else{
 		log_i("Memoria llena, iniciando journaling...");
+		journal_register_t* reg = malloc(sizeof(journal_register_t));
+		reg->key = key;
+		reg->timestamp = timestamp;
+		reg->table_name = strdup(table_name);
+		reg->value = strdup(value);
+
+		if (invocation == J_INSERT)
+			reg->modified = true;
+		else if (invocation == J_SELECT)
+			reg->modified = false;
+
+		response->result = reg;
+
 		journaling(response);
-		index = memory_insert(timestamp, key, value);
-		found_page = create_page(index, true);
+		//index = memory_insert(timestamp, key, value);
+		//found_page = create_page(index, true);
 		return found_page;
 	}
 }
@@ -241,4 +260,11 @@ void init_main_memory(){
 	for(int i = 0; i < g_total_page_count; i++){
 		strcpy(g_main_memory+(i*g_total_page_size),"null");
 	}
+}
+
+void sem_post_neg(sem_t* sem) {
+	int value;
+	sem_getvalue(sem, &value);
+	if (value <= 0)
+		sem_post(sem);
 }
