@@ -140,12 +140,10 @@ void process_insert(insert_input_t* input, response_t* response) {
 		*insert_status = -1;
 	}
 
-	if (response == NULL){
-		free(insert_status);
-	} else {
+	if (response != NULL){
 		set_response(response, insert_status);
 	}
-
+	free(insert_status);
 	free(upper_table_name);
 }
 
