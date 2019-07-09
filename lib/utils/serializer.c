@@ -251,6 +251,7 @@ elements_network_t get_out_element_info(socket_operation_t operation, void* inpu
 		break;
 		case MULTIINSERT_OUT:
 			return elements_multiinsert_out_info(input);
+		break;
 		default:
 			return init_elements_info(0);
 		break;

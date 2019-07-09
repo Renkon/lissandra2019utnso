@@ -13,6 +13,7 @@ void process_select(select_input_t* input, response_t* response) {
 
 	list_add(pcb->statements, statement);
 	list_add(g_scheduler_queues.new, pcb);
+	sem_post(&g_lts_semaphore);
 }
 
 void process_insert(insert_input_t* input, response_t* response) {
@@ -31,6 +32,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 
 	list_add(pcb->statements, statement);
 	list_add(g_scheduler_queues.new, pcb);
+	sem_post(&g_lts_semaphore);
 }
 
 void process_create(create_input_t* input, response_t* response) {
@@ -48,6 +50,7 @@ void process_create(create_input_t* input, response_t* response) {
 
 	list_add(pcb->statements, statement);
 	list_add(g_scheduler_queues.new, pcb);
+	sem_post(&g_lts_semaphore);
 }
 
 void process_describe(describe_input_t* input, response_t* response) {
@@ -66,6 +69,7 @@ void process_describe(describe_input_t* input, response_t* response) {
 
 	list_add(pcb->statements, statement);
 	list_add(g_scheduler_queues.new, pcb);
+	sem_post(&g_lts_semaphore);
 }
 
 void process_drop(drop_input_t* input, response_t* response) {
@@ -80,10 +84,13 @@ void process_drop(drop_input_t* input, response_t* response) {
 
 	list_add(pcb->statements, statement);
 	list_add(g_scheduler_queues.new, pcb);
+	sem_post(&g_lts_semaphore);
 }
 
 void process_journal(response_t* response) {
 	// TODO: invocar a una memoria para hacer journaling
+
+	sem_post(&g_lts_semaphore);
 }
 
 void process_add(add_input_t* input) {
@@ -101,10 +108,13 @@ void process_run(run_input_t* input) {
 	pcb_t* pcb = get_new_pcb();
 	bool success = on_inner_run_request(pcb->statements, input, false);
 
-	if (!success)
+	if (!success) {
 		delete_pcb(pcb);
-	else
+	}
+	else {
 		list_add(g_scheduler_queues.new, pcb);
+		sem_post(&g_lts_semaphore);
+	}
 }
 
 bool on_inner_run_request(t_list* statements, run_input_t* input, bool free_input) {
@@ -112,7 +122,7 @@ bool on_inner_run_request(t_list* statements, run_input_t* input, bool free_inpu
 	t_list* file_lines = get_file_lines(input->path);
 
 	if (file_lines == NULL) {
-		log_e("No se pudo abrir el archivo %s. No se ejecutara el RUN");
+		log_e("No se pudo abrir el archivo %s. No se ejecutara el RUN", input->path);
 		return false;
 	}
 
@@ -211,7 +221,7 @@ void add_statement(t_list* statements, operation_t operation, char* command) {
 				describe_input->table_name = malloc(strlen(tokens[1]) + 1);
 				describe_input->table_name = memcpy(describe_input->table_name, tokens[1], strlen(tokens[1]) + 1);
 			} else {
-				describe_input->table_name = string_new();
+				describe_input->table_name = NULL;
 			}
 
 			statement->describe_input = describe_input;
