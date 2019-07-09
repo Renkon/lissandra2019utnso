@@ -47,5 +47,7 @@ void check_value();
 void get_value_from_filesystem();
 void get_value_callback(void* result, response_t* response);
 
+void init_main_memory();
+
 #endif /* MEMORY_UTILS_H_ */
 

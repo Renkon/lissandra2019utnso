@@ -18,8 +18,6 @@ int main(void) {
 	setup_response_id_generator();
 	init_global_segment_list();
 	g_value_size = -1;
-	init_main_memory();
-	//add_dummy();
 	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY, get_callbacks());
 	destroy_logger();
 	return 0;
@@ -43,22 +41,5 @@ void init_server_callbacks() {
 void init_global_segment_list(){
 	g_segment_list = list_create();
 
-}
-
-void add_dummy(){
-	int a;
-	segment_t* segment_dummy = create_segment("LAPOSTA");
-	a = memory_insert(1569999999999,65000,"hey");
-	page_t* page_dummy = create_page(a,false);
-
-	list_add(segment_dummy->page,page_dummy);
-	list_add(g_segment_list,segment_dummy);
-}
-
-void init_main_memory(){
-	g_main_memory = (char*) malloc(g_config.memory_size);
-	for(int i = 0; i < g_total_page_count; i++){
-		strcpy(g_main_memory+(i*g_total_page_size),"null");
-	}
 }
 
