@@ -19,7 +19,7 @@ int main(void) {
 	init_global_segment_list();
 	g_value_size = -1;
 	init_main_memory();
-	add_dummy();
+	//add_dummy();
 	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY, get_callbacks());
 	destroy_logger();
 	return 0;
