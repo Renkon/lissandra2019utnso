@@ -33,5 +33,6 @@ void add_record_to_partition_list (record_t* record,tkvs_per_partition_t* partit
 void free_record(record_t* record);
 void create_new_partitions(t_list* partition_tkvs,int* blocks, int size_of_blocks,char*  table_name);
 int length_of_all_tkvs_in_partitions_to_add(t_list* partition_tkvs);
-void create_partition(tkvs_per_partition_t* partition, int* blocks, int size_of_blocks,char* table_name);
+int create_partition(tkvs_per_partition_t* partition, int* blocks, int size_of_blocks,char* table_name);
+tkv_t* convert_to_tkv(record_t* record);
 #endif /* COMPACTOR_COMPACTOR_H_ */
