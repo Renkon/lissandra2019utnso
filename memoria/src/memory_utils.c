@@ -44,6 +44,7 @@ bool memory_full() {
 
 
 char* main_memory_values(int index,memory_var_t type){
+	log_i("index %i", index);
 	char** our_array = string_split(g_main_memory+index, ";");
 	char* value = our_array[type];
 	switch( type ){
@@ -233,12 +234,25 @@ void get_value_callback(void* result, response_t* response) {
 		log_t("Request del VALUE al fs devolvio: %i", *value);
 
 		if (*value != g_value_size) {
+			bool memory_initialized = g_value_size != -1;
+
 			log_t("Se cambio el tamaño maximo de los registros");
 			g_value_size = *value;
 			g_total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + g_value_size + 3;
 			g_total_page_count = g_config.memory_size/g_total_page_size;
 
-			journaling();
+			if (memory_initialized)
+				journaling();
+			else
+				init_main_memory();
 		}
+	}
+}
+
+void init_main_memory(){
+	log_i("size %i , total size %i", g_value_size, g_total_page_size);
+	g_main_memory = (char*) malloc(g_config.memory_size);
+	for(int i = 0; i < g_total_page_count; i++){
+		strcpy(g_main_memory+(i*g_total_page_size),"null");
 	}
 }

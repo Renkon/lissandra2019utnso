@@ -43,7 +43,6 @@ extern int g_config_keys_size;
 
 void init_server_callbacks();
 void init_global_segment_list();
-void add_dummy();
 
 //GLOBAL STATMENTS
 t_list* g_segment_list;
@@ -53,6 +52,5 @@ int g_total_page_size;
 int g_value_size;
 
 callbacks_t* get_callbacks();
-void init_main_memory();
 
 #endif /* MEMORIA_H_ */
