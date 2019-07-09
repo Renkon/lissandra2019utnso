@@ -122,7 +122,7 @@ bool on_inner_run_request(t_list* statements, run_input_t* input, bool free_inpu
 	t_list* file_lines = get_file_lines(input->path);
 
 	if (file_lines == NULL) {
-		log_e("No se pudo abrir el archivo %s. No se ejecutara el RUN");
+		log_e("No se pudo abrir el archivo %s. No se ejecutara el RUN", input->path);
 		return false;
 	}
 
@@ -221,7 +221,7 @@ void add_statement(t_list* statements, operation_t operation, char* command) {
 				describe_input->table_name = malloc(strlen(tokens[1]) + 1);
 				describe_input->table_name = memcpy(describe_input->table_name, tokens[1], strlen(tokens[1]) + 1);
 			} else {
-				describe_input->table_name = string_new();
+				describe_input->table_name = NULL;
 			}
 
 			statement->describe_input = describe_input;

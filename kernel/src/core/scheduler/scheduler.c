@@ -60,6 +60,7 @@ pcb_t* get_new_pcb() {
 	pcb->errors = false;
 	pcb->statements = list_create();
 	pcb->__recently_ready = false;
+	pcb->__recently_exec = false;
 
 	return pcb;
 }

@@ -7,15 +7,20 @@
 #include "utils/serializer.h"
 #include "../statistics/stats.h"
 #include "shared_types/shared_types.h"
-#include "semaphore.h"
+#include <semaphore.h>
 #include "statement.h"
 #include "utils/operation_types.h"
 #include "../describer/describer.h"
+
+sem_t g_sts_semaphore;
+t_list* __pcbs_to_ready;
 
 void short_term_schedule();
 void planifier_execute(void* arg);
 void exec_next_statement(int processor);
 void exec_remote(pcb_t* pcb, statement_t* statement);
+
+void sem_post_neg(sem_t* semaphore);
 
 void on_select(void* result, response_t* response);
 void on_insert(void* result, response_t* response);

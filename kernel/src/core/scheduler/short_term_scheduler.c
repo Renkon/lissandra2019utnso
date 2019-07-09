@@ -4,12 +4,18 @@ void short_term_schedule() {
 	pcb_t* pcb;
 	sem_t* semaphore_init;
 
-	t_list* __pcbs_to_ready = list_create();
+	sem_init(&g_sts_semaphore, 0, 0);
+
+	__pcbs_to_ready = list_create();
+
+	for (int i = 0; i < list_size(g_scheduler_queues.exec); i++)
+		list_add(__pcbs_to_ready, NULL);
 
 	pthread_detach(pthread_self());
 
 	// Este bloque se ejecuta continuamente, y es la mente maestra del planificador
 	while (true) {
+		sem_wait(&g_sts_semaphore);
 		usleep(g_config.execution_delay * 1000);
 
 		for (int i = 0; i < list_size(g_scheduler_queues.exec); i++) {
@@ -24,47 +30,36 @@ void short_term_schedule() {
 					pcb->state = EXEC;
 					pcb->quantum = 0;
 
-					log_t("Proceso %i pasado a Exec", pcb->process_id);
+					log_d("Proceso %i pasado a Exec en hilo %i", pcb->process_id, i);
+					pcb->__recently_exec = true;
+					sem_post_neg(&g_sts_semaphore);
 				}
-			} else {
-				// Revisamos si termino de ejecutar
-				if (pcb->program_counter >= list_size(pcb->statements)) {
-					list_remove(g_scheduler_queues.exec, i);
-					list_add(g_scheduler_queues.exit, pcb);
-					list_add_in_index(g_scheduler_queues.exec, i, NULL);
-					pcb->state = EXIT;
-
-					log_t("Proceso %i finalizo su ejecucion", pcb->process_id);
-					sem_post(&g_lts_semaphore);
-				} else if (pcb->quantum >= g_config.quantum) {
-					// Termino su ciclo de quantum
-					list_remove(g_scheduler_queues.exec, i);
-					list_add(g_scheduler_queues.ready, pcb);
-					list_add(__pcbs_to_ready, pcb);
-					pcb->state = READY;
-					pcb->__recently_ready = true;
-					list_add_in_index(g_scheduler_queues.exec, i, NULL);
-
-					log_t("Proceso %i vuelve a cola de listos", pcb->process_id);
-				} else {
-					semaphore_init = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_init, i);
-					pcb->processor = i;
-					sem_post(semaphore_init);
-					// Aca el planificador ejecuta
-					pcb->quantum++;
-				}
+			} else if (pcb->__recently_exec) {
+				semaphore_init = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_init, i);
+				pcb->processor = i;
+				sem_post(semaphore_init);
+				// Aca el planificador ejecuta
+				pcb->quantum++;
+				pcb->__recently_exec = false;
 			}
 		}
 
-		for (int i = 0; i < list_size(__pcbs_to_ready); i++)
-			((pcb_t*) list_get(__pcbs_to_ready, i))->__recently_ready = false;
-		list_clean(__pcbs_to_ready);
+		for (int i = 0; i < list_size(__pcbs_to_ready); i++) {
+			pcb_t* pcb = (pcb_t*) list_get(__pcbs_to_ready, i);
+			if (pcb != NULL && pcb->__recently_ready) {
+				pcb->__recently_ready = false;
+				list_replace(__pcbs_to_ready, i, NULL);
+				sem_post_neg(&g_sts_semaphore);
+			}
+		}
+
 	}
 }
 
 void planifier_execute(void* arg) {
 	pthread_detach(pthread_self());
 
+	pcb_t* pcb;
 	int exec_id = *((int*) arg);
 	sem_t* semaphore_init = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_init, exec_id);
 	sem_t* semaphore_exec = (sem_t*) list_get(g_scheduler_queues.exec_semaphores, exec_id);
@@ -73,7 +68,46 @@ void planifier_execute(void* arg) {
 		sem_wait(semaphore_init);
 		exec_next_statement(exec_id);
 		sem_wait(semaphore_exec);
+
+		// Revisamos si termino de ejecutar
+		pcb = (pcb_t*) list_get(g_scheduler_queues.exec, exec_id);
+		if (pcb->program_counter >= list_size(pcb->statements)) {
+			list_remove(g_scheduler_queues.exec, exec_id);
+			list_add(g_scheduler_queues.exit, pcb);
+			list_add_in_index(g_scheduler_queues.exec, exec_id, NULL);
+			pcb->state = EXIT;
+
+			log_d("Proceso %i finalizo su ejecucion", pcb->process_id);
+			list_replace(__pcbs_to_ready, exec_id, NULL);
+			sem_post(&g_lts_semaphore);
+			sem_post_neg(&g_sts_semaphore);
+		} else if (pcb->quantum >= g_config.quantum) {
+			// Termino su ciclo de quantum
+			list_remove(g_scheduler_queues.exec, exec_id);
+			list_add(g_scheduler_queues.ready, pcb);
+			list_replace(__pcbs_to_ready, exec_id, pcb);
+			pcb->state = READY;
+			pcb->__recently_ready = true;
+			list_add_in_index(g_scheduler_queues.exec, exec_id, NULL);
+
+			log_d("Proceso %i vuelve a cola de listos", pcb->process_id);
+			sem_post_neg(&g_sts_semaphore);
+		} else {
+			semaphore_init = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_init, exec_id);
+			pcb->processor = exec_id;
+			usleep(g_config.execution_delay * 1000);
+			sem_post(semaphore_init);
+			// Aca el planificador ejecuta
+			pcb->quantum++;
+		}
 	}
+}
+
+void sem_post_neg(sem_t* semaphore) {
+	int sem;
+	sem_getvalue(semaphore, &sem);
+	if (sem <= 0)
+		sem_post(semaphore);
 }
 
 void exec_next_statement(int processor) {

@@ -19,7 +19,9 @@ void long_term_schedule() {
 			list_remove(g_scheduler_queues.new, 0);
 			list_add(g_scheduler_queues.ready, pcb);
 
-			log_t("LTS nuevo proceso PID %i", pcb->process_id);
+			log_d("LTS nuevo proceso PID %i", pcb->process_id);
+
+			sem_post_neg(&g_sts_semaphore);
 
 			// Skippeamos lo q queda de la iteracion
 			// las de NEW son mas prioritarias que las de EXIT
@@ -30,8 +32,15 @@ void long_term_schedule() {
 		if (list_size(g_scheduler_queues.exit) > 0) {
 			pcb_t* pcb = (pcb_t*) list_get(g_scheduler_queues.exit, 0);
 
-			log_t("LTS fin de proceso PID %i", pcb->process_id);
+			log_d("LTS fin de proceso PID %i", pcb->process_id);
 			list_remove(g_scheduler_queues.exit, 0);
+
+			for (int i = 0; i < list_size(__pcbs_to_ready); i++) {
+				if (list_get(__pcbs_to_ready, i) == pcb) {
+					list_replace(__pcbs_to_ready, i, NULL);
+					break;
+				}
+			}
 			delete_pcb(pcb);
 		}
 	}
