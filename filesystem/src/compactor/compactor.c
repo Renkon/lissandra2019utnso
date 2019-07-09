@@ -16,6 +16,7 @@ void compaction(char* table_name){
 	//t_list* partion_tkvs_string_form = list_map(partition_tkvs,transform_records_to_tkv);
 	int length_of_all_tkvs = length_of_all_tkvs_in_partitions_to_add(partition_tkvs);
 	int necessary_blocks = division_rounded_up(length_of_all_tkvs, fs_metadata->block_size);
+	necessary_blocks += add_blocks_for_partitions_without_tkvs(partition_tkvs);
 	int blocks[necessary_blocks];
 	char* bitmap_dir = get_bitmap_directory();
 	sem_wait(bitmap_semaphore);
@@ -33,6 +34,20 @@ void compaction(char* table_name){
 	free(table_directory);
 	free(table_metadata);
 	//free la tmpc_tkvs y partition tkvs todo
+}
+
+int add_blocks_for_partitions_without_tkvs(t_list* partition_tkvs) {
+	//Vas a pedir un bloque mas por cada particion que no tenga tkvs.
+	int blocks = 0;
+
+	for (int i = 0; i < list_size(partition_tkvs); i++) {
+		tkvs_per_partition_t* partition = list_get(partition_tkvs, i);
+
+		if (list_size(partition->tkvs) == 0) {
+			blocks += 1;
+		}
+	}
+	return blocks;
 }
 
 tkv_t* convert_to_tkv(record_t* record){
@@ -57,13 +72,15 @@ int create_partition(tkvs_per_partition_t* partition, int* blocks, int size_of_b
 	t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv); //hacer free TODO
 	int size_of_all_tkvs_from_partition = tkv_total_length(string_tkv_list);
 	int blocks_amount = division_rounded_up(size_of_all_tkvs_from_partition,fs_metadata->block_size);
-	int* blocks_for_the_table = array_take(blocks, size_of_blocks,blocks_amount);
-	//Si no le tengo que agregar nada entonces no toco nada.
-	if(blocks_for_the_table == 0){
-		return size_of_blocks;
+	//Si blocks amount da 0 significa que no tengo tkvs entonces le pongo un bloque vacio.
+	if(blocks_amount == 0){
+		int* blocks_for_the_table = array_take(blocks, size_of_blocks,1); //todo
+		create_fs_archive(table_name,blocks_for_the_table,1,size_of_all_tkvs_from_partition,2,partition->partition);
+		return size_of_blocks-1;
 
 	}
-	create_fs_archive(table_name,blocks_for_the_table,blocks_amount,size_of_all_tkvs_from_partition,1,partition->partition);
+	int* blocks_for_the_table = array_take(blocks, size_of_blocks,blocks_amount);
+	create_fs_archive(table_name,blocks_for_the_table,blocks_amount,size_of_all_tkvs_from_partition,2,partition->partition);
 	int block_size = fs_metadata->block_size;
 	int block_index = 0;
 	//Abro el .bin del primer bloque
@@ -406,12 +423,13 @@ void create_fs_archive(char* table_name,int* blocks,int block_amount,int tkv_siz
 	}
 
 	if(archive_flag == 2){
-		free(	archive_dir);
-		archive_dir = malloc(digits_in_a_number(partition_number) + strlen("/.bin") + 1);
-		sprintf(archive_dir, "/%d.bin", partition_number); //Esto transforma de int a string
-		char* partition_route = malloc(strlen(table_directory) + strlen(	archive_dir) + 1);
-		strcpy(partition_route, table_directory);
-		strcat(partition_route, archive_dir);
+		free(archive_dir);
+		char* partition_path = malloc(digits_in_a_number(partition_number) + strlen("/.bin") + 1);
+		sprintf(partition_path, "/%d.bin", partition_number); //Esto transforma de int a string
+		archive_dir = malloc(strlen(table_directory) + strlen(partition_path) + 1);
+		strcpy(	archive_dir, table_directory);
+		strcat(	archive_dir, partition_path);
+		free(partition_path);
 
 	}
 
@@ -520,7 +538,7 @@ int tkv_total_length(t_list* tkvs){
 		tkv_t* tkv = list_get(tkvs,i);
 		total_length += strlen(tkv->tkv);
 		//Calculo cuantos /n tengo que agregar
-		int extra_bits = strlen(tkv->tkv)/fs_metadata->block_size;
+		int extra_bits = strlen(tkv->tkv)/(fs_metadata->block_size-1);
 		if((strlen(tkv->tkv)%fs_metadata->block_size) ==0){
 			//si la division me da 0 entonces tengo un bit de mas asi que lo saco.
 			extra_bits-=1;
