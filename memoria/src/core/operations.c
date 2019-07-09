@@ -35,7 +35,7 @@ void process_select(select_input_t* input, response_t* response) {
 					record_t* record = malloc(sizeof(record_t));
 					record->key = string_to_uint16(return_key);
 					record->table_name = strdup(found_segment->name);
-					record->value = return_value;
+					record->value = strdup(return_value);
 					record->timestamp = string_to_long_long(return_timestamp);
 					set_response(response, record);
 				}
@@ -140,10 +140,11 @@ void process_insert(insert_input_t* input, response_t* response) {
 		*insert_status = -1;
 	}
 
-	if (response != NULL){
+	if (response == NULL)
+		free(insert_status);
+	else
 		set_response(response, insert_status);
-	}
-	free(insert_status);
+
 	free(upper_table_name);
 }
 

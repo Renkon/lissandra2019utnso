@@ -230,7 +230,7 @@ void on_select(void* result, response_t* response) {
 		log_i("La tabla %s no existe. El SELECT ha fallado", record->table_name);
 		pcb->errors = true;
 	} else if (record->timestamp == -1) {
-		log_i("La key solicitada no se encuentra en la tabla %s.", record->table_name);
+		log_i("SELECT %i FROM %s: NOVALUE", record->key, record->table_name);
 	} else {
 		log_i("SELECT %i FROM %s: %s", record->key, record->table_name, record->value);
 	}
@@ -249,14 +249,20 @@ void on_insert(void* result, response_t* response) {
 	// Esto me da asco, pero bueno, perdoname diosito x2.
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+	insert_input_t* input = current_statement->insert_input;
 
 	// TODO: logica del insert aca
 	// Debajo deberia ir lo del insert
 	if (status == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
 		pcb->errors = true;
+	} else if (*status == -2) {
+		log_e("La memoria no pudo realizar el insert dado que tenia la memoria llena y fallo el journaling. EL INSERT ha fallado");
+		pcb->errors = true;
+	} else if (*status == -1) {
+		log_w("El tamaño del valor (%s) del registro insertado es mayor al permitido. EL INSERT ha fallado", input->value);
 	} else {
-		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+		log_i("Se inserto en %s:%i. Valor: %s", input->table_name, input->key, input->value);
 	}
 
 	pcb->last_execution_stats->timestamp_end = get_timestamp();
