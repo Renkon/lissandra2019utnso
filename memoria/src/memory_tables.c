@@ -7,6 +7,7 @@
 
 #include "memory_tables.h"
 
+
 segment_t* get_segment_by_name(t_list* list, char* table_name) {
 	 int i = 0;
 	 segment_t* segment_found;
@@ -225,4 +226,11 @@ segment_t* get_segment_by_index_global(int index){
 		}
 	}
 	return NULL;
+}
+
+void delete_all_segments(){
+	for(int i = 0; i < list_size(g_segment_list); i++){
+		segment_t* segment = list_get(g_segment_list,i);
+		remove_segment(segment);
+	}
 }

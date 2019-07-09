@@ -38,8 +38,8 @@ char* main_memory_values(int index,memory_var_t type);
 void modify_memory_by_index(int index,int key ,char* value);
 bool order_by_timestamp(int first_i,int second_i);
 void eliminate_page_instance_by_index(int index);
-void journaling();
-page_t* replace_algorithm(long long timestamp,int key, char* value);
+void journaling(response_t* response);
+page_t* replace_algorithm(response_t* response, long long timestamp,int key, char* value);
 
 /* Ir a buscar el value */
 void init_value_checker();

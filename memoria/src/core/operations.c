@@ -97,13 +97,13 @@ void process_insert(insert_input_t* input, response_t* response) {
 				if (!memory_full()) {//Aun hay paginas disponibles, inserto en el segmento una nueva pagina
 
 					index = memory_insert(input->timestamp, input->key, input->value);
-					found_page = create_page(index, false);
+					found_page = create_page(index, true);
 					list_add(found_segment->page, found_page);
 
 					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", input->key, input->value, input->timestamp, found_segment->name);
 				} else { //Ya no hay paginas disponibles, uso el algoritmo de reemplazo
 
-					found_page = replace_algorithm(input->timestamp, input->key, input->value);
+					found_page = replace_algorithm(response, input->timestamp, input->key, input->value);
 					list_add(found_segment->page, found_page);
 
 					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo.", input->key, input->value, input->timestamp, found_segment->name);
@@ -115,9 +115,9 @@ void process_insert(insert_input_t* input, response_t* response) {
 			found_segment = create_segment(upper_table_name);
 			if (!memory_full()){
 				index = memory_insert(input->timestamp, input->key, input->value);
-				found_page = create_page(index, false);
+				found_page = create_page(index, true);
 			} else {
-				found_page = replace_algorithm(input->timestamp, input->key, input->value);
+				found_page = replace_algorithm(response, input->timestamp, input->key, input->value);
 			}
 			list_add(found_segment->page, found_page);
 			list_add(g_segment_list, found_segment);
@@ -195,7 +195,7 @@ void process_journal(response_t* response) {
 	log_i("mm journal args none");
 	usleep(g_config.memory_delay * 1000);
 
-	journaling();
+	journaling(response);
 
 }
 
@@ -240,7 +240,7 @@ void select_callback(void* result, response_t* response) {
 						list_add(found_segment->page, found_page);
 						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
 					} else {
-						found_page = replace_algorithm(alpha_record->timestamp, alpha_record->key, alpha_record->value);
+						found_page = replace_algorithm(response, alpha_record->timestamp, alpha_record->key, alpha_record->value);//TODO revisar esto xd
 						list_add(found_segment->page, found_page);
 						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo.", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
 						}
@@ -248,7 +248,7 @@ void select_callback(void* result, response_t* response) {
 			}else {
 				found_segment = create_segment(upper_table_name);
 				index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
-				found_page = create_page(index, true);
+				found_page = create_page(index, false);
 				list_add(found_segment->page, found_page);
 				list_add(g_segment_list, found_segment);
 
@@ -407,6 +407,18 @@ void drop_callback(void* result, response_t* response){
 	}
 }
 
+void journal_callback(void* result, response_t* response){
+	int* multiinsert_result = (int*) result;
+
+	if(*multiinsert_result == -1){
+		log_e("No se pudo hacer el journaling, Fine Peggiore");
+	} else if(*multiinsert_result == 0){
+		log_t("¡Journaling ejecutado con exito!");
+		log_i("Procediendo a borrar todos los segmentos.");
+		delete_all_segments();
+	}
+}
+
 void cleanup_select_input(void* input) {
 	select_input_t* select_input = (select_input_t*) input;
 	free(select_input->table_name);
@@ -439,3 +451,12 @@ void cleanup_describe_input(void* input) {
 	free(describe_input);
 }
 
+void cleanup_journal_input(void* input){
+	t_list* insert_inputs = (t_list*) input;
+	for(int i; i < list_size(insert_inputs); i++){
+		insert_input_t* input = list_get(insert_inputs,i);
+		free(input->table_name);
+		free(input->value);
+		free(input);
+	}
+}

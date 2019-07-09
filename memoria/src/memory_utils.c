@@ -140,34 +140,22 @@ t_list* list_add_multi_lists(t_list* pages_indexes){
 	return new_list;
 }
 
-void journaling(){
-	/*t_list* journal = get_pages_by_modified(true);
+void journaling(response_t* response){
+	t_list* journal = get_pages_by_modified(true);
 	t_list* indexes = list_map(journal,(void*)page_get_index);
 
-	t_list* journal_list = list_add_multi_lists(journal_list);
+	t_list* journal_list = list_add_multi_lists(indexes);
 
-	int position;
+	elements_network_t elem_info = elements_multiinsert_in_info(journal_list);
+	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, MULTIINSERT_IN, journal_list, elem_info.elements, elem_info.elements_size, journal_callback, true, cleanup_journal_input, response);
 
-	for(int i = 0; i < list_size(journal_list); i++){
-		//insert_input_t* sending_journal = list_get(journal_list,i);
-		//elements_network_t elem_info = elements_create_in_info(sending_journal);
-		//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, sending_journal, elem_info.elements, elem_info.elements_size, insert_callback, true, cleanup_insert_input, NULL);
-
-	}
-
-	remove_pages_modified();
-
-	for(int j = 0; j < list_size(journal); j++){
-		position = list_get(indexes,j);
-		strcpy(g_main_memory[position],"null");
-	}
 
 	list_destroy(journal);
 	list_destroy(indexes);
-	*/
+
 }
 
-page_t* replace_algorithm(long long timestamp,int key, char* value){
+page_t* replace_algorithm(response_t* response,long long timestamp,int key, char* value){
 
 	int index;
 	page_t* found_page;
@@ -195,9 +183,10 @@ page_t* replace_algorithm(long long timestamp,int key, char* value){
 
 	}else{
 		log_i("Memoria llena, iniciando journaling...");
-		journaling();
-		replace_algorithm(timestamp, key, value);
-		//return null;
+		journaling(response);
+		index = memory_insert(timestamp, key, value);
+		found_page = create_page(index, true);
+		return found_page;
 	}
 }
 
@@ -241,7 +230,7 @@ void get_value_callback(void* result, response_t* response) {
 			g_total_page_count = g_config.memory_size/g_total_page_size;
 
 			if (memory_initialized)
-				journaling();
+				journaling(response);
 			else
 				init_main_memory();
 		}
