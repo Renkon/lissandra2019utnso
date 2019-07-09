@@ -15,6 +15,7 @@
 
 void process_select(select_input_t* input, response_t* response);
 void process_insert(insert_input_t* input, response_t* response);
+void process_multiinsert(t_list* inputs, response_t* response);
 void process_create(create_input_t* input, response_t* response);
 void process_describe(describe_input_t* input, response_t* response);
 void process_drop(drop_input_t* input, response_t* response);

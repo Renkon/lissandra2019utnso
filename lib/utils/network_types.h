@@ -24,6 +24,8 @@ typedef enum {
 	GOSSIP_OUT,
 	VALUE_IN,
 	VALUE_OUT,
+	MULTIINSERT_IN,
+	MULTIINSERT_OUT,
 	_LAST
 } socket_operation_t;
 
