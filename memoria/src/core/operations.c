@@ -209,7 +209,7 @@ void process_drop(drop_input_t* input, response_t* response) {
 
 }
 
-void process_journal(response_t* response) {
+void process_journal(void* unused, response_t* response) {
 	log_i("mm journal args none");
 	usleep(g_config.memory_delay * 1000);
 

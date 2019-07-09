@@ -150,14 +150,12 @@ void journaling(response_t* response){
 	elements_network_t elem_info = elements_multiinsert_in_info(journal_list);
 	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, MULTIINSERT_IN, journal_list, elem_info.elements, elem_info.elements_size, journal_callback, true, cleanup_journal_input, response);
 
-
 	list_destroy(journal);
 	list_destroy(indexes);
 
 }
 
 page_t* replace_algorithm(response_t* response,long long timestamp,int key, char* value){
-
 	int index;
 	page_t* found_page;
 	int replace;

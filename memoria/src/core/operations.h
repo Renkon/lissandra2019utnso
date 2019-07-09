@@ -17,7 +17,7 @@ void process_insert(insert_input_t* input, response_t* response);
 void process_create(create_input_t* input, response_t* response);
 void process_describe(describe_input_t* input, response_t* response);
 void process_drop(drop_input_t* input, response_t* response);
-void process_journal(response_t* response);
+void process_journal(void* unused, response_t* response);
 
 
 void select_callback(void* result, response_t* response);
