@@ -230,7 +230,7 @@ void on_select(void* result, response_t* response) {
 		log_i("La tabla %s no existe. El SELECT ha fallado", record->table_name);
 		pcb->errors = true;
 	} else if (record->timestamp == -1) {
-		log_i("SELECT %i FROM %s: NOVALUE", record->key, record->table_name);
+		log_i("SELECT FROM %s no tiene valor", record->table_name);
 	} else {
 		log_i("SELECT %i FROM %s: %s", record->key, record->table_name, record->value);
 	}
