@@ -4,6 +4,7 @@ void init_memory_list() {
 	g_memories_added_sc = list_create();
 	g_memories_added_shc = list_create();
 	g_memories_added_ec = list_create();
+	ec_next = 0;
 }
 
 memory_t* get_any_memory() {
@@ -23,18 +24,22 @@ memory_t* get_any_sc_memory() {
 }
 
 memory_t* get_any_shc_memory(char* table_name, uint16_t key) {
-	// TODO: hacer el algoritmo para obtener una SHC.
+	int hash_value = hash(table_name, (int) key);
+	int assigned_memory = hash_value % list_size(g_memories_added_shc);
 
-	return NULL;
+	return (memory_t*) list_get(g_memories_added_shc, assigned_memory);
 }
 
 memory_t* get_any_ec_memory() {
 	if (list_size(g_memories_added_ec) == 0)
 		return NULL;
 
-	int random_memory = rnd(0, list_size(g_memories_added_ec));
+	if (ec_next >= list_size(g_memories_added_ec) - 1)
+		ec_next = 0;
+	else
+		ec_next++;
 
-	return (memory_t*) list_get(g_memories_added_ec, random_memory);
+	return (memory_t*) list_get(g_memories_added_ec, ec_next);
 }
 
 void add_sc_memory(int id) {

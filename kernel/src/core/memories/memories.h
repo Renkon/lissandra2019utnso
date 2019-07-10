@@ -14,6 +14,7 @@ t_list* g_memories_added_ec;
 
 t_list* g_memories;
 
+int ec_next;
 
 void init_memory_list();
 
