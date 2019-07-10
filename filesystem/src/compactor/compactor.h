@@ -40,4 +40,6 @@ int size_of_all_tkvs_from_table();
 int blocks_needed_for_memtable();
 int necessary_blocks_for_tkvs(t_list* tkvs);
 int size_of_all_tkvs(t_list* tkvs);
+void destroy_all_tmps(char* table_directory);
+void free_tkvs_per_partition(tkvs_per_partition_t* tkvs);
 #endif /* COMPACTOR_COMPACTOR_H_ */

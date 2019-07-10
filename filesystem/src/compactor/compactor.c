@@ -7,24 +7,28 @@ void compaction(char* table_name){
 	partition_t* tmpc =get_all_blocks_from_all_tmps(table_name);
 	//Creo el tmpc
 	create_fs_archive(table_name,tmpc->blocks,tmpc->number_of_blocks,tmpc->size,0,0);
-	//Matar todos los tmps todo;
 	t_list* tmpc_tkvs = create_tkv_list(tmpc);
 	t_list* partition_tkvs = create_partition_tkv_list(table_directory,table_metadata);
 	get_tkvs_to_insert(tmpc_tkvs,partition_tkvs);
+	list_clean_and_destroy_elements(tmpc_tkvs,free_record);
 	//Bloqueo tablas todo
-	//Libera bloques de los tmpc y el bin todo
-	//t_list* partion_tkvs_string_form = list_map(partition_tkvs,transform_records_to_tkv);
-	int necessary_blocks= length_needed_to_add_tkvs_in_partitions(partition_tkvs);//SACA MAS BLOQUES DE LOS QUE NECESITA TODO
+	char* tmpc_directory = get_tmpc_directory(table_directory);
+	sem_wait(bitmap_semaphore);
+	char* bitmap_dir = get_bitmap_directory();
+	t_bitarray* bitmap = read_bitmap(bitmap_dir);
+	free_partitions(table_directory, bitmap);
+	free_blocks_of_all_tmps(table_directory, bitmap);
+	destroy_all_tmps(table_directory);
+	remove(tmpc_directory);
+	int necessary_blocks= length_needed_to_add_tkvs_in_partitions(partition_tkvs);
 	necessary_blocks += add_blocks_for_partitions_without_tkvs(partition_tkvs);
 	int* blocks= malloc(sizeof(int)*necessary_blocks);
-	char* bitmap_dir = get_bitmap_directory();
-	sem_wait(bitmap_semaphore);
-	t_bitarray* bitmap = read_bitmap(bitmap_dir);
 	int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
 	create_new_partitions(partition_tkvs,blocks,free_blocks_amount,table_name);
 	//Desbloqueo tablas todo
 	write_bitmap(bitmap, bitmap_dir);
 	sem_post(bitmap_semaphore);
+	free(tmpc_directory);
 	free(bitmap->bitarray);
 	free(bitmap);
 	free(bitmap_dir);
@@ -33,7 +37,24 @@ void compaction(char* table_name){
 	free(initial_table_dir);
 	free(table_directory);
 	free(table_metadata);
-	//free la tmpc_tkvs y partition tkvs todo
+	 //free_tkvs_per_partition_list(partition_tkvs);
+	list_clean(partition_tkvs);
+}
+
+void destroy_all_tmps(char* table_directory){
+	int tmp_number = 1;
+	char* tmp_name = get_tmp_name(tmp_number);
+	while (exist_in_directory(tmp_name, table_directory)) {
+		char* tmp_dir = get_tmp_directory(table_directory, tmp_number);
+		remove(tmp_dir);
+		free(tmp_dir);
+		tmp_number++;
+		free(tmp_name);
+		tmp_name = get_tmp_name(tmp_number);
+	}
+
+
+
 }
 
 int add_blocks_for_partitions_without_tkvs(t_list* partition_tkvs) {
@@ -145,7 +166,7 @@ void create_new_partitions(t_list* partition_tkvs,int* blocks, int size_of_block
 	for(int i=0; i<list_size(partition_tkvs);i++){
 		tkvs_per_partition_t* partition = list_get(partition_tkvs,i);
 		blocks_length = create_partition(partition,blocks,blocks_length,table_name);
-
+		free_tkvs_per_partition(partition);
 	}
 
 }
@@ -174,7 +195,8 @@ void add_record_to_partition_list (record_t* record,tkvs_per_partition_t* partit
 				/*free(record_from_partition->value);
 				free(record_from_partition);*/
 				list_remove_and_destroy_element(partition->tkvs,i,free_record);
-				list_add(partition->tkvs, record);
+				record_t* the_record = copy_key(record);
+				list_add(partition->tkvs, the_record);
 				return;
 			}
 		//Si tiene la misma key pero menos timestamp no hago nada
@@ -183,7 +205,8 @@ void add_record_to_partition_list (record_t* record,tkvs_per_partition_t* partit
 
 	}
 	//Si no lo encuentra entronces lo agrega al final
-	list_add(partition->tkvs, record);
+	record_t* the_record = copy_key(record);
+	list_add(partition->tkvs, the_record);
 }
 
 
@@ -206,6 +229,28 @@ t_list* create_partition_tkv_list(char* table_directory,table_metadata_t* table_
 		free(partition);
 	}
 	return partition_tkvs;
+}
+
+void free_tkvs_per_partition_list(t_list* list){
+	for(int i=0; i<list_size(list);i++){
+		tkvs_per_partition_t* partition = list_get(list,i);
+
+		for(int d=0; d<list_size(partition->tkvs);d++){
+
+			record_t* record = list_get(partition->tkvs,d);
+			free_record(record);
+
+		}
+		list_clean(partition->tkvs);
+		free(partition);
+
+	}
+
+}
+
+void free_tkvs_per_partition(tkvs_per_partition_t* tkvs){
+		list_clean_and_destroy_elements(tkvs->tkvs,free_record);
+		free(tkvs);
 }
 
 t_list*  create_tkv_list(partition_t* partition) {
