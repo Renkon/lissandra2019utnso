@@ -121,32 +121,3 @@ void update_memory(memory_t* memory) {
 	}
 }
 
-bool is_memory_alive(void* memory) {
-	return ((memory_t*) memory)->alive;
-}
-
-memory_t* get_random_memory(bool alive) {
-	t_list* alive_memories = NULL;
-	t_list* gossipable_memories;
-
-	if (alive) {
-		alive_memories = list_filter(g_memories, is_memory_alive);
-		if (list_size(alive_memories) == 0) {
-			list_destroy(alive_memories);
-			return NULL;
-		} else {
-			gossipable_memories = alive_memories;
-		}
-	} else {
-		gossipable_memories = g_memories;
-	}
-
-	int random_memory = rnd(0, list_size(gossipable_memories) - 1);
-	memory_t* memory = (memory_t*) list_get(gossipable_memories, random_memory);
-
-	if (alive_memories != NULL)
-		list_destroy(alive_memories);
-
-	return memory;
-}
-

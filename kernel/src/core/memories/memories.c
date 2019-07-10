@@ -6,6 +6,37 @@ void init_memory_list() {
 	g_memories_added_ec = list_create();
 }
 
+memory_t* get_any_memory() {
+	if (list_size(g_memories) == 0)
+		return NULL;
+
+	int random_memory = rnd(0, list_size(g_memories));
+
+	return (memory_t*) list_get(g_memories, random_memory);
+}
+
+memory_t* get_any_sc_memory() {
+	if (list_size(g_memories_added_sc) == 0)
+		return NULL;
+
+	return (memory_t*) list_get(g_memories_added_sc, 0);
+}
+
+memory_t* get_any_shc_memory(char* table_name, uint16_t key) {
+	// TODO: hacer el algoritmo para obtener una SHC.
+
+	return NULL;
+}
+
+memory_t* get_any_ec_memory() {
+	if (list_size(g_memories_added_ec) == 0)
+		return NULL;
+
+	int random_memory = rnd(0, list_size(g_memories_added_ec));
+
+	return (memory_t*) list_get(g_memories_added_ec, random_memory);
+}
+
 void add_sc_memory(int id) {
 	memory_t* memory = get_memory_by_id(g_memories, id);
 
@@ -90,3 +121,33 @@ void remove_memory_from_consistency(t_list* mems, int id) {
 		}
 	}
 }
+
+memory_t* get_random_memory(bool alive) {
+	t_list* alive_memories = NULL;
+	t_list* gossipable_memories;
+
+	if (alive) {
+		alive_memories = list_filter(g_memories, is_memory_alive);
+		if (list_size(alive_memories) == 0) {
+			list_destroy(alive_memories);
+			return NULL;
+		} else {
+			gossipable_memories = alive_memories;
+		}
+	} else {
+		gossipable_memories = g_memories;
+	}
+
+	int random_memory = rnd(0, list_size(gossipable_memories) - 1);
+	memory_t* memory = (memory_t*) list_get(gossipable_memories, random_memory);
+
+	if (alive_memories != NULL)
+		list_destroy(alive_memories);
+
+	return memory;
+}
+
+bool is_memory_alive(void* memory) {
+	return ((memory_t*) memory)->alive;
+}
+

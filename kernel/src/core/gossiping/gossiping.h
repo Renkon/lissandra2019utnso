@@ -21,7 +21,5 @@ void gossip_continuously();
 void gossip();
 void post_gossip(void* result, response_t* response);
 void update_memory(memory_t* memory);
-bool is_memory_alive(void* memory);
-memory_t* get_random_memory(bool alive);
 
 #endif /* CORE_GOSSIPING_GOSSIPING_H_ */
