@@ -88,8 +88,13 @@ void process_drop(drop_input_t* input, response_t* response) {
 }
 
 void process_journal(response_t* response) {
-	// TODO: invocar a una memoria para hacer journaling
+	pcb_t* pcb = get_new_pcb();
+	statement_t* statement = generate_statement();
 
+	statement->operation = JOURNAL;
+
+	list_add(pcb->statements, statement);
+	list_add(g_scheduler_queues.new, pcb);
 	sem_post(&g_lts_semaphore);
 }
 
@@ -155,7 +160,7 @@ bool on_inner_run_request(t_list* statements, run_input_t* input, bool free_inpu
 			break;
 		}
 
-		if (operation != RUN && operation > DROP) {
+		if (operation != RUN && operation > JOURNAL) {
 			log_e("Script invalido. Comando no habilitado en script. %s:%i > %s", input->path, (i + 1), command);
 			success = false;
 			break;

@@ -4,12 +4,14 @@ void init_memory_list() {
 	g_memories_added_sc = list_create();
 	g_memories_added_shc = list_create();
 	g_memories_added_ec = list_create();
-	ec_next = 0;
+	ec_next = -1;
 }
 
 memory_t* get_any_memory() {
-	if (list_size(g_memories) == 0)
+	if (list_size(g_memories) == 0) {
+		log_e("No hay memorias en la tabla de memorias");
 		return NULL;
+	}
 
 	t_list* alive_memories = list_filter(g_memories, is_memory_alive);
 	if (list_size(alive_memories) == 0) {
@@ -17,7 +19,7 @@ memory_t* get_any_memory() {
 		return NULL;
 	}
 
-	int random_memory = rnd(0, list_size(alive_memories));
+	int random_memory = rnd(0, list_size(alive_memories) - 1);
 	memory_t* selected = (memory_t*) list_get(alive_memories, random_memory);
 	list_destroy(alive_memories);
 
@@ -26,8 +28,10 @@ memory_t* get_any_memory() {
 }
 
 memory_t* get_any_sc_memory() {
-	if (list_size(g_memories_added_sc) == 0)
+	if (list_size(g_memories_added_sc) == 0) {
+		log_e("No hay memorias para el criterio STRONG CONSISTENCY");
 		return NULL;
+	}
 
 	memory_t* selected = (memory_t*) list_get(g_memories_added_sc, 0);
 
@@ -36,7 +40,11 @@ memory_t* get_any_sc_memory() {
 }
 
 memory_t* get_any_shc_memory(uint16_t key) {
-	log_t("%i", key);
+	if (list_size(g_memories_added_shc) == 0) {
+		log_e("No hay memorias para el criterio STRONG HASH CONSISTENCY");
+		return NULL;
+	}
+
 	int assigned_memory = hash((int) key, list_size(g_memories_added_shc));
 
 	memory_t* selected = (memory_t*) list_get(g_memories_added_shc, assigned_memory);
@@ -46,8 +54,10 @@ memory_t* get_any_shc_memory(uint16_t key) {
 }
 
 memory_t* get_any_ec_memory() {
-	if (list_size(g_memories_added_ec) == 0)
+	if (list_size(g_memories_added_ec) == 0) {
+		log_e("No hay memorias para el criterio EVENTUAL CONSISTENCY");
 		return NULL;
+	}
 
 	if (ec_next >= list_size(g_memories_added_ec) - 1)
 		ec_next = 0;
@@ -175,5 +185,61 @@ memory_t* get_random_memory(bool alive) {
 
 bool is_memory_alive(void* memory) {
 	return ((memory_t*) memory)->alive;
+}
+
+void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb) {
+	// TODO: wait for them to finish.
+	if (only_shc) {
+		for (int i = 0; i < list_size(g_memories_added_shc); i++) {
+			memory_t* memory = (memory_t*) list_get(g_memories_added_shc, i);
+			elements_network_t element_info = elements_journal_in_info(NULL);
+
+			// TODO: ver como carajo hacer para esperar a todas las memorias que hagan journal
+			//do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
+			//		element_info.elements, element_info.elements_size, local_journal_callback, true, NULL, pcb);
+		}
+	} else {
+		t_list* memories_with_consistency = get_list_with_a_consistency();
+		for (int i = 0; i < list_size(memories_with_consistency); i++) {
+			memory_t* memory = (memory_t*) list_get(g_memories_added_shc, i);
+			elements_network_t element_info = elements_journal_in_info(NULL);
+
+			// TODO: ver como carajo hacer para esperar a todas las memorias que hagan journal
+			//do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
+			//		element_info.elements, element_info.elements_size, local_journal_callback, true, NULL, pcb);
+		}
+		list_destroy(memories_with_consistency);
+	}
+}
+
+t_list* get_list_with_a_consistency() {
+	t_list* mems = list_create();
+
+	void _add_to_mems_if_not_found(t_list* memlist) {
+		for (int i = 0; i < list_size(memlist); i++) {
+			memory_t* mem = (memory_t*) list_get(memlist, i);
+			bool found_already = false;
+
+			for (int j = 0; j < list_size(mems); j++) {
+				memory_t* mem2 = (memory_t*) list_get(mems, j);
+
+				if (mem2 == mem) {
+					found_already = true;
+					break;
+				}
+			}
+
+			if (!found_already) {
+				log_t("Agrego %i a la lista", mem->id);
+				list_add(mems, mem);
+			}
+		}
+	}
+
+	_add_to_mems_if_not_found(g_memories_added_sc);
+	_add_to_mems_if_not_found(g_memories_added_shc);
+	_add_to_mems_if_not_found(g_memories_added_ec);
+
+	return mems;
 }
 

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "commons/collections/list.h"
 #include "generic_logger.h"
+#include "utils/operation_types.h"
 #include "utils/dates.h"
 
 #ifndef CORE_STATISTICS_STATS_H_
@@ -16,6 +17,7 @@ typedef struct {
 	long long timestamp_end;
 	int memory;
 	stats_event_t event_type;
+	consistency_t consistency;
 } stats_t;
 
 t_list* g_stats_events;

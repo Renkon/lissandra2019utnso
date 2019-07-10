@@ -134,6 +134,12 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 	elements_network_t element_info;
 	void (*callback)(void*, response_t*);
 
+	if (statement->operation == JOURNAL) {
+		journaling(false, on_journal, pcb);
+		sem_wait(statement->semaphore);
+		return;
+	}
+
 	switch (statement->operation) {
 		case SELECT:
 			network_operation = SELECT_IN;
@@ -164,11 +170,6 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 			input = statement->drop_input;
 			element_info = elements_drop_in_info(statement->drop_input);
 			callback = on_drop;
-		break;
-		case JOURNAL:
-			network_operation = JOURNAL_IN;
-			element_info = elements_journal_in_info(NULL);
-			callback = on_journal;
 		break;
 		default:
 		break;
@@ -211,6 +212,7 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 			consistency_t consistency = get_consistency_from_table(table_name);
 
 			if (consistency == -1) {
+				free(element_info.elements_size);
 				log_e("Supuestamente la tabla estaba en metadata, pero ya se borro, por lo tanto no puedo hacer la operacion");
 				log_e("Hubo un error al ejecutar un statement. Se cancela la ejecucion del proceso con PID %i", pcb->process_id);
 				pcb->errors = true;
@@ -232,15 +234,28 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 			}
 
 			if (assigned_memory == NULL) {
+				free(element_info.elements_size);
 				log_e("Hubo un error al ejecutar un statement. Se cancela la ejecucion del proceso con PID %i", pcb->process_id);
+
+				pcb->last_execution_stats->timestamp_end = get_timestamp();
+				pcb->last_execution_stats->memory = -1;
+				pcb->last_execution_stats->consistency = consistency;
+				log_t("Se ingresa un evento a las estadisticas.");
+				list_add(g_stats_events, pcb->last_execution_stats);
+				clear_old_stats();
+
 				pcb->errors = true;
 				pcb->program_counter = list_size(pcb->statements);
 				sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
 				return;
 			}
+
+			pcb->last_execution_stats->memory = assigned_memory->id;
+			pcb->last_execution_stats->consistency = consistency;
 		} else { // Agarro una memoria al azar, a lo nisman
 			assigned_memory = get_any_memory();
 			if (assigned_memory == NULL) {
+				free(element_info.elements_size);
 				log_e("Hubo un error al ejecutar un statement. Se cancela la ejecucion del proceso con PID %i", pcb->process_id);
 				pcb->errors = true;
 				pcb->program_counter = list_size(pcb->statements);
@@ -411,13 +426,11 @@ void on_journal(void* result, response_t* response) {
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
-	// TODO: logica del journal aca
-	// Debajo deberia ir lo del journal
-	if (status == NULL) {
-		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+	if (*status == -1) {
+		log_e("Al menos una memoria fallo al intentar hacer el journaling. El JOURNAL ha fallado");
 		pcb->errors = true;
 	} else {
-		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+		log_i("Se realizo el journaling de todas las memorias asignadas a un criterio.", *status);
 	}
 
 	post_exec_statement(pcb, current_statement);

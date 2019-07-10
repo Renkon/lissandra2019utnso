@@ -72,7 +72,7 @@ void do_simple_request(process_t process, char* ip, int port, socket_operation_t
 	pthread_t thread;
 	client_conn_args_t* args = malloc(sizeof(client_conn_args_t));
 	args->process = process;
-	args->ip = ip;
+	args->ip = strdup(ip);
 	args->port = port;
 	args->operation = operation;
 	args->content = content;
@@ -105,6 +105,7 @@ void do_request(void* arguments) {
 
 		args->callback(NULL, args->response);
 
+		free(args->ip);
 		free(arguments);
 		return;
 	}
@@ -132,6 +133,7 @@ void do_request(void* arguments) {
 	kill_connection(socket);
 	free_packet_content(packet);
 	free(packet);
+	free(args->ip);
 	free(arguments);
 }
 
