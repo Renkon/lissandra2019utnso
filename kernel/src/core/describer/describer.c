@@ -187,7 +187,7 @@ void display_metadata() {
 		char* consistency = metadata->consistency == STRONG_CONSISTENCY ? "SC" : (metadata->consistency == STRONG_HASH_CONSISTENCY ? "SHC" : "EC");
 		log_t("--- Metadata de %s ---", metadata->table_name);
 		log_t("  -> Tiempo de compactacion: %i", metadata->compaction_time);
-		log_t("  -> Tipo de consistencia: %i", consistency);
+		log_t("  -> Tipo de consistencia: %s", consistency);
 		log_t("  -> Cantidad de particiones: %i", metadata->partitions);
 	}
 }

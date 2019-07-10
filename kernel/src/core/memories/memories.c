@@ -29,10 +29,14 @@ memory_t* get_any_sc_memory() {
 	if (list_size(g_memories_added_sc) == 0)
 		return NULL;
 
-	return (memory_t*) list_get(g_memories_added_sc, 0);
+	memory_t* selected = (memory_t*) list_get(g_memories_added_sc, 0);
+
+	log_t("Se asigno la memoria %i para la operacion", selected->id);
+	return selected;
 }
 
 memory_t* get_any_shc_memory(uint16_t key) {
+	log_t("%i", key);
 	int assigned_memory = hash((int) key, list_size(g_memories_added_shc));
 
 	memory_t* selected = (memory_t*) list_get(g_memories_added_shc, assigned_memory);
@@ -93,6 +97,8 @@ void add_shc_memory(int id) {
 
 	list_add(g_memories_added_shc, memory);
 	log_i("Se agrego la memoria %i al criterio STRONG HASH CONSISTENCY", id);
+
+	// TODO: forzar journaling en memorias del SHC.
 }
 
 void add_ec_memory(int id) {
