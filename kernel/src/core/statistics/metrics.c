@@ -51,13 +51,21 @@ int get_operation_count(consistency_t consistency, stats_event_t event_t) {
 void init_metrics() {
 	pthread_t metrics_thread;
 
+	sem_init(&g_stats_semaphore, 0, 1);
+
+	g_historic_infos = list_create();
+
 	if (pthread_create(&metrics_thread, NULL, (void*) process_metrics_continuously, NULL)) {
 		log_e("No se pudo inicializar el hilo de metricas");
 	}
 }
 
 void process_metrics() {
+	t_list* sorted_memories = list_sorted(g_memories, compare_mems_by_id);
+
 	clear_old_stats();
+	int total_requests = get_total_requests_overall(g_memories);
+
 	log_i("                               METRICAS DE KERNEL                               ");
 	log_i("--------------------------------------------------------------------------------");
 	log_i("   Las metricas estan calculadas en base a eventos de los ultimos 30 segundos   ");
@@ -73,12 +81,18 @@ void process_metrics() {
 			get_write_latency(EVENTUAL_CONSISTENCY), get_reads(EVENTUAL_CONSISTENCY), get_writes(EVENTUAL_CONSISTENCY));
 	log_i("--------------------------------- MEMORY LOADS ---------------------------------");
 	log_i("   Muestra el porcentaje de operaciones en esa memoria sobre el total. La suma  ");
-	log_i(" siempre deberia dar el 100%. Solo se muestran memorias con operaciones en los  ");
+	log_i("    siempre deberia dar 100. Solo se muestran memorias con operaciones en los   ");
 	log_i("          ultimos 30 segundos (en los que se considera su memory load)          ");
-	// TODO: loop y obtener las weas.
+	for (int i = 0; i < list_size(sorted_memories); i++) {
+		memory_t* mem = (memory_t*) list_get(sorted_memories, i);
+		int requests = get_total_requests(mem->id);
+		float percentage = total_requests > 0 ? ((float) requests / (float) total_requests) * 100 : 0;
+		log_i(" Memoria %i -> Requests: %i/%i. Porcentaje: %.2f", mem->id, requests, total_requests, percentage);
+	}
 	log_i("--------------------------------------------------------------------------------");
-}
 
+	list_destroy(sorted_memories);
+}
 
 void process_metrics_continuously() {
 	pthread_detach(pthread_self());
@@ -87,4 +101,8 @@ void process_metrics_continuously() {
 		usleep(g_config.metrics_display * 1000);
 		process_metrics();
 	}
+}
+
+bool compare_mems_by_id(void* mem1, void* mem2) {
+	return ((memory_t*) mem1)->id < ((memory_t*) mem2)->id;
 }

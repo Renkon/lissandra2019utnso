@@ -18,5 +18,6 @@ int get_operation_count(consistency_t consistency, stats_event_t event);
 void init_metrics();
 void process_metrics();
 void process_metrics_continuously();
+bool compare_mems_by_id(void* mem1, void* mem2);
 
 #endif /* CORE_STATISTICS_METRICS_H_ */
