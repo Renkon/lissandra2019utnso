@@ -195,6 +195,7 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 			elements_network_t element_info = elements_journal_in_info(NULL);
 
 			// TODO: ver como carajo hacer para esperar a todas las memorias que hagan journal
+			// un semaforo que inicialize en 0 mas un wait por cada journal? local_journal_callback ejecutaria el callback despues de qu etermine todito
 			//do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
 			//		element_info.elements, element_info.elements_size, local_journal_callback, true, NULL, pcb);
 		}
@@ -205,6 +206,7 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 			elements_network_t element_info = elements_journal_in_info(NULL);
 
 			// TODO: ver como carajo hacer para esperar a todas las memorias que hagan journal
+			// un semaforo que inicialize en 0 mas un wait por cada journal? local_journal_callback ejecutaria el callback despues de qu etermine todito
 			//do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
 			//		element_info.elements, element_info.elements_size, local_journal_callback, true, NULL, pcb);
 		}
