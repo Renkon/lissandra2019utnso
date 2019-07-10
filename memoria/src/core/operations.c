@@ -117,9 +117,11 @@ void process_insert(insert_input_t* input, response_t* response) {
 					sem_post_neg(&g_mem_op_semaphore);
 				} else { //Ya no hay paginas disponibles, uso el algoritmo de reemplazo
 					found_page = replace_algorithm(response, input->timestamp, input->key, input->value, J_INSERT, upper_table_name);
-					list_add(found_segment->page, found_page);
+					if(found_page != NULL){
+						list_add(found_segment->page, found_page);
+						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo.", input->key, input->value, input->timestamp, found_segment->name);
+					}
 
-					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo.", input->key, input->value, input->timestamp, found_segment->name);
 				}
 			}
 
@@ -130,12 +132,17 @@ void process_insert(insert_input_t* input, response_t* response) {
 				index = memory_insert(input->timestamp, input->key, input->value);
 				found_page = create_page(index, true);
 				sem_post_neg(&g_mem_op_semaphore);
+				list_add(found_segment->page, found_page);
+				list_add(g_segment_list, found_segment);
+				log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", input->key, input->value, input->timestamp, found_segment->name);
 			} else {
 				found_page = replace_algorithm(response, input->timestamp, input->key, input->value, J_INSERT, upper_table_name);
+				if(found_page!= NULL){
+					list_add(found_segment->page, found_page);
+					list_add(g_segment_list, found_segment);
+					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada usando el algoritmo de reemplazo", input->key, input->value, input->timestamp, found_segment->name);
+				}
 			}
-			list_add(found_segment->page, found_page);
-			list_add(g_segment_list, found_segment);
-			log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", input->key, input->value, input->timestamp, found_segment->name);
 		};
 		*insert_status = 0;
 	}else{
@@ -261,22 +268,32 @@ void select_callback(void* result, response_t* response) {
 						index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
 						found_page = create_page(index, false);
 						list_add(found_segment->page, found_page);
-						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
+						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s desde SELECT", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
 					} else {
 						found_page = replace_algorithm(response, alpha_record->timestamp, alpha_record->key, alpha_record->value, J_SELECT, upper_table_name);//TODO revisar esto xd
-						list_add(found_segment->page, found_page);
-						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo.", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
-						}
-				list_destroy(index_list);
-			}else {
-				// TODO: agregar journaling forzado aca tambien
-				found_segment = create_segment(upper_table_name);
-				index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
-				found_page = create_page(index, false);
-				list_add(found_segment->page, found_page);
-				list_add(g_segment_list, found_segment);
 
-				log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", alpha_record->key, record->value, alpha_record->timestamp, found_segment->name);
+						if(found_page != NULL){
+							list_add(found_segment->page, found_page);
+							log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo desde SELECT.", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
+						}
+					}
+				list_destroy(index_list);
+			} else {
+				found_segment = create_segment(upper_table_name);
+				if (!memory_full()){
+					index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
+					found_page = create_page(index, false);
+					list_add(found_segment->page, found_page);
+					list_add(g_segment_list, found_segment);
+					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada desde SELECT", alpha_record->key, record->value, alpha_record->timestamp, found_segment->name);
+				} else {
+					found_page = replace_algorithm(response, alpha_record->timestamp, alpha_record->key, alpha_record->value, J_SELECT, upper_table_name);
+					if(found_page != NULL){
+						list_add(found_segment->page, found_page);
+						list_add(g_segment_list, found_segment);
+						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada desde SELECT", alpha_record->key, record->value, alpha_record->timestamp, found_segment->name);
+					}
+				}
 			}
 			free(upper_table_name);
 			free(alpha_record->table_name);
@@ -459,27 +476,47 @@ void journal_callback(void* result, response_t* response){
 				*resp = -4;
 				set_response(response, resp);
 			} else {
-				// Estamos aca, porque hizo bien el journaling, y tengo el registro disponible
-				// reg->key
-				// reg->modified -> si es true, esto implica que es INSERT. si no, es SELECT
-				// reg->table_name
-				// reg->timestamp
-				// reg->value
-				// ACORDATE DE USAR STRDUP
 
-				if (reg->modified) { // Es INSERT
-					// TEnes que retornar un NUMERO, porque el insert retorna un numero
-					//if (response->id != -1337)
-					//  set_response(response, unnumero);
-					//else
-					//  free(response)
+				if (reg->modified) { // Es INSERT como siempre despues de un
+					int* insert_status = malloc(sizeof(int));
+
+					segment_t*	found_segment = create_segment(reg->table_name);
+					int index = memory_insert(reg->timestamp, reg->key, reg->value);
+					page_t* found_page = create_page(index, true);
+					list_add(found_segment->page, found_page);
+					list_add(g_segment_list, found_segment);
+
+					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de hacer Journaling.", reg->key, reg->value, reg->timestamp, found_segment->name);
+					*insert_status = 0;
+
+					if (response->id != -1337) {
+					  set_response(response, insert_status);
+					} else {
+					  free(response);
+					  free(insert_status);
+					}
 				} else { // ES SELECT
-					// Tenes que retornar un record_t
+					record_t* record = malloc(sizeof(record_t));
+					record->key = reg->key;
+					record->table_name = strdup(reg->table_name);
+					record->value = strdup(reg->value);
+					record->timestamp = string_to_long_long(reg->timestamp);
 
-					//if (response->id != -1337)
-					//	set_response(response, mirecord);
-					//else
-					//  free(response)
+					segment_t* found_segment = create_segment(record->table_name);
+					int index = memory_insert(record->timestamp, record->key, record->value);
+					page_t* found_page = create_page(index, true);
+					list_add(found_segment->page, found_page);
+					list_add(g_segment_list, found_segment);
+					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de hacer Journaling.", reg->key, reg->value, reg->timestamp, found_segment->name);
+
+					if (response->id != -1337){
+						set_response(response, record);
+					} else{
+						free(response);
+						free(record->table_name);
+						free(record->value);
+						free(record);
+					}
 				}
 			}
 

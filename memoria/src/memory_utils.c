@@ -209,7 +209,7 @@ page_t* replace_algorithm(response_t* response,long long timestamp,int key, char
 		journaling(response);
 		//TODO index = memory_insert(timestamp, key, value);
 		//TODO found_page = create_page(index, true);
-		return found_page;
+		return NULL;
 	}
 }
 
