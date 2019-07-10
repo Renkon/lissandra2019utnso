@@ -36,4 +36,8 @@ int length_of_all_tkvs_in_partitions_to_add(t_list* partition_tkvs);
 int create_partition(tkvs_per_partition_t* partition, int* blocks, int size_of_blocks,char* table_name);
 tkv_t* convert_to_tkv(record_t* record);
 int add_blocks_for_partitions_without_tkvs(t_list* partition_tkvs);
+int size_of_all_tkvs_from_table();
+int blocks_needed_for_memtable();
+int necessary_blocks_for_tkvs(t_list* tkvs);
+int size_of_all_tkvs(t_list* tkvs);
 #endif /* COMPACTOR_COMPACTOR_H_ */

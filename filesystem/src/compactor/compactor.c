@@ -14,16 +14,16 @@ void compaction(char* table_name){
 	//Bloqueo tablas todo
 	//Libera bloques de los tmpc y el bin todo
 	//t_list* partion_tkvs_string_form = list_map(partition_tkvs,transform_records_to_tkv);
-	int length_of_all_tkvs = length_of_all_tkvs_in_partitions_to_add(partition_tkvs);
-	int necessary_blocks = division_rounded_up(length_of_all_tkvs, fs_metadata->block_size);
+	int necessary_blocks= length_needed_to_add_tkvs_in_partitions(partition_tkvs);
 	necessary_blocks += add_blocks_for_partitions_without_tkvs(partition_tkvs);
-	int blocks[necessary_blocks];
+	int* blocks= malloc(sizeof(int)*necessary_blocks);
 	char* bitmap_dir = get_bitmap_directory();
 	sem_wait(bitmap_semaphore);
 	t_bitarray* bitmap = read_bitmap(bitmap_dir);
 	int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
 	create_new_partitions(partition_tkvs,blocks,free_blocks_amount,table_name);
 	//Desbloqueo tablas todo
+	//write bitmap todo
 	sem_post(bitmap_semaphore);
 	free(bitmap->bitarray);
 	free(bitmap);
@@ -57,12 +57,12 @@ tkv_t* convert_to_tkv(record_t* record){
 	return tkv;
 }
 
-int length_of_all_tkvs_in_partitions_to_add(t_list* partition_tkvs){
+int length_needed_to_add_tkvs_in_partitions(t_list* partition_tkvs){
 	int total_length =0;
 	for(int i=0; i<list_size(partition_tkvs); i++){
 			tkvs_per_partition_t* partition = list_get(partition_tkvs,i);
 				t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv); //hacer free TODO
-				total_length+= tkv_total_length(string_tkv_list);
+				total_length+= size_of_all_tkvs(string_tkv_list);
 		}
 
 	return total_length;
@@ -70,8 +70,8 @@ int length_of_all_tkvs_in_partitions_to_add(t_list* partition_tkvs){
 
 int create_partition(tkvs_per_partition_t* partition, int* blocks, int size_of_blocks,char* table_name) {
 	t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv); //hacer free TODO
-	int size_of_all_tkvs_from_partition = tkv_total_length(string_tkv_list);
-	int blocks_amount = division_rounded_up(size_of_all_tkvs_from_partition,fs_metadata->block_size);
+	int size_of_all_tkvs_from_partition = size_of_all_tkvs(string_tkv_list);
+	int blocks_amount = necessary_blocks_for_tkvs(string_tkv_list);
 	//Si blocks amount da 0 significa que no tengo tkvs entonces le pongo un bloque vacio.
 	if(blocks_amount == 0){
 		int* blocks_for_the_table = array_take(blocks, size_of_blocks,1); //todo
@@ -372,9 +372,9 @@ void dump(){
 	if(mem_table->elements_count>0){
 	//Saco cuantos bloques necesito para dumpear todas las tablas los cuales se calculan como:
 	//tamaño de todos los tkvs/ tamaño de un bloque redondeado hacia arriba.
-	int necessary_blocks = division_rounded_up(length_of_all_tkvs_in_memtable(), fs_metadata->block_size);
+	int necessary_blocks = blocks_needed_for_memtable();
 	//Creo un array de tantos bloques como los que necesito
-	int blocks[necessary_blocks];
+	int* blocks= malloc(sizeof(int)*necessary_blocks);
 	char* bitmap_dir = get_bitmap_directory();
 	//Leo el bitmap
 	sem_wait(bitmap_semaphore);
@@ -470,10 +470,10 @@ void free_memtable(){
 }
 
 void dump_table(table_t* table, int* blocks, int size_of_blocks) {
-	int size_of_all_tkvs_from_table = tkv_total_length(table->tkvs);
-	int blocks_amount = division_rounded_up(size_of_all_tkvs_from_table,fs_metadata->block_size);
+	int size_of_all_tkvs_in_table = size_of_all_tkvs(table->tkvs);
+	int blocks_amount = necessary_blocks_for_tkvs(table->tkvs);
 	int* blocks_for_the_table = array_take(blocks, size_of_blocks,blocks_amount);
-	create_fs_archive(table->name,blocks_for_the_table,blocks_amount,size_of_all_tkvs_from_table,1,0);
+	create_fs_archive(table->name,blocks_for_the_table,blocks_amount,size_of_all_tkvs_in_table,1,0);
 	int block_size = fs_metadata->block_size;
 	int block_index = 0;
 	//Abro el .bin del primer bloque
@@ -531,7 +531,7 @@ void dump_table(table_t* table, int* blocks, int size_of_blocks) {
 	fclose(block);
 }
 
-int tkv_total_length(t_list* tkvs){
+int necessary_blocks_for_tkvs(t_list* tkvs){
 	int total_length = 0;
 
 	for(int i =0;i<tkvs->elements_count;i++){
@@ -545,18 +545,51 @@ int tkv_total_length(t_list* tkvs){
 
 		}
 		total_length+=extra_bits;
+		total_length = division_rounded_up(total_length,fs_metadata->block_size);
+	}
+	return total_length;
+}
+
+int size_of_all_tkvs(t_list* tkvs){
+	int total_length = 0;
+
+	for(int i =0;i<tkvs->elements_count;i++){
+		tkv_t* tkv = list_get(tkvs,i);
+		total_length += strlen(tkv->tkv);
+		//Calculo cuantos /n tengo que agregar
+		int extra_bits = strlen(tkv->tkv)/(fs_metadata->block_size-1);
+		if((strlen(tkv->tkv)%fs_metadata->block_size) ==0){
+			//si la division me da 0 entonces tengo un bit de mas asi que lo saco.
+			extra_bits-=1;
+
+		}
+		total_length+=extra_bits;
+
 	}
 	return total_length;
 }
 
 
-int length_of_all_tkvs_in_memtable(){
+int blocks_needed_for_memtable(){
 	int total_length = 0;
 
 	for(int i=0; i<mem_table->elements_count;i++){
 		table_t* table = list_get(mem_table,i);
-		total_length+= tkv_total_length(table->tkvs);
+		total_length+= necessary_blocks_for_tkvs(table->tkvs);
 	}
 	return total_length;
 }
+
+int size_of_all_tkvs_from_table(){
+	int total_length = 0;
+
+	for (int i = 0; i < mem_table->elements_count; i++) {
+		table_t* table = list_get(mem_table, i);
+		total_length += size_of_all_tkvs(table->tkvs);
+	}
+	return total_length;
+}
+
+
+
 
