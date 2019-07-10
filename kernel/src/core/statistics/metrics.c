@@ -81,8 +81,7 @@ void process_metrics() {
 			get_write_latency(EVENTUAL_CONSISTENCY), get_reads(EVENTUAL_CONSISTENCY), get_writes(EVENTUAL_CONSISTENCY));
 	log_i("--------------------------------- MEMORY LOADS ---------------------------------");
 	log_i("   Muestra el porcentaje de operaciones en esa memoria sobre el total. La suma  ");
-	log_i("    siempre deberia dar 100. Solo se muestran memorias con operaciones en los   ");
-	log_i("          ultimos 30 segundos (en los que se considera su memory load)          ");
+	log_i("                             siempre deberia dar 100                            ");
 	for (int i = 0; i < list_size(sorted_memories); i++) {
 		memory_t* mem = (memory_t*) list_get(sorted_memories, i);
 		int requests = get_total_requests(mem->id);
