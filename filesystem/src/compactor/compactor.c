@@ -14,7 +14,7 @@ void compaction(char* table_name){
 	//Bloqueo tablas todo
 	//Libera bloques de los tmpc y el bin todo
 	//t_list* partion_tkvs_string_form = list_map(partition_tkvs,transform_records_to_tkv);
-	int necessary_blocks= length_needed_to_add_tkvs_in_partitions(partition_tkvs);
+	int necessary_blocks= length_needed_to_add_tkvs_in_partitions(partition_tkvs);//SACA MAS BLOQUES DE LOS QUE NECESITA TODO
 	necessary_blocks += add_blocks_for_partitions_without_tkvs(partition_tkvs);
 	int* blocks= malloc(sizeof(int)*necessary_blocks);
 	char* bitmap_dir = get_bitmap_directory();
@@ -23,7 +23,7 @@ void compaction(char* table_name){
 	int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
 	create_new_partitions(partition_tkvs,blocks,free_blocks_amount,table_name);
 	//Desbloqueo tablas todo
-	//write bitmap todo
+	write_bitmap(bitmap, bitmap_dir);
 	sem_post(bitmap_semaphore);
 	free(bitmap->bitarray);
 	free(bitmap);
@@ -62,7 +62,7 @@ int length_needed_to_add_tkvs_in_partitions(t_list* partition_tkvs){
 	for(int i=0; i<list_size(partition_tkvs); i++){
 			tkvs_per_partition_t* partition = list_get(partition_tkvs,i);
 				t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv); //hacer free TODO
-				total_length+= size_of_all_tkvs(string_tkv_list);
+				total_length+= necessary_blocks_for_tkvs(string_tkv_list);
 		}
 
 	return total_length;
@@ -171,12 +171,14 @@ void add_record_to_partition_list (record_t* record,tkvs_per_partition_t* partit
 		if(record->key == record_from_partition->key){
 			//Si lo encuentra y la timestamp es menor entonces lo agrego
 			if(record->timestamp > record_from_partition->timestamp){
-				list_remove_and_destroy_element(partition,i,free_record);
+				/*free(record_from_partition->value);
+				free(record_from_partition);*/
+				list_remove_and_destroy_element(partition->tkvs,i,free_record);
 				list_add(partition->tkvs, record);
-				break;
+				return;
 			}
 		//Si tiene la misma key pero menos timestamp no hago nada
-		break;
+		return;
 		}
 
 	}
