@@ -94,11 +94,26 @@ void process_journal(response_t* response) {
 }
 
 void process_add(add_input_t* input) {
-	// TODO: hacer lo del add a un criterio
+	switch (input->consistency) {
+		case STRONG_CONSISTENCY:
+			add_sc_memory(input->memory_number);
+		break;
+		case STRONG_HASH_CONSISTENCY:
+			add_shc_memory(input->memory_number);
+		break;
+		case EVENTUAL_CONSISTENCY:
+			add_ec_memory(input->memory_number);
+		break;
+	}
 }
 
 statement_t* generate_statement() {
 	statement_t* statement = malloc(sizeof(statement_t));
+	statement->create_input = NULL;
+	statement->describe_input = NULL;
+	statement->drop_input = NULL;
+	statement->insert_input = NULL;
+	statement->select_input = NULL;
 	statement->semaphore = malloc(sizeof(sem_t));
 	sem_init(statement->semaphore, 0, 0);
 	return statement;

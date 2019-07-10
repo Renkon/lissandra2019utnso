@@ -14,8 +14,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-t_list* g_memories;
+#include "../memories/memories.h"
 
 void init_gossiping();
 void gossip_continuously();

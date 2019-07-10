@@ -54,6 +54,7 @@ void post_gossip(void* result, response_t* response) {
 	if (result == NULL) { // Fallo la request?
 		selected_memory->alive = false;
 		selected_memory->timestamp = get_timestamp();
+		remove_memory(selected_memory->id); // la borro de las tablas de consistencias
 	} else {
 		// Se hizo la ricuest! Caso inicial
 		// Estoy en la memoria -1 (la principal sin ID)
@@ -98,6 +99,9 @@ void update_memory(memory_t* memory) {
 				existing_memory->port = memory->port;
 				existing_memory->alive = memory->alive;
 				existing_memory->timestamp = memory->timestamp;
+
+				if (!existing_memory->alive) // la borro de todos los criterios
+					remove_memory(existing_memory->id);
 			}
 			found = true;
 			break;

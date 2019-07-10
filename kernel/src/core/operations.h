@@ -13,6 +13,7 @@
 #include "utils/response.h"
 #include "scheduler/statement.h"
 #include "scheduler/long_term_scheduler.h"
+#include "memories/memories.h"
 
 void process_select(select_input_t* input, response_t* response);
 void process_insert(insert_input_t* input, response_t* response);

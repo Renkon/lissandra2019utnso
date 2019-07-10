@@ -2,8 +2,26 @@
 #define CORE_MEMORIES_MEMORIES_H_
 
 #include "commons/collections/list.h"
+#include "shared_types/shared_types.h"
+#include "generic_logger.h"
+#include <stdlib.h>
+
+t_list* g_memories_added_sc;
+t_list* g_memories_added_shc;
+t_list* g_memories_added_ec;
+
+t_list* g_memories;
+
 
 void init_memory_list();
 
+void add_sc_memory(int id);
+void add_shc_memory(int id);
+void add_ec_memory(int id);
+
+void remove_memory(int id);
+
+memory_t* get_memory_by_id(t_list* mem_list, int id);
+void remove_memory_from_consistency(t_list* mems, int id);
 
 #endif /* CORE_MEMORIES_MEMORIES_H_ */
