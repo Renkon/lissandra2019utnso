@@ -11,9 +11,17 @@ memory_t* get_any_memory() {
 	if (list_size(g_memories) == 0)
 		return NULL;
 
-	int random_memory = rnd(0, list_size(g_memories));
+	t_list* alive_memories = list_filter(g_memories, is_memory_alive);
+	if (list_size(alive_memories) == 0) {
+		log_e("No hay memorias vivas para responder la peticion");
+		return NULL;
+	}
 
-	return (memory_t*) list_get(g_memories, random_memory);
+	int random_memory = rnd(0, list_size(alive_memories));
+	memory_t* selected = (memory_t*) list_get(alive_memories, random_memory);
+	list_destroy(alive_memories);
+
+	return selected;
 }
 
 memory_t* get_any_sc_memory() {
