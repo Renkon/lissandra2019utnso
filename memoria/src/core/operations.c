@@ -469,13 +469,20 @@ void journal_callback(void* result, response_t* response){
 
 				if (reg->modified) { // Es INSERT
 					// TEnes que retornar un NUMERO, porque el insert retorna un numero
-					//set_response(response, unnumero);
+					//if (response->id != -1337)
+					//  set_response(response, unnumero);
+					//else
+					//  free(response)
 				} else { // ES SELECT
 					// Tenes que retornar un record_t
 
-					//set_response(response, mirecord);
+					//if (response->id != -1337)
+					//	set_response(response, mirecord);
+					//else
+					//  free(response)
 				}
 			}
+
 
 			free(reg->table_name);
 			free(reg->value);

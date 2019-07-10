@@ -199,11 +199,16 @@ page_t* replace_algorithm(response_t* response,long long timestamp,int key, char
 		else if (invocation == J_SELECT)
 			reg->modified = false;
 
+		if (response == NULL) {
+			response = malloc(sizeof(response_t*));
+			response->id = -1337;
+		}
+
 		response->result = reg;
 
 		journaling(response);
-		//index = memory_insert(timestamp, key, value);
-		//found_page = create_page(index, true);
+		//TODO index = memory_insert(timestamp, key, value);
+		//TODO found_page = create_page(index, true);
 		return found_page;
 	}
 }
