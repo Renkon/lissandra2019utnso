@@ -265,14 +265,14 @@ void select_callback(void* result, response_t* response) {
 
 			if (found_segment != NULL) {
 				index_list = list_map(found_segment->page, (void*) page_get_index);
-				found_page = get_page_by_key(found_segment, index_list, alpha_record->key);
+				found_page = get_page_by_key(found_segment, index_list, alpha_record->key);//se deberia poder comentar xd
 					if (!memory_full()) {
 						index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
 						found_page = create_page(index, false);
 						list_add(found_segment->page, found_page);
 						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s desde SELECT", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
 					} else {
-						found_page = replace_algorithm(response, alpha_record->timestamp, alpha_record->key, alpha_record->value, J_SELECT, upper_table_name);//TODO revisar esto xd
+						found_page = replace_algorithm(response, alpha_record->timestamp, alpha_record->key, alpha_record->value, J_SELECT, upper_table_name);
 
 						if(found_page != NULL){
 							list_add(found_segment->page, found_page);
@@ -504,7 +504,7 @@ void journal_callback(void* result, response_t* response){
 					record->key = reg->key;
 					record->table_name = strdup(reg->table_name);
 					record->value = strdup(reg->value);
-					record->timestamp = string_to_long_long(reg->timestamp);
+					record->timestamp = reg->timestamp;
 
 					segment_t* found_segment = create_segment(record->table_name);
 					int index = memory_insert(record->timestamp, record->key, record->value);
