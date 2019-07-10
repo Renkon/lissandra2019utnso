@@ -21,6 +21,7 @@ memory_t* get_any_memory() {
 	memory_t* selected = (memory_t*) list_get(alive_memories, random_memory);
 	list_destroy(alive_memories);
 
+	log_t("Se asigno la memoria %i para la operacion", selected->id);
 	return selected;
 }
 
@@ -31,11 +32,13 @@ memory_t* get_any_sc_memory() {
 	return (memory_t*) list_get(g_memories_added_sc, 0);
 }
 
-memory_t* get_any_shc_memory(char* table_name, uint16_t key) {
-	int hash_value = hash(table_name, (int) key);
-	int assigned_memory = hash_value % list_size(g_memories_added_shc);
+memory_t* get_any_shc_memory(uint16_t key) {
+	int assigned_memory = hash((int) key, list_size(g_memories_added_shc));
 
-	return (memory_t*) list_get(g_memories_added_shc, assigned_memory);
+	memory_t* selected = (memory_t*) list_get(g_memories_added_shc, assigned_memory);
+
+	log_t("Se asigno la memoria %i para la operacion", selected->id);
+	return selected;
 }
 
 memory_t* get_any_ec_memory() {
@@ -47,7 +50,10 @@ memory_t* get_any_ec_memory() {
 	else
 		ec_next++;
 
-	return (memory_t*) list_get(g_memories_added_ec, ec_next);
+	memory_t* selected = (memory_t*) list_get(g_memories_added_ec, ec_next);
+
+	log_t("Se asigno la memoria %i para la operacion", selected->id);
+	return selected;
 }
 
 void add_sc_memory(int id) {
@@ -110,6 +116,7 @@ void remove_memory(int id) {
 	remove_memory_from_consistency(g_memories_added_sc, id);
 	remove_memory_from_consistency(g_memories_added_shc, id);
 	remove_memory_from_consistency(g_memories_added_ec, id);
+	// TODO: forzar journaling aca para las memorias de SHC.
 	log_t("Se elimino la memoria %i de todas las cosistencias (si es que estaba)");
 }
 

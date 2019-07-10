@@ -203,8 +203,53 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 		pcb->program_counter = list_size(pcb->statements);
 		sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
 	} else {
-		// TODO: agregar la wea de mandarle solo a la memoria asignada!
-		do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, network_operation, input,
+		memory_t* assigned_memory;
+		if (statement->operation == SELECT || statement->operation == INSERT) {
+			// Tengo que revisar el criterio
+			char* table_name = statement->operation == SELECT ? statement->select_input->table_name : statement->insert_input->table_name;
+			uint16_t key = statement->operation == SELECT ? statement->select_input->key : statement->insert_input->key;
+			consistency_t consistency = get_consistency_from_table(table_name);
+
+			if (consistency == -1) {
+				log_e("Supuestamente la tabla estaba en metadata, pero ya se borro, por lo tanto no puedo hacer la operacion");
+				log_e("Hubo un error al ejecutar un statement. Se cancela la ejecucion del proceso con PID %i", pcb->process_id);
+				pcb->errors = true;
+				pcb->program_counter = list_size(pcb->statements);
+				sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
+				return;
+			}
+
+			switch (consistency) {
+				case STRONG_CONSISTENCY:
+					assigned_memory = get_any_sc_memory();
+				break;
+				case STRONG_HASH_CONSISTENCY:
+					assigned_memory = get_any_shc_memory(key);
+				break;
+				case EVENTUAL_CONSISTENCY:
+					assigned_memory = get_any_ec_memory();
+				break;
+			}
+
+			if (assigned_memory == NULL) {
+				log_e("Hubo un error al ejecutar un statement. Se cancela la ejecucion del proceso con PID %i", pcb->process_id);
+				pcb->errors = true;
+				pcb->program_counter = list_size(pcb->statements);
+				sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
+				return;
+			}
+		} else { // Agarro una memoria al azar, a lo nisman
+			assigned_memory = get_any_memory();
+			if (assigned_memory == NULL) {
+				log_e("Hubo un error al ejecutar un statement. Se cancela la ejecucion del proceso con PID %i", pcb->process_id);
+				pcb->errors = true;
+				pcb->program_counter = list_size(pcb->statements);
+				sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
+				return;
+			}
+		}
+
+		do_simple_request(KERNEL, assigned_memory->ip, assigned_memory->port, network_operation, input,
 				element_info.elements, element_info.elements_size, callback, true, NULL, pcb);
 
 		sem_wait(statement->semaphore);
@@ -222,6 +267,7 @@ void on_select(void* result, response_t* response) {
 
 	if (record == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El SELECT ha fallado");
+		// TODO: fallback?
 		pcb->errors = true;
 	} else if (record->timestamp == -3) {
 		log_e("Hubo un error de red al querer ir a buscar un valor al FS. El SELECT ha fallado");
@@ -251,10 +297,9 @@ void on_insert(void* result, response_t* response) {
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 	insert_input_t* input = current_statement->insert_input;
 
-	// TODO: logica del insert aca
-	// Debajo deberia ir lo del insert
 	if (status == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+		// TODO: fallback?
 		pcb->errors = true;
 	} else if (*status == -2) {
 		log_e("La memoria no pudo realizar el insert dado que tenia la memoria llena y fallo el journaling. EL INSERT ha fallado");
@@ -283,6 +328,7 @@ void on_create(void* result, response_t* response) {
 	input = current_statement->create_input;
 	if (status == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El CREATE ha fallado");
+		// TODO: fallback?
 		pcb->errors = true;
 	} else if (*status == -3) {
 		log_e("Hubo un error de red al querer crear la tabla %s. El CREATE ha fallado", input->table_name);
@@ -310,6 +356,7 @@ void on_describe(void* result, response_t* response) {
 
 	if (metadata_list == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El DESCRIBE ha fallado");
+		// TODO: fallback?
 		pcb->errors = true;
 	} else {
 		if (list_size(metadata_list) == 0) {
@@ -339,10 +386,9 @@ void on_drop(void* result, response_t* response) {
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
-	// TODO: logica del drop aca
-	// Debajo deberia ir lo del drop
 	if (status == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El DROP ha fallado");
+		// TODO: fallback?
 		pcb->errors = true;
 	} else if (*status == -2) {
 		log_e("Hubo un error de red al querer droppear la tabla %s. El DROP ha fallado", current_statement->drop_input->table_name);

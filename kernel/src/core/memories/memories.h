@@ -20,7 +20,7 @@ void init_memory_list();
 
 memory_t* get_any_memory();
 memory_t* get_any_sc_memory();
-memory_t* get_any_shc_memory(char* table_name, uint16_t key);
+memory_t* get_any_shc_memory(uint16_t key);
 memory_t* get_any_ec_memory();
 
 void add_sc_memory(int id);
