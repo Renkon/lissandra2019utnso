@@ -135,6 +135,12 @@ void destroy_segment(segment_t* segment){
 	free(segment);
 }
 
+void destroy_insert(insert_input_t* insert){
+	free(insert->table_name);
+	free(insert->value);
+	free(insert);
+}
+
 int get_segment_position_by_name(char* segment_name){
 	int i=0;
 	segment_t* segment;

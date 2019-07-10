@@ -22,6 +22,7 @@ page_t* get_page_by_index(segment_t* segment,int index);
 t_list* get_pages_by_modified(bool modified);
 void remove_segment(segment_t* segment);
 void destroy_page(page_t* page);
+void destroy_insert(insert_input_t* insert);
 page_t* get_page_by_index_global(int index);
 void delete_all_segments();
 

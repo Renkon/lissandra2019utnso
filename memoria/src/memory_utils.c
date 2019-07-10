@@ -122,21 +122,23 @@ void eliminate_page_instance_by_index(int index){
 
 t_list* list_add_multi_lists(t_list* pages_indexes){
 	t_list* new_list = list_create();
-
+	char* timestamp;
+	char* key;
 	for(int i = 0 ; i < pages_indexes->elements_count ; i++){
 		insert_input_t* insert = malloc(sizeof(insert_input_t));
+		timestamp = main_memory_values(list_get(pages_indexes,i),TIMESTAMP);
+		key = main_memory_values(list_get(pages_indexes,i),KEY);
 
-		insert->timestamp = string_to_long_long(main_memory_values(list_get(pages_indexes,i),TIMESTAMP));
-		insert->key = string_to_uint16(main_memory_values(list_get(pages_indexes,i),KEY));
-		insert->value = strdup(main_memory_values(list_get(pages_indexes,i),VALUE));
-		insert->table_name = strdup(get_table_name_by_index(list_get(pages_indexes,i)));
+		insert->timestamp = string_to_long_long(timestamp);
+		insert->key = string_to_uint16(key);
+		insert->value = main_memory_values(list_get(pages_indexes,i),VALUE);
+		insert->table_name = get_table_name_by_index(list_get(pages_indexes,i));
+
 
 		list_add(new_list,insert);
+		free(timestamp);
+		free(key);
 	}
-
-	//free(insert->table_name);
-	//free(insert->value);
-	//free(insert);
 
 	return new_list;
 }
@@ -187,6 +189,7 @@ page_t* replace_algorithm(response_t* response,long long timestamp,int key, char
 		return found_page;
 
 	}else{
+		list_destroy(not_modified_pages);
 		log_i("Memoria llena, iniciando journaling...");
 		journal_register_t* reg = malloc(sizeof(journal_register_t));
 		reg->key = key;

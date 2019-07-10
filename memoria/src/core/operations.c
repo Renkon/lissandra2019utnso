@@ -141,6 +141,8 @@ void process_insert(insert_input_t* input, response_t* response) {
 					list_add(found_segment->page, found_page);
 					list_add(g_segment_list, found_segment);
 					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada usando el algoritmo de reemplazo", input->key, input->value, input->timestamp, found_segment->name);
+				}else{
+					destroy_segment(found_segment);
 				}
 			}
 		};
@@ -292,6 +294,8 @@ void select_callback(void* result, response_t* response) {
 						list_add(found_segment->page, found_page);
 						list_add(g_segment_list, found_segment);
 						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada desde SELECT", alpha_record->key, record->value, alpha_record->timestamp, found_segment->name);
+					}else{
+						destroy_segment(found_segment);
 					}
 				}
 			}
@@ -564,11 +568,5 @@ void cleanup_describe_input(void* input) {
 
 void cleanup_journal_input(void* input){
 	t_list* insert_inputs = (t_list*) input;
-	for(int i = 0; i < list_size(insert_inputs); i++){
-		insert_input_t* input = list_get(insert_inputs,i);
-		free(input->table_name);
-		free(input->value);
-		free(input);
-	}
-	list_destroy(insert_inputs);
+	list_destroy_and_destroy_elements(insert_inputs,(void*)destroy_insert);
 }
