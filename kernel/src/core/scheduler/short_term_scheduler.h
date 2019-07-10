@@ -10,6 +10,7 @@
 #include <semaphore.h>
 #include "statement.h"
 #include "utils/operation_types.h"
+#include "utils/dates.h"
 #include "../describer/describer.h"
 
 sem_t g_sts_semaphore;

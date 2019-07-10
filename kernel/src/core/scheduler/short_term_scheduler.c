@@ -264,6 +264,7 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 			}
 		}
 
+		statement->assigned_memory = assigned_memory;
 		do_simple_request(KERNEL, assigned_memory->ip, assigned_memory->port, network_operation, input,
 				element_info.elements, element_info.elements_size, callback, true, NULL, pcb);
 
@@ -282,7 +283,9 @@ void on_select(void* result, response_t* response) {
 
 	if (record == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El SELECT ha fallado");
-		// TODO: fallback?
+		current_statement->assigned_memory->alive = false;
+		current_statement->assigned_memory->timestamp = get_timestamp();
+		remove_memory(current_statement->assigned_memory->id);
 		pcb->errors = true;
 	} else if (record->timestamp == -3) {
 		log_e("Hubo un error de red al querer ir a buscar un valor al FS. El SELECT ha fallado");
@@ -314,7 +317,9 @@ void on_insert(void* result, response_t* response) {
 
 	if (status == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
-		// TODO: fallback?
+		current_statement->assigned_memory->alive = false;
+		current_statement->assigned_memory->timestamp = get_timestamp();
+		remove_memory(current_statement->assigned_memory->id);
 		pcb->errors = true;
 	} else if (*status == -2) {
 		log_e("La memoria no pudo realizar el insert dado que tenia la memoria llena y fallo el journaling. EL INSERT ha fallado");
@@ -343,7 +348,9 @@ void on_create(void* result, response_t* response) {
 	input = current_statement->create_input;
 	if (status == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El CREATE ha fallado");
-		// TODO: fallback?
+		current_statement->assigned_memory->alive = false;
+		current_statement->assigned_memory->timestamp = get_timestamp();
+		remove_memory(current_statement->assigned_memory->id);
 		pcb->errors = true;
 	} else if (*status == -3) {
 		log_e("Hubo un error de red al querer crear la tabla %s. El CREATE ha fallado", input->table_name);
@@ -371,7 +378,9 @@ void on_describe(void* result, response_t* response) {
 
 	if (metadata_list == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El DESCRIBE ha fallado");
-		// TODO: fallback?
+		current_statement->assigned_memory->alive = false;
+		current_statement->assigned_memory->timestamp = get_timestamp();
+		remove_memory(current_statement->assigned_memory->id);
 		pcb->errors = true;
 	} else {
 		if (list_size(metadata_list) == 0) {
@@ -403,7 +412,9 @@ void on_drop(void* result, response_t* response) {
 
 	if (status == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El DROP ha fallado");
-		// TODO: fallback?
+		current_statement->assigned_memory->alive = false;
+		current_statement->assigned_memory->timestamp = get_timestamp();
+		remove_memory(current_statement->assigned_memory->id);
 		pcb->errors = true;
 	} else if (*status == -2) {
 		log_e("Hubo un error de red al querer droppear la tabla %s. El DROP ha fallado", current_statement->drop_input->table_name);

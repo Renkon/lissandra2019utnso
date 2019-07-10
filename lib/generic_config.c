@@ -74,6 +74,7 @@ void check_config(char* config_file, void (*callback)(t_config*), char** config_
 				struct inotify_event *event = (struct inotify_event *) &buffer[offset];
 				// Si el archivo modificado es el de configuracion (por el nombre)
 				if (event->len && strcmp(event->name, config_file) == 0) {
+					log_t("Detectados cambios en archivo de configuracion");
 					update_config(config_file, callback, config_keys, config_size);
 				}
 

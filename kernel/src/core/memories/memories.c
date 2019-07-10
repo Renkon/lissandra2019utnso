@@ -132,6 +132,7 @@ void remove_memory(int id) {
 	remove_memory_from_consistency(g_memories_added_sc, id);
 	remove_memory_from_consistency(g_memories_added_shc, id);
 	remove_memory_from_consistency(g_memories_added_ec, id);
+
 	// TODO: forzar journaling aca para las memorias de SHC.
 	log_t("Se elimino la memoria %i de todas las cosistencias (si es que estaba)");
 }

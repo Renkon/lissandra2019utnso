@@ -120,6 +120,7 @@ statement_t* generate_statement() {
 	statement->insert_input = NULL;
 	statement->select_input = NULL;
 	statement->semaphore = malloc(sizeof(sem_t));
+	statement->assigned_memory = NULL;
 	sem_init(statement->semaphore, 0, 0);
 	return statement;
 }
