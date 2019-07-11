@@ -150,6 +150,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 	}else{
 		log_w("El tamaño del value es mayor al maximo disponible, cancelando operacion.");
 		*insert_status = -1;
+		sem_post_neg(&g_mem_op_semaphore);
 	}
 
 	if (response == NULL)
