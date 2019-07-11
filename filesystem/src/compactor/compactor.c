@@ -629,7 +629,8 @@ int necessary_blocks_for_tkvs(t_list* tkvs){
 
 	for(int i =0;i<tkvs->elements_count;i++){
 		tkv_t* tkv = list_get(tkvs,i);
-		total_length += strlen(tkv->tkv);
+		int length_counter =0;
+		length_counter += strlen(tkv->tkv);
 		//Calculo cuantos /n tengo que agregar
 		int extra_bits = strlen(tkv->tkv)/(fs_metadata->block_size-1);
 		if((strlen(tkv->tkv)%fs_metadata->block_size) ==0){
@@ -637,8 +638,8 @@ int necessary_blocks_for_tkvs(t_list* tkvs){
 			extra_bits-=1;
 
 		}
-		total_length+=extra_bits;
-		total_length = division_rounded_up(total_length,fs_metadata->block_size);
+		length_counter+=extra_bits;
+		total_length += division_rounded_up(length_counter,fs_metadata->block_size);
 	}
 	return total_length;
 }
