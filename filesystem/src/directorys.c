@@ -208,3 +208,58 @@ void write_tkv(char* tkv,FILE* block){
 	//Si me entra el tkv en el bloque lo meto asi nomas.
 	fwrite(tkv,1,strlen(tkv)+1,block);
 }
+
+void create_fs_archive(char* table_name,int* blocks,int block_amount,int tkv_size,int archive_flag, int partition_number){
+	char* initial_table_dir = get_table_directory();
+	int tmp_number = 1;
+	char* tmp_name = get_tmp_name(tmp_number);
+	char* table_name_upper = to_uppercase(table_name);
+	char* table_directory = create_new_directory(initial_table_dir,table_name_upper);
+
+	while (exist_in_directory(tmp_name, table_directory)) {
+		tmp_number++;
+		free(tmp_name);
+		tmp_name = get_tmp_name(tmp_number);
+	}
+	char* 	archive_dir = get_tmp_directory(table_directory, tmp_number);
+	if(archive_flag == 0 ){
+		free(	archive_dir);
+		archive_dir = get_tmpc_directory(table_directory);
+
+	}
+
+	if(archive_flag == 2){
+		free(archive_dir);
+		char* partition_path = malloc(digits_in_a_number(partition_number) + strlen("/.bin") + 1);
+		sprintf(partition_path, "/%d.bin", partition_number); //Esto transforma de int a string
+		archive_dir = malloc(strlen(table_directory) + strlen(partition_path) + 1);
+		strcpy(	archive_dir, table_directory);
+		strcat(	archive_dir, partition_path);
+		free(partition_path);
+
+	}
+
+
+	partition_t* partition = malloc(sizeof(partition_t));
+	partition->number_of_blocks = block_amount;
+	partition->size = tkv_size;
+	partition->blocks = malloc(block_amount*sizeof(int));
+	memcpy(partition->blocks,blocks,block_amount*sizeof(int));
+
+
+
+	FILE* arch = fopen(archive_dir, "wb");
+	fwrite(&partition->number_of_blocks, 1, sizeof(partition->number_of_blocks), arch);
+	fwrite(partition->blocks, 1, sizeof(int) * partition->number_of_blocks, arch);
+	fwrite(&partition->size, 1, sizeof(partition->size), arch);
+
+	fclose(arch);
+	free(partition->blocks);
+	free(partition);
+	free(initial_table_dir);
+	free(archive_dir);
+	free(tmp_name);
+	free(table_name_upper);
+	free(table_directory);
+}
+

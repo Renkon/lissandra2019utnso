@@ -29,6 +29,8 @@ void compaction(char* table_name){
 	//Desbloqueo tablas todo
 	write_bitmap(bitmap, bitmap_dir);
 	sem_post(bitmap_semaphore);
+	log_i("Compactacion terminada sobre la tabla %s!", table_name);
+	log_i("Esta estuvo bloqueada un total de %d segundos", 15); //cambiar hardcodeo todo
 	free(tmpc_directory);
 	free(bitmap->bitarray);
 	free(bitmap);
@@ -38,7 +40,6 @@ void compaction(char* table_name){
 	free(initial_table_dir);
 	free(table_directory);
 	free(table_metadata);
-	 //free_tkvs_per_partition_list(partition_tkvs);
 	free(blocks);
 	list_destroy(partition_tkvs);
 	list_destroy(block_list);
@@ -205,14 +206,6 @@ void create_new_partitions(t_list* partition_tkvs,t_list* blocks, int size_of_bl
 
 }
 
-void ver_bloques(int* bloques,int size){
-		printf("  Se viene la wea\n");
-	for(int i=0;i<size;i++){
-		int wea = bloques[i];
-		printf(" %d ",wea);
-
-	}
-}
 
 void get_tkvs_to_insert(t_list* tmpc_tkvs, t_list* partition_tkvs){
 
@@ -251,97 +244,6 @@ void add_record_to_partition_list (record_t* record,tkvs_per_partition_t* partit
 	record_t* the_record = copy_key(record);
 	list_add(partition->tkvs, the_record);
 }
-
-
-void free_record(record_t* record){
-	free(record->value);
-	free(record);
-}
-
-t_list* create_partition_tkv_list(char* table_directory,table_metadata_t* table_metadata){
-	t_list* partition_tkvs = list_create();
-
-	for(int i=0; i<table_metadata->partitions;i++){
-		char* partition_dir = create_partition_directory(table_directory, i+1);
-		partition_t* partition = read_fs_archive( partition_dir);
-		tkvs_per_partition_t* partition_for_the_list = malloc(sizeof(tkvs_per_partition_t));
-		partition_for_the_list->partition = i+1;
-		partition_for_the_list->tkvs = create_tkv_list(partition);
-		list_add(partition_tkvs, partition_for_the_list);
-		free(partition_dir);
-		free(partition->blocks);
-		free(partition);
-	}
-	return partition_tkvs;
-}
-
-void free_tkvs_per_partition_list(t_list* list){
-	for(int i=0; i<list_size(list);i++){
-		tkvs_per_partition_t* partition = list_get(list,i);
-
-		for(int d=0; d<list_size(partition->tkvs);d++){
-
-			record_t* record = list_get(partition->tkvs,d);
-			free_record(record);
-
-		}
-		list_clean(partition->tkvs);
-		free(partition);
-
-	}
-
-}
-
-void free_tkvs_per_partition(tkvs_per_partition_t* tkvs){
-		list_destroy_and_destroy_elements(tkvs->tkvs,free_record);
-		free(tkvs);
-}
-
-t_list*  create_tkv_list(partition_t* partition) {
-	tkv_t* key_found;
-	int index = 0;
-	int incomplete_tkv_size = 0;
-	t_list* tkvs = list_create();
-
-	for (int i = 0; i < partition->number_of_blocks; i++) {
-		key_found = add_records_from_block(partition->blocks[i], index, incomplete_tkv_size, tkvs);
-		index = 0;
-
-		//Me fijo si encontro un tkv incompleto
-		if (key_found->incomplete) {
-			while (key_found->incomplete) {
-				key_found->incomplete = false;
-				int next_block= partition->blocks[i+1];
-				char* continuation = read_first_tkv_in_block(next_block);
-				incomplete_tkv_size = strlen(continuation)+1;
-				//Busco la siguiente parte y la concateno
-				tkv_append(key_found,continuation);
-				if (string_ends_with(key_found->tkv, "\n")) {
-					char* substr = string_substring_until(key_found->tkv, strlen(key_found->tkv) - 1);
-					strcpy(key_found->tkv, substr);
-					key_found->incomplete = true;
-					i++;
-					free(substr);
-				}
-
-				free(continuation);
-			}
-			index = 1;
-			//Una vez  reconstruido el tkv lo agrego
-			record_t* record = convert_record(key_found->tkv);//Free? todo
-			list_add(tkvs, record);
-
-		}
-
-		// limpiamos en cada iteracion
-		//if (i < partition->number_of_blocks - 1) {
-			free(key_found->tkv);
-			free(key_found);
-		//}
-	}
-	return tkvs;
-}
-
 
 tkv_t* add_records_from_block(int block, int index, int incomplete_tkv_size,t_list* tkvs) {
 	char* block_directory = create_block_directory(block);
@@ -391,22 +293,6 @@ tkv_t* add_records_from_block(int block, int index, int incomplete_tkv_size,t_li
 	return key_found_in_block;
 
 }
-
-record_t* convert_record(char* tkv_string){
-	record_t* record = malloc(sizeof(record_t));
-	char** tkv = string_split(tkv_string, ";");
-	record->value = malloc(strlen(tkv[2])+1);
-	strcpy(record->value,tkv[2]);
-	 record->key =string_to_uint16(tkv[1]);
-	 record->timestamp = string_to_long_long(tkv[0]);
-	 free(tkv[0]);
-	 free(tkv[1]);
-	 free(tkv[2]);
-	 free(tkv);
-	 return record;
-}
-
-
 
 partition_t* get_all_blocks_from_all_tmps (char* table_name){
 	char* initial_table_dir = get_table_directory();
@@ -495,59 +381,6 @@ void dump(){
 	}
 }
 
-void create_fs_archive(char* table_name,int* blocks,int block_amount,int tkv_size,int archive_flag, int partition_number){
-	char* initial_table_dir = get_table_directory();
-	int tmp_number = 1;
-	char* tmp_name = get_tmp_name(tmp_number);
-	char* table_name_upper = to_uppercase(table_name);
-	char* table_directory = create_new_directory(initial_table_dir,table_name_upper);
-
-	while (exist_in_directory(tmp_name, table_directory)) {
-		tmp_number++;
-		free(tmp_name);
-		tmp_name = get_tmp_name(tmp_number);
-	}
-	char* 	archive_dir = get_tmp_directory(table_directory, tmp_number);
-	if(archive_flag == 0 ){
-		free(	archive_dir);
-		archive_dir = get_tmpc_directory(table_directory);
-
-	}
-
-	if(archive_flag == 2){
-		free(archive_dir);
-		char* partition_path = malloc(digits_in_a_number(partition_number) + strlen("/.bin") + 1);
-		sprintf(partition_path, "/%d.bin", partition_number); //Esto transforma de int a string
-		archive_dir = malloc(strlen(table_directory) + strlen(partition_path) + 1);
-		strcpy(	archive_dir, table_directory);
-		strcat(	archive_dir, partition_path);
-		free(partition_path);
-
-	}
-
-
-	partition_t* partition = malloc(sizeof(partition_t));
-	partition->number_of_blocks = block_amount;
-	partition->size = tkv_size;
-	partition->blocks = malloc(block_amount*sizeof(int));
-	memcpy(partition->blocks,blocks,block_amount*sizeof(int));
-
-
-
-	FILE* arch = fopen(archive_dir, "wb");
-	fwrite(&partition->number_of_blocks, 1, sizeof(partition->number_of_blocks), arch);
-	fwrite(partition->blocks, 1, sizeof(int) * partition->number_of_blocks, arch);
-	fwrite(&partition->size, 1, sizeof(partition->size), arch);
-
-	fclose(arch);
-	free(partition->blocks);
-	free(partition);
-	free(initial_table_dir);
-	free(archive_dir);
-	free(tmp_name);
-	free(table_name_upper);
-	free(table_directory);
-}
 
 void free_memtable(){
 	//Destruyo la lista y todos sus elementos
@@ -622,66 +455,6 @@ void dump_table(table_t* table, int* blocks, int size_of_blocks) {
 	}
 	free(blocks_for_the_table);
 	fclose(block);
-}
-
-int necessary_blocks_for_tkvs(t_list* tkvs){
-	int total_length = 0;
-
-	for(int i =0;i<tkvs->elements_count;i++){
-		tkv_t* tkv = list_get(tkvs,i);
-		int length_counter =0;
-		length_counter += strlen(tkv->tkv);
-		//Calculo cuantos /n tengo que agregar
-		int extra_bits = strlen(tkv->tkv)/(fs_metadata->block_size-1);
-		if((strlen(tkv->tkv)%fs_metadata->block_size) ==0){
-			//si la division me da 0 entonces tengo un bit de mas asi que lo saco.
-			extra_bits-=1;
-
-		}
-		length_counter+=extra_bits;
-		total_length += division_rounded_up(length_counter,fs_metadata->block_size);
-	}
-	return total_length;
-}
-
-int size_of_all_tkvs(t_list* tkvs){
-	int total_length = 0;
-
-	for(int i =0;i<tkvs->elements_count;i++){
-		tkv_t* tkv = list_get(tkvs,i);
-		total_length += strlen(tkv->tkv);
-		//Calculo cuantos /n tengo que agregar
-		int extra_bits = strlen(tkv->tkv)/(fs_metadata->block_size-1);
-		if((strlen(tkv->tkv)%fs_metadata->block_size) ==0){
-			//si la division me da 0 entonces tengo un bit de mas asi que lo saco.
-			extra_bits-=1;
-
-		}
-		total_length+=extra_bits;
-
-	}
-	return total_length;
-}
-
-
-int blocks_needed_for_memtable(){
-	int total_length = 0;
-
-	for(int i=0; i<mem_table->elements_count;i++){
-		table_t* table = list_get(mem_table,i);
-		total_length+= necessary_blocks_for_tkvs(table->tkvs);
-	}
-	return total_length;
-}
-
-int size_of_all_tkvs_from_table(){
-	int total_length = 0;
-
-	for (int i = 0; i < mem_table->elements_count; i++) {
-		table_t* table = list_get(mem_table, i);
-		total_length += size_of_all_tkvs(table->tkvs);
-	}
-	return total_length;
 }
 
 

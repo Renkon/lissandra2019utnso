@@ -9,7 +9,6 @@
 #include "../lissandra/lissandra.h"
 #include <commons/bitarray.h>
 #include "../directorys.h"
-#include "../lissandra/lissandra.h"
 #include "../fs_lists.h"
 #include "shared_types/shared_types.h"
 
@@ -44,6 +43,8 @@ void free_blocks_of_fs_archive(char* archive_directory, t_bitarray* bitmap);
 void free_block(int block);
 void free_blocks_of_all_tmps(char* table_directory, t_bitarray* bitmap);
 void free_table(table_t* table);
+record_t* convert_record(char* tkv_string);
+void free_record(record_t* record);
 
 
 

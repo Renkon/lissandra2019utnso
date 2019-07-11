@@ -289,5 +289,22 @@ void free_blocks_of_all_tmps(char* table_directory, t_bitarray* bitmap) {
 	free(tmp_name);
 }
 
+record_t* convert_record(char* tkv_string){
+	record_t* record = malloc(sizeof(record_t));
+	char** tkv = string_split(tkv_string, ";");
+	record->value = malloc(strlen(tkv[2])+1);
+	strcpy(record->value,tkv[2]);
+	 record->key =string_to_uint16(tkv[1]);
+	 record->timestamp = string_to_long_long(tkv[0]);
+	 free(tkv[0]);
+	 free(tkv[1]);
+	 free(tkv[2]);
+	 free(tkv);
+	 return record;
+}
 
+void free_record(record_t* record){
+	free(record->value);
+	free(record);
+}
 
