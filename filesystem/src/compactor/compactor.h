@@ -30,5 +30,6 @@ t_list* from_array_to_list (int* array, int size);
 int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_of_blocks,char* table_name);
 void compact_this_table(char* table_name);
 void compact_this_table(char* table_name);
+void iniitalize_compaction_in_all_tables();
 
 #endif /* COMPACTOR_COMPACTOR_H_ */

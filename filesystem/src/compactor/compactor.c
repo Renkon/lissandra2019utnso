@@ -1,6 +1,14 @@
 #include "compactor.h"
 
 
+void iniitalize_compaction_in_all_tables(){
+
+	for (int i = 0; i < list_size(table_state_list); i++) {
+		table_state_t* table_to_compact = list_get(table_state_list, i);
+		initialize_compaction_in_this_table(table_to_compact->name);
+	}
+}
+
 void initialize_compaction_in_this_table(char* table_name) {
 	pthread_t compaction_thread;
 	if (pthread_create(&compaction_thread, NULL, (void*) compact_this_table, table_name)) {

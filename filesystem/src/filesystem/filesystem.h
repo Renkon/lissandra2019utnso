@@ -7,6 +7,7 @@
 #include "../fs_lists.h"
 #include "../lib/utils/operation_types.h"
 #include "../lissandra/lissandra.h"
+#include "../lissandra/table_state_utils.h"
 #include <commons/bitarray.h>
 #include "../directorys.h"
 #include "../fs_lists.h"
@@ -45,7 +46,8 @@ void free_blocks_of_all_tmps(char* table_directory, t_bitarray* bitmap);
 void free_table(table_t* table);
 record_t* convert_record(char* tkv_string);
 void free_record(record_t* record);
-
-
+void add_table_to_table_state_list(char* table_name);
+table_state_t* find_in_table_state_list(char* table_name);
+void is_blocked_wait(char* table_name);
 
 #endif /* CREATE_CREATE_UTILS_H_ */

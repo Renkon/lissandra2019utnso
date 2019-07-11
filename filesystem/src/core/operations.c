@@ -135,10 +135,8 @@ void process_create(create_input_t* input, response_t* response) {
 		*create_status = -2;
 	}
 	sem_post(bitmap_semaphore);
-	//char* table_name = malloc(strlen(table_name_upper)+1);
-	//strcpy(table_name,table_name_upper);
 	initialize_compaction_in_this_table(strdup(table_name_upper));
-	//free(table_name);
+	add_table_to_table_state_list(table_name_upper);
 	free(table_name_upper);
 	free(bitmap->bitarray);
 	free(bitmap);

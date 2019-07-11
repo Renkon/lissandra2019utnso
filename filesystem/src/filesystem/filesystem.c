@@ -308,3 +308,35 @@ void free_record(record_t* record){
 	free(record);
 }
 
+void add_table_to_table_state_list(char* table_name){
+	table_state_t* table_state = malloc(sizeof(table_state_t));
+	table_state->is_blocked_mutex = malloc(sizeof(sem_t));
+	sem_init(table_state->is_blocked_mutex, 0,1);
+	table_state->live_status_mutex = malloc(sizeof(sem_t));
+	sem_init(table_state->live_status_mutex, 0,1);
+	char* upper_read = to_uppercase(table_name);
+	table_state->name = strdup(upper_read);
+	list_add(table_state_list, table_state);
+	free(upper_read);
+}
+
+table_state_t* find_in_table_state_list(char* table_name) {
+	table_state_t* table_find_failed = malloc(sizeof(table_state_t));
+	table_find_failed->name = "failed";
+	for (int i = 0; i < list_size(table_state_list); i++) {
+		table_state_t* table_found = list_get(table_state_list, i);
+		if (strcmp(table_found->name, table_name) == 0) {
+			free(table_find_failed);
+			return table_found;
+		}
+
+	}
+return table_find_failed;
+}
+
+void is_blocked_wait(char* table_name){
+	table_state_t* the_table = find_in_table_state_list(table_name);
+	sem_wait(the_table->is_blocked_mutex);
+
+}
+
