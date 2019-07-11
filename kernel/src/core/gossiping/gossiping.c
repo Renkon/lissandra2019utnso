@@ -23,8 +23,8 @@ void init_gossiping() {
 void gossip_continuously() {
 	pthread_detach(pthread_self());
 	while (true) {
-		usleep(g_config.gossip_refresh * 1000);
 		gossip();
+		usleep(g_config.gossip_refresh * 1000);
 	}
 }
 

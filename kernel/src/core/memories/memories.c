@@ -224,6 +224,8 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 			log_t("Journaling recibio respuesta de todas las memorias asignadas a criterio");
 			if (callback != NULL)
 				callback(journal_result, pcb);
+			else
+				free(journal_result);
 			sem_post(&g_inner_journal_semaphore);
 		}
 	}
@@ -273,6 +275,8 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 		sem_post(&g_journal_semaphore);
 		if (callback != NULL)
 			callback(journal_result, pcb);
+		else
+			free(journal_result);
 	}
 
 }

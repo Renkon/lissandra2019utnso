@@ -5,6 +5,7 @@ void short_term_schedule() {
 	sem_t* semaphore_init;
 
 	sem_init(&g_sts_semaphore, 0, 0);
+	sem_init(&g_inner_scheduler_semaphore, 0, 1);
 
 	__pcbs_to_ready = list_create();
 
@@ -19,6 +20,7 @@ void short_term_schedule() {
 		usleep(g_config.execution_delay * 1000);
 
 		for (int i = 0; i < list_size(g_scheduler_queues.exec); i++) {
+			sem_wait(&g_inner_scheduler_semaphore);
 			if ((pcb = (pcb_t*) list_get(g_scheduler_queues.exec, i)) == NULL) {
 				// No hay proceso en este slot de lo que esta en ejecucion
 				// Procedemos a obtener el primer elemento y lo dejamos en ready
@@ -42,6 +44,7 @@ void short_term_schedule() {
 				pcb->quantum++;
 				pcb->__recently_exec = false;
 			}
+			sem_post(&g_inner_scheduler_semaphore);
 		}
 
 		for (int i = 0; i < list_size(__pcbs_to_ready); i++) {
@@ -295,7 +298,7 @@ void on_select(void* result, response_t* response) {
 		log_e("Hubo un error de red al querer ir a buscar un valor al FS. El SELECT ha fallado");
 		pcb->errors = true;
 	} else if (record->timestamp == -2) {
-		log_i("La tabla %s no existe. El SELECT ha fallado", record->table_name);
+		log_e("La tabla %s no existe. El SELECT ha fallado", record->table_name);
 		pcb->errors = true;
 	} else if (record->timestamp == -1) {
 		log_i("SELECT FROM %s no tiene valor", record->table_name);
