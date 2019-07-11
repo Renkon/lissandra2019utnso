@@ -471,7 +471,7 @@ void journal_callback(void* result, response_t* response){
 	if (response != NULL) {
 		if (!select_or_insert) {
 			int* resp = malloc(sizeof(int));
-			*resp = multiinsert_result == NULL ? 2 : *multiinsert_result;
+			*resp = multiinsert_result == NULL ? -1 : *multiinsert_result;
 			set_response(response, resp);
 		} else {
 			journal_register_t* reg = (journal_register_t*) response->result;
@@ -480,7 +480,6 @@ void journal_callback(void* result, response_t* response){
 				*resp = -4;
 				set_response(response, resp);
 			} else {
-
 				if (reg->modified) { // Es INSERT como siempre despues de un
 					int* insert_status = malloc(sizeof(int));
 
