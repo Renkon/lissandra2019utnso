@@ -119,7 +119,9 @@ void exec_next_statement(int processor) {
 	if (statement->operation <= INSERT) {
 		// Si es select o insert nos interesa persistir informacion de la consulta
 		event = malloc(sizeof(stats_t));
+		event->consistency = -1;
 		event->timestamp_start = get_timestamp();
+		event->timestamp_end = event->timestamp_start;
 		event->memory = 0; // TODO: obtener en q memoria se ejecutaria esto
 		event->event_type = statement->operation == SELECT ? SELECT_EVENT : INSERT_EVENT;
 		pcb->last_execution_stats = event;
@@ -136,7 +138,6 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 
 	if (statement->operation == JOURNAL) {
 		journaling(false, on_journal, pcb);
-		sem_wait(statement->semaphore);
 		return;
 	}
 
@@ -440,13 +441,17 @@ void on_journal(void* result, response_t* response) {
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
-	if (*status == -1) {
+	if (*status == -3) {
+		log_e("No hay memorias asignadas como para realizar JOURNAL.");
+		pcb->errors = true;
+	} else if (*status == -1) {
 		log_e("Al menos una memoria fallo al intentar hacer el journaling. El JOURNAL ha fallado");
 		pcb->errors = true;
 	} else {
 		log_i("Se realizo el journaling de todas las memorias asignadas a un criterio.", *status);
 	}
 
+	free(status);
 	post_exec_statement(pcb, current_statement);
 }
 

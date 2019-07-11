@@ -146,7 +146,7 @@ void remove_memory(int id) {
 		journaling(true, NULL, NULL);
 	}
 
-	log_t("Se elimino la memoria %i de todas las cosistencias (si es que estaba)");
+	log_t("Se elimino la memoria %i de todas las cosistencias (si es que estaba)", id);
 }
 
 memory_t* get_memory_by_id(t_list* mem_list, int id) {
@@ -223,19 +223,22 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 		if (g_journal_actual == g_journal_expected) {
 			log_t("Journaling recibio respuesta de todas las memorias asignadas a criterio");
 			if (callback != NULL)
-				callback(*journal_result, pcb);
+				callback(journal_result, pcb);
 			sem_post(&g_inner_journal_semaphore);
 		}
 	}
 
 	g_journal_actual = 0;
 	sem_wait(&g_journal_semaphore);
+	bool should_wait = true;
 
 	if (only_shc) {
 		g_journal_expected = list_size(g_memories_added_shc);
 
 		if (g_journal_expected == 0) {
 			log_w("No hay memorias SHC para journalear.");
+			should_wait = false;
+			*journal_result = -3;
 		} else {
 			for (int i = 0; i < list_size(g_memories_added_shc); i++) {
 				memory_t* memory = (memory_t*) list_get(g_memories_added_shc, i);
@@ -250,6 +253,8 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 
 		if (g_journal_expected == 0) {
 			log_w("No hay memorias asignadas a consistencias para journalear.");
+			should_wait = false;
+			*journal_result = -3;
 		} else {
 			for (int i = 0; i < list_size(memories_with_consistency); i++) {
 				memory_t* memory = (memory_t*) list_get(memories_with_consistency, i);
@@ -260,8 +265,16 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 		}
 		list_destroy(memories_with_consistency);
 	}
-	sem_wait(&g_inner_journal_semaphore);
-	sem_post(&g_journal_semaphore);
+
+	if (should_wait) {
+		sem_wait(&g_inner_journal_semaphore);
+		sem_post(&g_journal_semaphore);
+	} else {
+		sem_post(&g_journal_semaphore);
+		if (callback != NULL)
+			callback(journal_result, pcb);
+	}
+
 }
 
 
