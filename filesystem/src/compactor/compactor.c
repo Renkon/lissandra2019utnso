@@ -24,7 +24,8 @@ void compaction(char* table_name){
 	necessary_blocks += add_blocks_for_partitions_without_tkvs(partition_tkvs);
 	int* blocks= malloc(sizeof(int)*necessary_blocks);
 	int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
-	create_new_partitions(partition_tkvs,blocks,free_blocks_amount,table_name);
+	t_list* block_list = from_array_to_list(blocks,free_blocks_amount);
+	create_new_partitions(partition_tkvs,block_list,free_blocks_amount,table_name);
 	//Desbloqueo tablas todo
 	write_bitmap(bitmap, bitmap_dir);
 	sem_post(bitmap_semaphore);
@@ -39,6 +40,24 @@ void compaction(char* table_name){
 	free(table_metadata);
 	 //free_tkvs_per_partition_list(partition_tkvs);
 	list_clean(partition_tkvs);
+}
+
+int* from_list_to_array(t_list* list){
+
+	int* array = malloc((sizeof(int))*(list_size(list)));
+	for(int i=0; i<list_size(list);i++){
+		array[i] = list_get(list,i);
+	}
+	return array;
+}
+
+t_list* from_array_to_list (int* array, int size){
+	t_list* list = list_create();
+	for(int i=0;i<size;i++){
+		int array_inindex = array[i];
+		list_add(list,array_inindex);
+	}
+	return list;
 }
 
 void destroy_all_tmps(char* table_directory){
@@ -89,23 +108,25 @@ int length_needed_to_add_tkvs_in_partitions(t_list* partition_tkvs){
 	return total_length;
 }
 
-int create_partition(tkvs_per_partition_t* partition, int* blocks, int size_of_blocks,char* table_name) {
+int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_of_blocks,char* table_name) {
 	t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv); //hacer free TODO
 	int size_of_all_tkvs_from_partition = size_of_all_tkvs(string_tkv_list);
 	int blocks_amount = necessary_blocks_for_tkvs(string_tkv_list);
 	//Si blocks amount da 0 significa que no tengo tkvs entonces le pongo un bloque vacio.
 	if(blocks_amount == 0){
-		int* blocks_for_the_table = array_take(blocks, size_of_blocks,1); //todo
-		create_fs_archive(table_name,blocks_for_the_table,1,size_of_all_tkvs_from_partition,2,partition->partition);
+		t_list* blocks_for_the_table = list_take_and_remove(blocks,1); //todo
+		int* blocks_array = from_list_to_array(blocks_for_the_table);
+		create_fs_archive(table_name, blocks_array,1,size_of_all_tkvs_from_partition,2,partition->partition);
 		return size_of_blocks-1;
 
 	}
-	int* blocks_for_the_table = array_take(blocks, size_of_blocks,blocks_amount);
-	create_fs_archive(table_name,blocks_for_the_table,blocks_amount,size_of_all_tkvs_from_partition,2,partition->partition);
+	t_list* blocks_for_the_table = list_take_and_remove(blocks,blocks_amount);
+	int* blocks_array = from_list_to_array(blocks_for_the_table);
+	create_fs_archive(table_name,blocks_array,blocks_amount,size_of_all_tkvs_from_partition,2,partition->partition);
 	int block_size = fs_metadata->block_size;
 	int block_index = 0;
 	//Abro el .bin del primer bloque
-	int block_to_open = blocks_for_the_table[block_index];
+	int block_to_open = list_get(blocks_for_the_table,block_index);
 	FILE* block = open_block(block_to_open);
 
 	for (int i = 0; i < list_size(partition->tkvs); i++) {
@@ -142,7 +163,7 @@ int create_partition(tkvs_per_partition_t* partition, int* blocks, int size_of_b
 				write_tkv(tkv_that_enters,block);
 				fclose(block);
 				block_index++;
-				int block_open = blocks_for_the_table[block_index];
+				int block_open = list_get(blocks_for_the_table,block_index);
 				block = open_block(block_open);
 				block_size = fs_metadata->block_size;
 			}
@@ -151,24 +172,35 @@ int create_partition(tkvs_per_partition_t* partition, int* blocks, int size_of_b
 		if (block_size <= 1) {
 			fclose(block);
 			block_index++;
-			block = open_block(blocks_for_the_table[block_index]);
+			int block_open = list_get(blocks_for_the_table,block_index);
+			block = open_block(block_open);
 			block_size = fs_metadata->block_size;
 		}
 
 	}
-	free(blocks_for_the_table);
+	list_destroy(blocks_for_the_table);
 	fclose(block);
 	return size_of_blocks - blocks_amount;
 }
 
-void create_new_partitions(t_list* partition_tkvs,int* blocks, int size_of_blocks,char*  table_name){
+void create_new_partitions(t_list* partition_tkvs,t_list* blocks, int size_of_blocks,char*  table_name){
 	int blocks_length = size_of_blocks;
 	for(int i=0; i<list_size(partition_tkvs);i++){
+		//ver_bloques(blocks,blocks_length);
 		tkvs_per_partition_t* partition = list_get(partition_tkvs,i);
 		blocks_length = create_partition(partition,blocks,blocks_length,table_name);
 		free_tkvs_per_partition(partition);
 	}
 
+}
+
+void ver_bloques(int* bloques,int size){
+		printf("  Se viene la wea\n");
+	for(int i=0;i<size;i++){
+		int wea = bloques[i];
+		printf(" %d ",wea);
+
+	}
 }
 
 void get_tkvs_to_insert(t_list* tmpc_tkvs, t_list* partition_tkvs){
@@ -217,6 +249,7 @@ void free_record(record_t* record){
 
 t_list* create_partition_tkv_list(char* table_directory,table_metadata_t* table_metadata){
 	t_list* partition_tkvs = list_create();
+
 	for(int i=0; i<table_metadata->partitions;i++){
 		char* partition_dir = create_partition_directory(table_directory, i+1);
 		partition_t* partition = read_fs_archive( partition_dir);
@@ -267,7 +300,8 @@ t_list*  create_tkv_list(partition_t* partition) {
 		if (key_found->incomplete) {
 			while (key_found->incomplete) {
 				key_found->incomplete = false;
-				char* continuation = read_first_tkv_in_block(partition->blocks[i + 1]);
+				int next_block= partition->blocks[i+1];
+				char* continuation = read_first_tkv_in_block(next_block);
 				incomplete_tkv_size = strlen(continuation)+1;
 				//Busco la siguiente parte y la concateno
 				tkv_append(key_found,continuation);

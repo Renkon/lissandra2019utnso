@@ -31,9 +31,8 @@ t_list* create_partition_tkv_list(char* table_directory,table_metadata_t* table_
 void get_tkvs_to_insert(t_list* tmpc_tkvs, t_list* partition_tkvs);
 void add_record_to_partition_list (record_t* record,tkvs_per_partition_t* partition);
 void free_record(record_t* record);
-void create_new_partitions(t_list* partition_tkvs,int* blocks, int size_of_blocks,char*  table_name);
+void create_new_partitions(t_list* partition_tkvs,t_list* blocks, int size_of_blocks,char*  table_name);
 int length_of_all_tkvs_in_partitions_to_add(t_list* partition_tkvs);
-int create_partition(tkvs_per_partition_t* partition, int* blocks, int size_of_blocks,char* table_name);
 tkv_t* convert_to_tkv(record_t* record);
 int add_blocks_for_partitions_without_tkvs(t_list* partition_tkvs);
 int size_of_all_tkvs_from_table();
@@ -42,4 +41,7 @@ int necessary_blocks_for_tkvs(t_list* tkvs);
 int size_of_all_tkvs(t_list* tkvs);
 void destroy_all_tmps(char* table_directory);
 void free_tkvs_per_partition(tkvs_per_partition_t* tkvs);
+int* from_list_to_array(t_list* list);
+t_list* from_array_to_list (int* array, int size);
+int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_of_blocks,char* table_name);
 #endif /* COMPACTOR_COMPACTOR_H_ */
