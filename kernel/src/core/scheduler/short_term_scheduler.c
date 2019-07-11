@@ -287,6 +287,9 @@ void on_select(void* result, response_t* response) {
 		current_statement->assigned_memory->timestamp = get_timestamp();
 		remove_memory(current_statement->assigned_memory->id);
 		pcb->errors = true;
+	} else if (record->timestamp == -4) {
+		log_e("La memoria asignada no pudo realizar un journaling para seleccionar un valor. El SELECT ha fallado");
+		pcb->errors = true;
 	} else if (record->timestamp == -3) {
 		log_e("Hubo un error de red al querer ir a buscar un valor al FS. El SELECT ha fallado");
 		pcb->errors = true;
@@ -294,7 +297,7 @@ void on_select(void* result, response_t* response) {
 		log_i("La tabla %s no existe. El SELECT ha fallado", record->table_name);
 		pcb->errors = true;
 	} else if (record->timestamp == -1) {
-		log_i("SELECT FROM %s: NOVALUE", record->table_name);
+		log_i("SELECT FROM %s no tiene valor", record->table_name);
 	} else {
 		log_i("SELECT %i FROM %s: %s", record->key, record->table_name, record->value);
 	}
@@ -321,7 +324,7 @@ void on_insert(void* result, response_t* response) {
 		current_statement->assigned_memory->timestamp = get_timestamp();
 		remove_memory(current_statement->assigned_memory->id);
 		pcb->errors = true;
-	} else if (*status == -2) {
+	} else if (*status == -4) {
 		log_e("La memoria no pudo realizar el insert dado que tenia la memoria llena y fallo el journaling. EL INSERT ha fallado");
 		pcb->errors = true;
 	} else if (*status == -1) {

@@ -87,7 +87,7 @@ void process_drop(drop_input_t* input, response_t* response) {
 	sem_post(&g_lts_semaphore);
 }
 
-void process_journal(response_t* response) {
+void process_journal(void* unused, response_t* response) {
 	pcb_t* pcb = get_new_pcb();
 	statement_t* statement = generate_statement();
 

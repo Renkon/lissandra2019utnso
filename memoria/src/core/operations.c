@@ -3,6 +3,7 @@
 void process_select(select_input_t* input, response_t* response) {
 	log_i("mm select args: %s %u", input->table_name, (unsigned int)input->key);
 	usleep(g_config.memory_delay * 1000);
+	sem_wait(&g_mem_op_semaphore);
 
 	page_t* found_page;
 	segment_t* found_segment;
@@ -44,6 +45,7 @@ void process_select(select_input_t* input, response_t* response) {
 				free(return_key);
 				free(return_value);
 				free(upper_table_name);
+				sem_post_neg(&g_mem_op_semaphore);
 
 			} else {
 				log_w("No se encontro la pagina en MEMORIA. Solicitando al FILESYSTEM");
@@ -54,10 +56,11 @@ void process_select(select_input_t* input, response_t* response) {
 
 				select_input->key = input->key;
 
+				sem_post_neg(&g_mem_op_semaphore);
 				usleep(g_config.filesystem_delay * 1000);
 				do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, select_input, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input, response);
+			};
 
-				};
 			list_destroy(index_list);
 		}else{
 			log_w("No se encontro el segmento en MEMORIA. Solicitando al FILESYSTEM");
@@ -68,15 +71,16 @@ void process_select(select_input_t* input, response_t* response) {
 
 			select_input->key = input->key;
 
+			sem_post_neg(&g_mem_op_semaphore);
 			usleep(g_config.filesystem_delay * 1000);
 			do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, SELECT_IN, select_input, elem_info.elements, elem_info.elements_size, select_callback, true, cleanup_select_input, response);
 		}
-
 }
 
 void process_insert(insert_input_t* input, response_t* response) {
 	log_i("mm insert args: %s %u \"%s\" %ld", input->table_name, (unsigned int) input->key, input->value, input->timestamp);
 	usleep(g_config.memory_delay * 1000);
+	sem_wait(&g_mem_op_semaphore);
 
 	int* insert_status = malloc(sizeof(int));
 	segment_t* found_segment;
@@ -102,22 +106,22 @@ void process_insert(insert_input_t* input, response_t* response) {
 				found_page->modified = true;
 
 				log_i("Se modifico el registro con key %u con el valor: %s ",input->key, input->value);
-
+				sem_post_neg(&g_mem_op_semaphore);
 			} else {//No existe la pagina
-
 				if (!memory_full()) {//Aun hay paginas disponibles, inserto en el segmento una nueva pagina
-
 					index = memory_insert(input->timestamp, input->key, input->value);
-					found_page = create_page(index, false);
+					found_page = create_page(index, true);
 					list_add(found_segment->page, found_page);
 
 					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", input->key, input->value, input->timestamp, found_segment->name);
+					sem_post_neg(&g_mem_op_semaphore);
 				} else { //Ya no hay paginas disponibles, uso el algoritmo de reemplazo
+					found_page = replace_algorithm(response, input->timestamp, input->key, input->value, J_INSERT, upper_table_name);
+					if(found_page != NULL){
+						list_add(found_segment->page, found_page);
+						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo.", input->key, input->value, input->timestamp, found_segment->name);
+					}
 
-					found_page = replace_algorithm(input->timestamp, input->key, input->value);
-					list_add(found_segment->page, found_page);
-
-					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo.", input->key, input->value, input->timestamp, found_segment->name);
 				}
 			}
 
@@ -126,18 +130,27 @@ void process_insert(insert_input_t* input, response_t* response) {
 			found_segment = create_segment(upper_table_name);
 			if (!memory_full()){
 				index = memory_insert(input->timestamp, input->key, input->value);
-				found_page = create_page(index, false);
+				found_page = create_page(index, true);
+				sem_post_neg(&g_mem_op_semaphore);
+				list_add(found_segment->page, found_page);
+				list_add(g_segment_list, found_segment);
+				log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", input->key, input->value, input->timestamp, found_segment->name);
 			} else {
-				found_page = replace_algorithm(input->timestamp, input->key, input->value);
+				found_page = replace_algorithm(response, input->timestamp, input->key, input->value, J_INSERT, upper_table_name);
+				if(found_page!= NULL){
+					list_add(found_segment->page, found_page);
+					list_add(g_segment_list, found_segment);
+					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada usando el algoritmo de reemplazo", input->key, input->value, input->timestamp, found_segment->name);
+				}else{
+					destroy_segment(found_segment);
+				}
 			}
-			list_add(found_segment->page, found_page);
-			list_add(g_segment_list, found_segment);
-			log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", input->key, input->value, input->timestamp, found_segment->name);
 		};
 		*insert_status = 0;
 	}else{
 		log_w("El tamaño del value es mayor al maximo disponible, cancelando operacion.");
 		*insert_status = -1;
+		sem_post_neg(&g_mem_op_semaphore);
 	}
 
 	if (response == NULL)
@@ -209,11 +222,11 @@ void process_drop(drop_input_t* input, response_t* response) {
 
 }
 
-void process_journal(response_t* response) {
+void process_journal(void* unused, response_t* response) {
 	log_i("mm journal args none");
 	usleep(g_config.memory_delay * 1000);
 
-	journaling();
+	journaling(response);
 
 }
 
@@ -221,6 +234,8 @@ void select_callback(void* result, response_t* response) {
 	// Falla conexion?
 	record_t* alpha_record;
 	record_t* record = (record_t*) result;
+
+	sem_wait(&g_mem_op_semaphore);
 
 	if (result == NULL) {
 		log_e("No se pudo seleccionar un valor del filesystem");
@@ -251,26 +266,39 @@ void select_callback(void* result, response_t* response) {
 
 			if (found_segment != NULL) {
 				index_list = list_map(found_segment->page, (void*) page_get_index);
-				found_page = get_page_by_key(found_segment, index_list, alpha_record->key);
+				found_page = get_page_by_key(found_segment, index_list, alpha_record->key);//se deberia poder comentar xd
 					if (!memory_full()) {
 						index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
 						found_page = create_page(index, false);
 						list_add(found_segment->page, found_page);
-						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
+						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s desde SELECT", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
 					} else {
-						found_page = replace_algorithm(alpha_record->timestamp, alpha_record->key, alpha_record->value);
-						list_add(found_segment->page, found_page);
-						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo.", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
-						}
-				list_destroy(index_list);
-			}else {
-				found_segment = create_segment(upper_table_name);
-				index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
-				found_page = create_page(index, true);
-				list_add(found_segment->page, found_page);
-				list_add(g_segment_list, found_segment);
+						found_page = replace_algorithm(response, alpha_record->timestamp, alpha_record->key, alpha_record->value, J_SELECT, upper_table_name);
 
-				log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada", alpha_record->key, record->value, alpha_record->timestamp, found_segment->name);
+						if(found_page != NULL){
+							list_add(found_segment->page, found_page);
+							log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de usar el algoritmo de reemplazo desde SELECT.", alpha_record->key, alpha_record->value, alpha_record->timestamp, found_segment->name);
+						}
+					}
+				list_destroy(index_list);
+			} else {
+				found_segment = create_segment(upper_table_name);
+				if (!memory_full()){
+					index = memory_insert(alpha_record->timestamp, alpha_record->key, alpha_record->value);
+					found_page = create_page(index, false);
+					list_add(found_segment->page, found_page);
+					list_add(g_segment_list, found_segment);
+					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada desde SELECT", alpha_record->key, record->value, alpha_record->timestamp, found_segment->name);
+				} else {
+					found_page = replace_algorithm(response, alpha_record->timestamp, alpha_record->key, alpha_record->value, J_SELECT, upper_table_name);
+					if(found_page != NULL){
+						list_add(found_segment->page, found_page);
+						list_add(g_segment_list, found_segment);
+						log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s recien creada desde SELECT", alpha_record->key, record->value, alpha_record->timestamp, found_segment->name);
+					}else{
+						destroy_segment(found_segment);
+					}
+				}
 			}
 			free(upper_table_name);
 			free(alpha_record->table_name);
@@ -278,6 +306,8 @@ void select_callback(void* result, response_t* response) {
 			free(alpha_record);
 		}
 	}
+
+	sem_post_neg(&g_mem_op_semaphore);
 
 	if (response != NULL) { //me llega desde el kernel
 		// Vamos a copiar el objeto record, asi se lo podemos devolver
@@ -425,6 +455,89 @@ void drop_callback(void* result, response_t* response){
 	}
 }
 
+void journal_callback(void* result, response_t* response){
+	int* multiinsert_result = (int*) result;
+	bool select_or_insert = response != NULL && response->result != NULL;
+
+	if (multiinsert_result == NULL) {
+		log_e("No se pudo realizar el journaling por problemas de red");
+	} else if (*multiinsert_result == -1) {
+		log_e("Fallaron algunos/todos los registros al realizarse el journaling");
+	} else if (*multiinsert_result == 0) {
+		log_t("¡Journaling ejecutado con exito!");
+		log_i("Procediendo a borrar todos los segmentos.");
+		delete_all_segments();
+	}
+
+	if (response != NULL) {
+		if (!select_or_insert) {
+			int* resp = malloc(sizeof(int));
+			*resp = multiinsert_result == NULL ? -1 : *multiinsert_result;
+			set_response(response, resp);
+		} else {
+			journal_register_t* reg = (journal_register_t*) response->result;
+			if (multiinsert_result == NULL || *multiinsert_result == -1) { // FALLO EL JOURNALING
+				if (response->id != -1337) {
+					int* resp = malloc(sizeof(int));
+					*resp = -4;
+					set_response(response, resp);
+				} else {
+					free(response);
+				}
+			} else {
+				if (reg->modified) { // Es INSERT como siempre despues de un
+					int* insert_status = malloc(sizeof(int));
+
+					segment_t*	found_segment = create_segment(reg->table_name);
+					int index = memory_insert(reg->timestamp, reg->key, reg->value);
+					page_t* found_page = create_page(index, true);
+					list_add(found_segment->page, found_page);
+					list_add(g_segment_list, found_segment);
+
+					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de hacer Journaling.", reg->key, reg->value, reg->timestamp, found_segment->name);
+					*insert_status = 0;
+
+					if (response->id != -1337) {
+					  set_response(response, insert_status);
+					} else {
+					  free(response);
+					  free(insert_status);
+					}
+				} else { // ES SELECT
+					record_t* record = malloc(sizeof(record_t));
+					record->key = reg->key;
+					record->table_name = strdup(reg->table_name);
+					record->value = strdup(reg->value);
+					record->timestamp = reg->timestamp;
+
+					segment_t* found_segment = create_segment(record->table_name);
+					int index = memory_insert(record->timestamp, record->key, record->value);
+					page_t* found_page = create_page(index, true);
+					list_add(found_segment->page, found_page);
+					list_add(g_segment_list, found_segment);
+					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de hacer Journaling.", reg->key, reg->value, reg->timestamp, found_segment->name);
+
+					if (response->id != -1337){
+						set_response(response, record);
+					} else{
+						free(response);
+						free(record->table_name);
+						free(record->value);
+						free(record);
+					}
+				}
+			}
+
+
+			free(reg->table_name);
+			free(reg->value);
+			free(reg);
+		}
+	}
+
+	sem_post_neg(&g_mem_op_semaphore);
+}
+
 void cleanup_select_input(void* input) {
 	select_input_t* select_input = (select_input_t*) input;
 	free(select_input->table_name);
@@ -457,3 +570,7 @@ void cleanup_describe_input(void* input) {
 	free(describe_input);
 }
 
+void cleanup_journal_input(void* input){
+	t_list* insert_inputs = (t_list*) input;
+	list_destroy_and_destroy_elements(insert_inputs, destroy_insert);
+}

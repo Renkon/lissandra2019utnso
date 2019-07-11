@@ -18,7 +18,7 @@ typedef struct {
 	void (*create)(create_input_t*, response_t*);
 	void (*describe)(describe_input_t*, response_t*);
 	void (*drop)(drop_input_t*, response_t*);
-	void (*journal)(response_t*);
+	void (*journal)(void*, response_t*);
 	void (*add)(add_input_t*);
 	void (*run)(run_input_t*);
 	void (*metrics)();
@@ -40,7 +40,7 @@ bool validate_run(int tokens_size, char** tokens);
 bool validate_metrics(int tokens_size, char** tokens);
 void process_input(operation_t operation, char* user_input, callbacks_t* callbacks);
 callbacks_t* get_input_callbacks(void (*select)(select_input_t*, response_t*), void (*insert)(insert_input_t*, response_t*), void (*create)(create_input_t*, response_t*),
-		void (*describe)(describe_input_t*, response_t*), void (*drop)(drop_input_t*, response_t*), void (*journal)(response_t*), void (*add)(add_input_t*), void (*run)(run_input_t*), void (*metrics)());
+		void (*describe)(describe_input_t*, response_t*), void (*drop)(drop_input_t*, response_t*), void (*journal)(void*, response_t*), void (*add)(add_input_t*), void (*run)(run_input_t*), void (*metrics)());
 
 callbacks_t* g_callbacks;
 

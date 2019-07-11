@@ -100,7 +100,7 @@ bool order_by_timestamp(int first_i,int second_i){
 
 }
 
-void eliminate_page_instance_by_index(int index){
+void eliminate_page_instance_by_index(int index, char* table_name){
 	segment_t* found_segment = get_segment_by_index_global(index);
 
 	strcpy(g_main_memory+index,"null");
@@ -110,7 +110,7 @@ void eliminate_page_instance_by_index(int index){
 	if(position != -1){
 		list_remove_and_destroy_element(found_segment->page,position,(void*) destroy_page);
 
-		if (list_size(found_segment->page) == 0){
+		if (list_size(found_segment->page) == 0 && !string_equals_ignore_case(table_name,found_segment->name)){
 			remove_segment(found_segment);
 		}
 
@@ -122,53 +122,63 @@ void eliminate_page_instance_by_index(int index){
 
 t_list* list_add_multi_lists(t_list* pages_indexes){
 	t_list* new_list = list_create();
-	insert_input_t* insert = malloc(sizeof(insert_input_t));
-
+	char* timestamp;
+	char* key;
 	for(int i = 0 ; i < pages_indexes->elements_count ; i++){
-		insert->timestamp = string_to_long_long(main_memory_values(list_get(pages_indexes,i),TIMESTAMP));
-		insert->key = string_to_uint16(main_memory_values(list_get(pages_indexes,i),KEY));
+		insert_input_t* insert = malloc(sizeof(insert_input_t));
+		timestamp = main_memory_values(list_get(pages_indexes,i),TIMESTAMP);
+		key = main_memory_values(list_get(pages_indexes,i),KEY);
+
+		insert->timestamp = string_to_long_long(timestamp);
+		insert->key = string_to_uint16(key);
 		insert->value = main_memory_values(list_get(pages_indexes,i),VALUE);
-		insert->table_name = get_table_name_by_index(list_get(pages_indexes,i));
+		insert->table_name = strdup(get_table_name_by_index(list_get(pages_indexes,i)));
+
 
 		list_add(new_list,insert);
+		free(timestamp);
+		free(key);
 	}
-
-	free(insert->table_name);
-	free(insert->value);
-	free(insert);
 
 	return new_list;
 }
 
-void journaling(){
-	/*t_list* journal = get_pages_by_modified(true);
+void journaling(response_t* response){
+	int sem_val;
+	sem_getvalue(&g_mem_op_semaphore, &sem_val);
+	if (sem_val > 0)
+		sem_wait(&g_mem_op_semaphore);
+
+	t_list* journal = get_pages_by_modified(true);
 	t_list* indexes = list_map(journal,(void*)page_get_index);
 
-	t_list* journal_list = list_add_multi_lists(journal_list);
+	t_list* journal_list = list_add_multi_lists(indexes);
 
-	int position;
-
-	for(int i = 0; i < list_size(journal_list); i++){
-		//insert_input_t* sending_journal = list_get(journal_list,i);
-		//elements_network_t elem_info = elements_create_in_info(sending_journal);
-		//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, sending_journal, elem_info.elements, elem_info.elements_size, insert_callback, true, cleanup_insert_input, NULL);
-
-	}
-
-	remove_pages_modified();
-
-	for(int j = 0; j < list_size(journal); j++){
-		position = list_get(indexes,j);
-		strcpy(g_main_memory[position],"null");
-	}
+	elements_network_t elem_info = elements_multiinsert_in_info(journal_list);
+	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, MULTIINSERT_IN, journal_list, elem_info.elements, elem_info.elements_size, journal_callback, true, cleanup_journal_input, response);
 
 	list_destroy(journal);
 	list_destroy(indexes);
-	*/
+
 }
 
-page_t* replace_algorithm(long long timestamp,int key, char* value){
+void init_auto_journal() {
+	pthread_t journal_thread;
+	if (pthread_create(&journal_thread, NULL, (void*) journal_continuously, NULL)) {
+		log_e("No se pudo inicializar el hilo de journaling");
+	}
+}
 
+void journal_continuously() {
+	pthread_detach(pthread_self());
+
+	while (true) {
+		usleep(g_config.journal_delay * 1000);
+		journaling(NULL);
+	}
+}
+
+page_t* replace_algorithm(response_t* response,long long timestamp,int key, char* value, journal_invocation_t invocation, char* table_name){
 	int index;
 	page_t* found_page;
 	int replace;
@@ -182,22 +192,46 @@ page_t* replace_algorithm(long long timestamp,int key, char* value){
 
 		replace = list_get(indexes_sorted,0);
 
-		eliminate_page_instance_by_index(replace);
+		eliminate_page_instance_by_index(replace, table_name);
 
 		index = memory_insert(timestamp, key, value);
-		found_page = create_page(index, true);
+
+		if (invocation == J_SELECT){
+			found_page = create_page(index, false);
+		} else if (invocation == J_INSERT){
+			found_page = create_page(index, true);
+		}
 
 		list_destroy(not_modified_pages);
 		list_destroy(indexes);
 		list_destroy(indexes_sorted);
-
+		sem_post_neg(&g_mem_op_semaphore);
 		return found_page;
 
 	}else{
+		list_destroy(not_modified_pages);
 		log_i("Memoria llena, iniciando journaling...");
-		journaling();
-		replace_algorithm(timestamp, key, value);
-		//return null;
+		journal_register_t* reg = malloc(sizeof(journal_register_t));
+		reg->key = key;
+		reg->timestamp = timestamp;
+		reg->table_name = strdup(table_name);
+		reg->value = strdup(value);
+
+		if (invocation == J_INSERT)
+			reg->modified = true;
+		else if (invocation == J_SELECT)
+			reg->modified = false;
+
+		if (response == NULL) {
+			response = malloc(sizeof(response_t));
+			response->id = -1337;
+		}
+
+		response->result = reg;
+
+		journaling(response);
+
+		return NULL;
 	}
 }
 
@@ -241,7 +275,7 @@ void get_value_callback(void* result, response_t* response) {
 			g_total_page_count = g_config.memory_size/g_total_page_size;
 
 			if (memory_initialized)
-				journaling();
+				journaling(response);
 			else
 				init_main_memory();
 		}
@@ -253,4 +287,11 @@ void init_main_memory(){
 	for(int i = 0; i < g_total_page_count; i++){
 		strcpy(g_main_memory+(i*g_total_page_size),"null");
 	}
+}
+
+void sem_post_neg(sem_t* sem) {
+	int value;
+	sem_getvalue(sem, &value);
+	if (value <= 0)
+		sem_post(sem);
 }

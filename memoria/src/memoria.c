@@ -18,6 +18,7 @@ int main(void) {
 	setup_response_id_generator();
 	init_global_segment_list();
 	g_value_size = -1;
+	init_auto_journal();
 	init_console("Papito codeo en Assembler - Memoria v1.0", "memory>", MEMORY, get_callbacks());
 	destroy_logger();
 	return 0;
@@ -41,5 +42,6 @@ void init_server_callbacks() {
 void init_global_segment_list(){
 	g_segment_list = list_create();
 
+	sem_init(&g_mem_op_semaphore, 0, 1);
 }
 
