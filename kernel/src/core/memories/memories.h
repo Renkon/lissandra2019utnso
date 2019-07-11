@@ -6,9 +6,11 @@
 #include "shared_types/shared_types.h"
 #include "generic_logger.h"
 #include "../scheduler/pcb.h"
+#include "utils/operation_types.h"
 #include "utils/numbers.h"
 #include <stdlib.h>
 #include <stdint.h>
+#include <semaphore.h>
 
 t_list* g_memories_added_sc;
 t_list* g_memories_added_shc;
@@ -17,6 +19,11 @@ t_list* g_memories_added_ec;
 t_list* g_memories;
 
 int ec_next;
+sem_t g_journal_semaphore;
+sem_t g_inner_journal_semaphore;
+
+int g_journal_expected;
+int g_journal_actual;
 
 void init_memory_list();
 

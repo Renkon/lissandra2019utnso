@@ -5,6 +5,9 @@ void init_memory_list() {
 	g_memories_added_shc = list_create();
 	g_memories_added_ec = list_create();
 	ec_next = -1;
+
+	sem_init(&g_inner_journal_semaphore, 0, 0);
+	sem_init(&g_journal_semaphore, 0, 1);
 }
 
 memory_t* get_any_memory() {
@@ -189,31 +192,71 @@ bool is_memory_alive(void* memory) {
 }
 
 void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb) {
-	// TODO: wait for them to finish.
-	if (only_shc) {
-		for (int i = 0; i < list_size(g_memories_added_shc); i++) {
-			memory_t* memory = (memory_t*) list_get(g_memories_added_shc, i);
-			elements_network_t element_info = elements_journal_in_info(NULL);
+	int* journal_result = malloc(sizeof(int));
+	*journal_result = 0;
 
-			// TODO: ver como carajo hacer para esperar a todas las memorias que hagan journal
-			// un semaforo que inicialize en 0 mas un wait por cada journal? local_journal_callback ejecutaria el callback despues de qu etermine todito
-			//do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
-			//		element_info.elements, element_info.elements_size, local_journal_callback, true, NULL, pcb);
+	void _local_journal_callback(void* result, response_t* response) {
+		g_journal_actual++;
+		int* int_res = (int*) result;
+
+		if (result == NULL) {
+			log_e("Hubo una memoria a la cual no se pudo solicitar el journaling. Un journal ha fallado");
+			*journal_result = -1;
+		} else if (*int_res == -1) {
+			log_e("Hubo una memoria que no pudo realizar el journaling. Un journal ha fallado");
+			*journal_result = -1;
+		} else {
+			log_t("Se journaleo una memoria.");
+		}
+
+		if (g_journal_actual == g_journal_expected) {
+			callback(*journal_result, pcb);
+			sem_post(&g_inner_journal_semaphore);
+		}
+	}
+
+	g_journal_actual = 0;
+	sem_wait(&g_journal_semaphore);
+
+	if (only_shc) {
+		g_journal_expected = list_size(g_memories_added_shc);
+
+		if (g_journal_expected == 0) {
+			log_w("No hay memorias SHC para journalear.");
+		} else {
+			for (int i = 0; i < list_size(g_memories_added_shc); i++) {
+				memory_t* memory = (memory_t*) list_get(g_memories_added_shc, i);
+
+				do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
+						0, NULL, _local_journal_callback, true, NULL, pcb);
+			}
 		}
 	} else {
 		t_list* memories_with_consistency = get_list_with_a_consistency();
-		for (int i = 0; i < list_size(memories_with_consistency); i++) {
-			memory_t* memory = (memory_t*) list_get(g_memories_added_shc, i);
-			elements_network_t element_info = elements_journal_in_info(NULL);
+		g_journal_expected = list_size(memories_with_consistency);
 
-			// TODO: ver como carajo hacer para esperar a todas las memorias que hagan journal
-			// un semaforo que inicialize en 0 mas un wait por cada journal? local_journal_callback ejecutaria el callback despues de qu etermine todito
-			//do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
-			//		element_info.elements, element_info.elements_size, local_journal_callback, true, NULL, pcb);
+		if (g_journal_expected == 0) {
+			log_w("No hay memorias asignadas a consistencias para journalear.");
+		} else {
+			for (int i = 0; i < list_size(memories_with_consistency); i++) {
+				memory_t* memory = (memory_t*) list_get(memories_with_consistency, i);
+
+				log_i("%i es el KERNEL", KERNEL);
+				log_i("%s es la IP", memory->ip);
+				log_i("%i es el PORT", memory->port);
+				log_i("%i JOURNALIN", JOURNAL_IN);
+
+				do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
+						0, NULL, _local_journal_callback, true, NULL, pcb);
+			}
 		}
 		list_destroy(memories_with_consistency);
 	}
+	sem_wait(&g_inner_journal_semaphore);
+	sem_post(&g_journal_semaphore);
 }
+
+
 
 t_list* get_list_with_a_consistency() {
 	t_list* mems = list_create();
