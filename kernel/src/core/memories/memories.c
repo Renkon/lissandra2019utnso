@@ -8,6 +8,7 @@ void init_memory_list() {
 
 	sem_init(&g_inner_journal_semaphore, 0, 0);
 	sem_init(&g_journal_semaphore, 0, 1);
+	sem_init(&g_journal_sum, 0, 1);
 }
 
 memory_t* get_any_memory() {
@@ -196,7 +197,9 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 	*journal_result = 0;
 
 	void _local_journal_callback(void* result, response_t* response) {
+		sem_wait(&g_journal_sum);
 		g_journal_actual++;
+		sem_post(&g_journal_sum);
 		int* int_res = (int*) result;
 
 		if (result == NULL) {
@@ -240,11 +243,6 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 		} else {
 			for (int i = 0; i < list_size(memories_with_consistency); i++) {
 				memory_t* memory = (memory_t*) list_get(memories_with_consistency, i);
-
-				log_i("%i es el KERNEL", KERNEL);
-				log_i("%s es la IP", memory->ip);
-				log_i("%i es el PORT", memory->port);
-				log_i("%i JOURNALIN", JOURNAL_IN);
 
 				do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
 						0, NULL, _local_journal_callback, true, NULL, pcb);

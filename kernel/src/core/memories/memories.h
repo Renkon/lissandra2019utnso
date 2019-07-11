@@ -21,6 +21,7 @@ t_list* g_memories;
 int ec_next;
 sem_t g_journal_semaphore;
 sem_t g_inner_journal_semaphore;
+sem_t g_journal_sum;
 
 int g_journal_expected;
 int g_journal_actual;
