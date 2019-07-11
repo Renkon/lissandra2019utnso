@@ -312,7 +312,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 			free(drop_input);
 		break;
 		case JOURNAL:
-			callbacks->journal(NULL);
+			callbacks->journal(NULL, NULL);
 		break;
 		case ADD:
 			add_input = malloc(sizeof(add_input_t));
@@ -353,7 +353,7 @@ void process_input(operation_t operation, char* user_input, callbacks_t* callbac
 }
 
 callbacks_t* get_input_callbacks(void (*select)(select_input_t*, response_t*), void (*insert)(insert_input_t*, response_t*), void (*create)(create_input_t*, response_t*),
-		void (*describe)(describe_input_t*, response_t*), void (*drop)(drop_input_t*, response_t*), void (*journal)(response_t*), void (*add)(add_input_t*), void (*run)(run_input_t*), void (*metrics)()){
+		void (*describe)(describe_input_t*, response_t*), void (*drop)(drop_input_t*, response_t*), void (*journal)(void*, response_t*), void (*add)(add_input_t*), void (*run)(run_input_t*), void (*metrics)()){
 	if (g_callbacks != NULL)
 		return g_callbacks;
 

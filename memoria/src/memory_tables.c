@@ -7,6 +7,7 @@
 
 #include "memory_tables.h"
 
+
 segment_t* get_segment_by_name(t_list* list, char* table_name) {
 	 int i = 0;
 	 segment_t* segment_found;
@@ -134,6 +135,12 @@ void destroy_segment(segment_t* segment){
 	free(segment);
 }
 
+void destroy_insert(insert_input_t* insert){
+	free(insert->table_name);
+	free(insert->value);
+	free(insert);
+}
+
 int get_segment_position_by_name(char* segment_name){
 	int i=0;
 	segment_t* segment;
@@ -225,4 +232,11 @@ segment_t* get_segment_by_index_global(int index){
 		}
 	}
 	return NULL;
+}
+
+void delete_all_segments(){
+	for(int i = list_size(g_segment_list) - 1; i >= 0; i--){
+		segment_t* segment = list_get(g_segment_list,i);
+		remove_segment(segment);
+	}
 }
