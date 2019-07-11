@@ -512,7 +512,7 @@ void journal_callback(void* result, response_t* response){
 
 					segment_t* found_segment = create_segment(record->table_name);
 					int index = memory_insert(record->timestamp, record->key, record->value);
-					page_t* found_page = create_page(index, true);
+					page_t* found_page = create_page(index, false);
 					list_add(found_segment->page, found_page);
 					list_add(g_segment_list, found_segment);
 					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de hacer Journaling.", reg->key, reg->value, reg->timestamp, found_segment->name);
