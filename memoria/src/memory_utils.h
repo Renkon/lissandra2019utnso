@@ -64,6 +64,8 @@ void get_value_from_filesystem();
 void get_value_callback(void* result, response_t* response);
 
 void init_main_memory();
+void init_auto_journal();
+void journal_continuously();
 
 void sem_post_neg(sem_t* sem);
 

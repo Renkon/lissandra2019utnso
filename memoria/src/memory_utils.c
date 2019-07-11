@@ -162,6 +162,22 @@ void journaling(response_t* response){
 
 }
 
+void init_auto_journal() {
+	pthread_t journal_thread;
+	if (pthread_create(&journal_thread, NULL, (void*) journal_continuously, NULL)) {
+		log_e("No se pudo inicializar el hilo de journaling");
+	}
+}
+
+void journal_continuously() {
+	pthread_detach(pthread_self());
+
+	while (true) {
+		usleep(g_config.journal_delay * 1000);
+		journaling(NULL);
+	}
+}
+
 page_t* replace_algorithm(response_t* response,long long timestamp,int key, char* value, journal_invocation_t invocation, char* table_name){
 	int index;
 	page_t* found_page;
