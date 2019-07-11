@@ -121,7 +121,7 @@ void process_create(create_input_t* input, response_t* response) {
 			//Guardo el bitmap
 			write_bitmap(bitmap, bitmap_dir);
 			log_i("Se crearon %d particiones para la tabla %s ",input->partitions, table_name_upper);
-			//Crear hilo para que la tabla haga su propio dumpeo TODO
+
 			log_i("Tabla %s creada exitosamente! ", table_name_upper);
 			*create_status = 0;
 		} else {
@@ -135,6 +135,10 @@ void process_create(create_input_t* input, response_t* response) {
 		*create_status = -2;
 	}
 	sem_post(bitmap_semaphore);
+	//char* table_name = malloc(strlen(table_name_upper)+1);
+	//strcpy(table_name,table_name_upper);
+	initialize_compaction_in_this_table(strdup(table_name_upper));
+	//free(table_name);
 	free(table_name_upper);
 	free(bitmap->bitarray);
 	free(bitmap);

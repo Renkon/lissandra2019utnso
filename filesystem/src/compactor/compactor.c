@@ -10,16 +10,18 @@ void initialize_compaction_in_this_table(char* table_name) {
 
 void compact_this_table(char* table_name){
 	pthread_detach(pthread_self());
+	char* local_table_name = strdup(table_name);
+	free(table_name);
 	char* initial_table_dir = get_table_directory();
-	char* table_directory = create_new_directory(initial_table_dir,table_name);
+	char* table_directory = create_new_directory(initial_table_dir,local_table_name);
 	table_metadata_t* table_metadata = read_table_metadata(table_directory);
 	int compaction_time = table_metadata->compaction_time;
 	free(initial_table_dir);
 	free(table_directory);
 	free(table_metadata);
 
-	while(true){ //cambiar el true todo
-		compaction(table_name);
+	while(true){ //cambiar el true el semaforo del estado de vivesa de la tabla todo
+		compaction(local_table_name);
 		usleep(compaction_time * 1000);
 	}
 }
