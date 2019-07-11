@@ -5,38 +5,43 @@ void iniitalize_compaction_in_all_tables(){
 
 	for (int i = 0; i < list_size(table_state_list); i++) {
 		table_state_t* table_to_compact = list_get(table_state_list, i);
-		initialize_compaction_in_this_table(table_to_compact->name);
+		table_to_compact->compaction_thread =initialize_compaction();
 	}
 }
 
-void initialize_compaction_in_this_table(char* table_name) {
+pthread_t  initialize_compaction() {
 	pthread_t compaction_thread;
-	if (pthread_create(&compaction_thread, NULL, (void*) compact_this_table, table_name)) {
-		log_e("No se pudo inicializar el hilo compactacion en la tabla %s",table_name);
+	if (pthread_create(&compaction_thread, NULL, (void*) compact_this_table, NULL)) {
+		log_e("No se pudo inicializar el hilo compactacion en la tabla %s");
 	}
+	return compaction_thread;
 }
 
-void compact_this_table(char* table_name){
+void compact_this_table(){
 	pthread_detach(pthread_self());
-	char* local_table_name = strdup(table_name);
-	free(table_name);
+	table_state_t* table_to_compact = find_in_table_state_list_with_thread(pthread_self());
+	char* table_name = table_to_compact->name;
 	char* initial_table_dir = get_table_directory();
-	char* table_directory = create_new_directory(initial_table_dir,local_table_name);
+	char* table_directory = create_new_directory(initial_table_dir,table_name);
 	table_metadata_t* table_metadata = read_table_metadata(table_directory);
 	int compaction_time = table_metadata->compaction_time;
 	free(initial_table_dir);
 	free(table_directory);
 	free(table_metadata);
 
-	while(true){ //cambiar el true el semaforo del estado de vivesa de la tabla todo
-		compaction(local_table_name);
+	while(get_live_status(table_name) == 1){
+		compaction(table_name);
 		usleep(compaction_time * 1000);
 	}
+	log_i("Hilo de compactacion de la tabla %s finalizado",table_name);
+	destroy_in_table_state_list(table_name);
 }
 
 
 void compaction(char* table_name){
-
+	long long first_timestamp;
+	long long last_timestamp;
+	long long bloqued_time;
 	char* initial_table_dir = get_table_directory();
 	char* table_directory = create_new_directory(initial_table_dir,table_name);
 	int tmp_number = 1;
@@ -50,7 +55,8 @@ void compaction(char* table_name){
 		t_list* partition_tkvs = create_partition_tkv_list(table_directory,table_metadata);
 		get_tkvs_to_insert(tmpc_tkvs,partition_tkvs);
 		list_destroy_and_destroy_elements(tmpc_tkvs,free_record);
-		//Bloqueo tablas todo
+		is_blocked_wait(table_name); //bloque la table
+		first_timestamp = get_timestamp();
 		char* tmpc_directory = get_tmpc_directory(table_directory);
 		sem_wait(bitmap_semaphore);
 		char* bitmap_dir = get_bitmap_directory();
@@ -65,11 +71,13 @@ void compaction(char* table_name){
 		int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
 		t_list* block_list = from_array_to_list(blocks,free_blocks_amount);
 		create_new_partitions(partition_tkvs,block_list,free_blocks_amount,table_name);
-		//Desbloqueo tablas todo
+		is_blocked_post(table_name);// desbloqueo
+		last_timestamp = get_timestamp();
 		write_bitmap(bitmap, bitmap_dir);
 		sem_post(bitmap_semaphore);
+		bloqued_time =last_timestamp-first_timestamp;
 		log_i("Compactacion terminada sobre la tabla %s!", table_name);
-		log_i("Esta estuvo bloqueada un total de %d segundos", 15); //cambiar hardcodeo todo
+		log_i("Esta estuvo bloqueada un total de %lld milisegundos", bloqued_time); //cambiar hardcodeo todo
 		free(tmpc_directory);
 		free(bitmap->bitarray);
 		free(bitmap);

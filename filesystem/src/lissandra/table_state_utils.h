@@ -13,6 +13,7 @@ typedef struct {
 	char*	name;
 	sem_t* is_blocked_mutex;
 	sem_t* live_status_mutex;
+	pthread_t compaction_thread;
 
 }table_state_t;
 

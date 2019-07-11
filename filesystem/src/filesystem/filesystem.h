@@ -12,6 +12,7 @@
 #include "../directorys.h"
 #include "../fs_lists.h"
 #include "shared_types/shared_types.h"
+#include "commons/string.h"
 
 typedef struct {
 	int number_of_blocks;
@@ -32,7 +33,7 @@ void create_table_metadata(consistency_t consistency, int partitions,long compac
 table_metadata_t* create_metadata(consistency_t consistency, int partitions,long compaction_time);
 int assign_free_blocks(t_bitarray* bitmap, int* blocks, int partitions_amount);
 int find_free_block(t_bitarray *bitmap);
-record_t* search_key (char* table_directory, int key);
+record_t* search_key(char* table_directory, int key, char* table_name);
 record_t* search_in_tmpc(char* table_directory, int key);
 record_t* search_in_all_tmps(char* table_directory,int key);
 record_t* search_in_partition(char* table_directory, int key);
@@ -49,5 +50,11 @@ void free_record(record_t* record);
 void add_table_to_table_state_list(char* table_name);
 table_state_t* find_in_table_state_list(char* table_name);
 void is_blocked_wait(char* table_name);
+void is_blocked_wait(char* table_name);
+void is_blocked_post(char* table_name);
+void live_status_wait(char* table_name);
+void live_status_post(char* table_name);
+int* get_live_status(char* table_name);
+table_state_t* find_in_table_state_list_with_thread(pthread_t thread);
 
 #endif /* CREATE_CREATE_UTILS_H_ */

@@ -111,13 +111,18 @@ int find_free_block(t_bitarray* bitmap) {
 	return -1;
 }
 
-record_t* search_key(char* table_directory, int key){
-
+record_t* search_key(char* table_directory, int key, char* table_name){
+	is_blocked_wait(table_name);
+	is_blocked_post(table_name);
 	//Busco la key en el unico archivo tmp que puede haber
 	record_t* key_found_in_tmpc = search_in_tmpc(table_directory, key);
 	//Busco la key en todos los tmps que existan
+	is_blocked_wait(table_name);
+	is_blocked_post(table_name);
 	record_t* key_found_in_tmp = search_in_all_tmps(table_directory, key);
 	//Busco la key en la particion que deberia estar
+	is_blocked_wait(table_name);
+	is_blocked_post(table_name);
 	record_t* key_found_in_partition = search_in_partition(table_directory, key);
 	//Comparo las 3 keys y por transitividad saco la que tiene la timestamp mas grande
 	record_t* auxiliar_key = key_with_greater_timestamp(key_found_in_tmp, key_found_in_tmpc);
@@ -223,7 +228,6 @@ void free_tkv(tkv_t* tkv){
 void free_table(table_t* table){
 	free(table->name);
 	for(int i=0; i<table->tkvs->elements_count;i++){
-
 		tkv_t* tkv = list_get(table->tkvs,i);
 		free_tkv(tkv);
 
@@ -317,26 +321,96 @@ void add_table_to_table_state_list(char* table_name){
 	char* upper_read = to_uppercase(table_name);
 	table_state->name = strdup(upper_read);
 	list_add(table_state_list, table_state);
+	table_state->compaction_thread =initialize_compaction();
 	free(upper_read);
 }
 
 table_state_t* find_in_table_state_list(char* table_name) {
 	table_state_t* table_find_failed = malloc(sizeof(table_state_t));
 	table_find_failed->name = "failed";
+
 	for (int i = 0; i < list_size(table_state_list); i++) {
 		table_state_t* table_found = list_get(table_state_list, i);
-		if (strcmp(table_found->name, table_name) == 0) {
+		char* table_found_name = table_found->name;
+		if (string_equals_ignore_case(table_found_name, table_name)) {
 			free(table_find_failed);
 			return table_found;
 		}
-
 	}
+log_w("No se encontro la tabla %s", table_name);
 return table_find_failed;
 }
+
+table_state_t* find_in_table_state_list_with_thread(pthread_t thread){
+	table_state_t* table_find_failed = malloc(sizeof(table_state_t));
+	table_find_failed->name = "failed";
+
+	for (int i = 0; i < list_size(table_state_list); i++) {
+		table_state_t* table_found = list_get(table_state_list, i);
+		pthread_t table_found_thread = table_found->compaction_thread;
+		if (table_found_thread == thread) {
+			free(table_find_failed);
+			return table_found;
+		}
+	}
+log_w("No se encontro la tabla con ese thread");
+return table_find_failed;
+}
+
+
+void destroy_in_table_state_list(char* table_name) {
+
+	for (int i = 0; i < list_size(table_state_list); i++) {
+		table_state_t* table_found = list_get(table_state_list, i);
+		char* table_found_name = table_found->name;
+		if (string_equals_ignore_case(table_found_name, table_name)) {
+			free(table_found ->is_blocked_mutex);
+			free(table_found ->live_status_mutex);
+			free(table_found ->name);
+			free(table_found);
+			list_remove(table_state_list,i);
+			return;
+		}
+	}
+
+}
+
 
 void is_blocked_wait(char* table_name){
 	table_state_t* the_table = find_in_table_state_list(table_name);
 	sem_wait(the_table->is_blocked_mutex);
+}
+
+
+void is_blocked_post(char* table_name){
+	table_state_t* the_table = find_in_table_state_list(table_name);
+	sem_post(the_table->is_blocked_mutex);
+}
+
+void live_status_wait(char* table_name){
+	table_state_t* the_table = find_in_table_state_list(table_name);
+	sem_wait(the_table->live_status_mutex);
+}
+
+void live_status_post(char* table_name){
+	table_state_t* the_table = find_in_table_state_list(table_name);
+	sem_post(the_table->live_status_mutex);
+}
+
+int* get_live_status(char* table_name){
+	table_state_t* the_table = find_in_table_state_list(table_name);
+	int* semaphore;
+	 sem_getvalue(the_table->live_status_mutex,&semaphore);
+	 return semaphore;
+}
+
+void eliminate_table_form_table_state_list(char* table_name){
+	table_state_t* the_table = find_in_table_state_list(table_name);
+	free(the_table->is_blocked_mutex);
+	free(the_table->live_status_mutex);
+	free(the_table->name);
+
 
 }
+
 
