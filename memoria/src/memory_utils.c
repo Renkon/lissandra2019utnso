@@ -100,7 +100,7 @@ bool order_by_timestamp(int first_i,int second_i){
 
 }
 
-void eliminate_page_instance_by_index(int index){
+void eliminate_page_instance_by_index(int index, char* table_name){
 	segment_t* found_segment = get_segment_by_index_global(index);
 
 	strcpy(g_main_memory+index,"null");
@@ -110,7 +110,7 @@ void eliminate_page_instance_by_index(int index){
 	if(position != -1){
 		list_remove_and_destroy_element(found_segment->page,position,(void*) destroy_page);
 
-		if (list_size(found_segment->page) == 0){
+		if (list_size(found_segment->page) == 0 && !string_equals_ignore_case(table_name,found_segment->name)){
 			remove_segment(found_segment);
 		}
 
@@ -176,10 +176,15 @@ page_t* replace_algorithm(response_t* response,long long timestamp,int key, char
 
 		replace = list_get(indexes_sorted,0);
 
-		eliminate_page_instance_by_index(replace);
+		eliminate_page_instance_by_index(replace, table_name);
 
 		index = memory_insert(timestamp, key, value);
-		found_page = create_page(index, true);
+
+		if (invocation == J_SELECT){
+			found_page = create_page(index, false);
+		} else if (invocation == J_INSERT){
+			found_page = create_page(index, true);
+		}
 
 		list_destroy(not_modified_pages);
 		list_destroy(indexes);

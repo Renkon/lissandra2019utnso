@@ -11,6 +11,7 @@
 #include "memoria.h"
 #include "memory_types.h"
 
+#include "commons/string.h"
 #include <stdbool.h>
 #include "utils/operation_types.h"
 #include "generic_client.h"
@@ -52,7 +53,7 @@ bool memory_full();
 char* main_memory_values(int index,memory_var_t type);
 void modify_memory_by_index(int index,int key ,char* value);
 bool order_by_timestamp(int first_i,int second_i);
-void eliminate_page_instance_by_index(int index);
+void eliminate_page_instance_by_index(int index, char* table_name);
 void journaling(response_t* response);
 page_t* replace_algorithm(response_t* response, long long timestamp,int key, char* value, journal_invocation_t invocation, char* table_name);
 
