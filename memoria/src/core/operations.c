@@ -568,5 +568,5 @@ void cleanup_describe_input(void* input) {
 
 void cleanup_journal_input(void* input){
 	t_list* insert_inputs = (t_list*) input;
-	list_destroy_and_destroy_elements(insert_inputs,(void*)destroy_insert);
+	list_destroy_and_destroy_elements(insert_inputs, destroy_insert);
 }

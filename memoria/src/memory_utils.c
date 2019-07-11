@@ -132,7 +132,7 @@ t_list* list_add_multi_lists(t_list* pages_indexes){
 		insert->timestamp = string_to_long_long(timestamp);
 		insert->key = string_to_uint16(key);
 		insert->value = main_memory_values(list_get(pages_indexes,i),VALUE);
-		insert->table_name = get_table_name_by_index(list_get(pages_indexes,i));
+		insert->table_name = strdup(get_table_name_by_index(list_get(pages_indexes,i)));
 
 
 		list_add(new_list,insert);
@@ -146,7 +146,6 @@ t_list* list_add_multi_lists(t_list* pages_indexes){
 void journaling(response_t* response){
 	int sem_val;
 	sem_getvalue(&g_mem_op_semaphore, &sem_val);
-	log_e("valor es %i", sem_val);
 	if (sem_val > 0)
 		sem_wait(&g_mem_op_semaphore);
 
@@ -203,15 +202,14 @@ page_t* replace_algorithm(response_t* response,long long timestamp,int key, char
 			reg->modified = false;
 
 		if (response == NULL) {
-			response = malloc(sizeof(response_t*));
+			response = malloc(sizeof(response_t));
 			response->id = -1337;
 		}
 
 		response->result = reg;
 
 		journaling(response);
-		//TODO index = memory_insert(timestamp, key, value);
-		//TODO found_page = create_page(index, true);
+
 		return NULL;
 	}
 }
