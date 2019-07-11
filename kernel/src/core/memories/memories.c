@@ -133,11 +133,18 @@ void add_ec_memory(int id) {
 }
 
 void remove_memory(int id) {
+	int shcs1 = list_size(g_memories_added_shc);
+
 	remove_memory_from_consistency(g_memories_added_sc, id);
 	remove_memory_from_consistency(g_memories_added_shc, id);
 	remove_memory_from_consistency(g_memories_added_ec, id);
 
-	// TODO: forzar journaling aca para las memorias de SHC.
+	int shcs2 = list_size(g_memories_added_shc);
+
+	if (shcs1 != shcs2) { // SE borro una SHC, fuerzo JOURNALING.
+		journaling(true, NULL, NULL);
+	}
+
 	log_t("Se elimino la memoria %i de todas las cosistencias (si es que estaba)");
 }
 
@@ -213,7 +220,9 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 		}
 
 		if (g_journal_actual == g_journal_expected) {
-			callback(*journal_result, pcb);
+			log_t("Journaling recibio respuesta de todas las memorias asignadas a criterio");
+			if (callback != NULL)
+				callback(*journal_result, pcb);
 			sem_post(&g_inner_journal_semaphore);
 		}
 	}
