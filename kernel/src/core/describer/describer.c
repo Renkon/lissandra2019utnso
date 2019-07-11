@@ -184,9 +184,10 @@ void display_metadata() {
 
 	for (int i = 0; i < tables; i++) {
 		table_metadata_t* metadata = list_get(g_table_metadata, i);
+		char* consistency = metadata->consistency == STRONG_CONSISTENCY ? "SC" : (metadata->consistency == STRONG_HASH_CONSISTENCY ? "SHC" : "EC");
 		log_t("--- Metadata de %s ---", metadata->table_name);
 		log_t("  -> Tiempo de compactacion: %i", metadata->compaction_time);
-		log_t("  -> Tipo de consistencia: %i", metadata->consistency);
+		log_t("  -> Tipo de consistencia: %s", consistency);
 		log_t("  -> Cantidad de particiones: %i", metadata->partitions);
 	}
 }
@@ -199,6 +200,16 @@ bool table_exists_in_metadata(char* table_name) {
 	}
 
 	return false;
+}
+
+consistency_t get_consistency_from_table(char* table_name) {
+	for (int i = 0; i < list_size(g_table_metadata); i++) {
+		table_metadata_t* metadata = (table_metadata_t*) list_get(g_table_metadata, i);
+		if (string_equals_ignore_case(table_name, metadata->table_name)) {
+			return metadata->consistency;
+		}
+	}
+	return -1;
 }
 
 void free_auto_describe_input(void* input) {

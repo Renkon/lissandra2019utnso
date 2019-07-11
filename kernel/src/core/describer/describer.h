@@ -11,6 +11,7 @@
 #include "commons/string.h"
 #include "generic_client.h"
 #include "utils/network_types.h"
+#include "commons/string.h"
 #include "utils/operation_types.h"
 #include "utils/response.h"
 
@@ -37,6 +38,7 @@ void on_post_drop(drop_input_t* input);
 void display_metadata();
 
 bool table_exists_in_metadata(char* table_name);
+consistency_t get_consistency_from_table(char* table_name);
 
 void free_auto_describe_input(void* input);
 

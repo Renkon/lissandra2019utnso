@@ -10,6 +10,7 @@ int main(void) {
 		return 1;
 	init_config(KNCFG, initialize_kernel_config, update_kernel_config, g_config_keys, g_config_keys_size);
 	init_scheduler();
+	init_memory_list();
 	init_describer();
 	init_gossiping();
 	init_metrics();

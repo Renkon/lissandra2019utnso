@@ -23,8 +23,8 @@ void init_gossiping() {
 void gossip_continuously() {
 	pthread_detach(pthread_self());
 	while (true) {
-		usleep(g_config.gossip_refresh * 1000);
 		gossip();
+		usleep(g_config.gossip_refresh * 1000);
 	}
 }
 
@@ -54,6 +54,7 @@ void post_gossip(void* result, response_t* response) {
 	if (result == NULL) { // Fallo la request?
 		selected_memory->alive = false;
 		selected_memory->timestamp = get_timestamp();
+		remove_memory(selected_memory->id); // la borro de las tablas de consistencias
 	} else {
 		// Se hizo la ricuest! Caso inicial
 		// Estoy en la memoria -1 (la principal sin ID)
@@ -98,6 +99,9 @@ void update_memory(memory_t* memory) {
 				existing_memory->port = memory->port;
 				existing_memory->alive = memory->alive;
 				existing_memory->timestamp = memory->timestamp;
+
+				if (!existing_memory->alive) // la borro de todos los criterios
+					remove_memory(existing_memory->id);
 			}
 			found = true;
 			break;
@@ -115,34 +119,5 @@ void update_memory(memory_t* memory) {
 
 		list_add(g_memories, new_memory);
 	}
-}
-
-bool is_memory_alive(void* memory) {
-	return ((memory_t*) memory)->alive;
-}
-
-memory_t* get_random_memory(bool alive) {
-	t_list* alive_memories = NULL;
-	t_list* gossipable_memories;
-
-	if (alive) {
-		alive_memories = list_filter(g_memories, is_memory_alive);
-		if (list_size(alive_memories) == 0) {
-			list_destroy(alive_memories);
-			return NULL;
-		} else {
-			gossipable_memories = alive_memories;
-		}
-	} else {
-		gossipable_memories = g_memories;
-	}
-
-	int random_memory = rnd(0, list_size(gossipable_memories) - 1);
-	memory_t* memory = (memory_t*) list_get(gossipable_memories, random_memory);
-
-	if (alive_memories != NULL)
-		list_destroy(alive_memories);
-
-	return memory;
 }
 

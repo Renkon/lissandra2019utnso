@@ -10,9 +10,11 @@
 #include <semaphore.h>
 #include "statement.h"
 #include "utils/operation_types.h"
+#include "utils/dates.h"
 #include "../describer/describer.h"
 
 sem_t g_sts_semaphore;
+sem_t g_inner_scheduler_semaphore;
 t_list* __pcbs_to_ready;
 
 void short_term_schedule();

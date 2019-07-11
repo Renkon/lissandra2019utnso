@@ -88,18 +88,39 @@ void process_drop(drop_input_t* input, response_t* response) {
 }
 
 void process_journal(void* unused, response_t* response) {
-	// TODO: invocar a una memoria para hacer journaling
+	pcb_t* pcb = get_new_pcb();
+	statement_t* statement = generate_statement();
 
+	statement->operation = JOURNAL;
+
+	list_add(pcb->statements, statement);
+	list_add(g_scheduler_queues.new, pcb);
 	sem_post(&g_lts_semaphore);
 }
 
 void process_add(add_input_t* input) {
-	// TODO: hacer lo del add a un criterio
+	switch (input->consistency) {
+		case STRONG_CONSISTENCY:
+			add_sc_memory(input->memory_number);
+		break;
+		case STRONG_HASH_CONSISTENCY:
+			add_shc_memory(input->memory_number);
+		break;
+		case EVENTUAL_CONSISTENCY:
+			add_ec_memory(input->memory_number);
+		break;
+	}
 }
 
 statement_t* generate_statement() {
 	statement_t* statement = malloc(sizeof(statement_t));
+	statement->create_input = NULL;
+	statement->describe_input = NULL;
+	statement->drop_input = NULL;
+	statement->insert_input = NULL;
+	statement->select_input = NULL;
 	statement->semaphore = malloc(sizeof(sem_t));
+	statement->assigned_memory = NULL;
 	sem_init(statement->semaphore, 0, 0);
 	return statement;
 }
@@ -140,7 +161,7 @@ bool on_inner_run_request(t_list* statements, run_input_t* input, bool free_inpu
 			break;
 		}
 
-		if (operation != RUN && operation > DROP) {
+		if (operation != RUN && operation > JOURNAL) {
 			log_e("Script invalido. Comando no habilitado en script. %s:%i > %s", input->path, (i + 1), command);
 			success = false;
 			break;

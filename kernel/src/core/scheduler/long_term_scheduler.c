@@ -30,6 +30,7 @@ void long_term_schedule() {
 		}
 
 		if (list_size(g_scheduler_queues.exit) > 0) {
+			sem_wait(&g_inner_scheduler_semaphore);
 			pcb_t* pcb = (pcb_t*) list_get(g_scheduler_queues.exit, 0);
 
 			log_d("LTS fin de proceso PID %i", pcb->process_id);
@@ -42,6 +43,7 @@ void long_term_schedule() {
 				}
 			}
 			delete_pcb(pcb);
+			sem_post(&g_inner_scheduler_semaphore);
 		}
 	}
 }

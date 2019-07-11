@@ -29,3 +29,7 @@ int rnd(int min, int max) {
 	int random_result = random() % divider;
 	return random_result + min;
 }
+
+int hash(int value, int modulus) {
+	return value % modulus;
+}

@@ -153,7 +153,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 		sem_post_neg(&g_mem_op_semaphore);
 	}
 
-	if (response == NULL)
+	if (response == NULL || found_page == NULL)
 		free(insert_status);
 	else
 		set_response(response, insert_status);
@@ -234,6 +234,7 @@ void select_callback(void* result, response_t* response) {
 	// Falla conexion?
 	record_t* alpha_record;
 	record_t* record = (record_t*) result;
+	page_t*	found_page;
 
 	sem_wait(&g_mem_op_semaphore);
 
@@ -259,7 +260,6 @@ void select_callback(void* result, response_t* response) {
 
 			char* upper_table_name = strdup(alpha_record->table_name);
 			string_to_upper(upper_table_name);
-			page_t*	found_page;
 			int index;
 			t_list* index_list;
 			segment_t* found_segment = get_segment_by_name(g_segment_list, upper_table_name);
@@ -309,7 +309,7 @@ void select_callback(void* result, response_t* response) {
 
 	sem_post_neg(&g_mem_op_semaphore);
 
-	if (response != NULL) { //me llega desde el kernel
+	if (response != NULL && found_page != NULL) { //me llega desde el kernel
 		// Vamos a copiar el objeto record, asi se lo podemos devolver
 		record_t* new_record = malloc(sizeof(record_t));
 		if (result != NULL) {
@@ -512,7 +512,7 @@ void journal_callback(void* result, response_t* response){
 
 					segment_t* found_segment = create_segment(record->table_name);
 					int index = memory_insert(record->timestamp, record->key, record->value);
-					page_t* found_page = create_page(index, true);
+					page_t* found_page = create_page(index, false);
 					list_add(found_segment->page, found_page);
 					list_add(g_segment_list, found_segment);
 					log_i("Se inserto satisfactoriamente la clave %u con valor %s y timestamp %lld en la tabla %s despues de hacer Journaling.", reg->key, reg->value, reg->timestamp, found_segment->name);
