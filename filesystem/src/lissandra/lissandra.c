@@ -14,6 +14,7 @@ int main(void) {
 	bitmap_semaphore = malloc(sizeof(sem_t));
 	sem_init(bitmap_semaphore, 0,1);
 	initialize_dump();
+	initialize_compaction_in_this_table("CHAMPIONS_ROTOS");
 	init_server_callbacks();
 	init_server(g_config.port, FILESYSTEM);
 	setup_response_id_generator();

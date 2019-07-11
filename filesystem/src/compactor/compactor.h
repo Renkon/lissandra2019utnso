@@ -28,5 +28,7 @@ void destroy_all_tmps(char* table_directory);
 int*from_list_to_array(t_list* list);
 t_list* from_array_to_list (int* array, int size);
 int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_of_blocks,char* table_name);
+void compact_this_table(char* table_name);
+void compact_this_table(char* table_name);
 
 #endif /* COMPACTOR_COMPACTOR_H_ */

@@ -1,49 +1,79 @@
 #include "compactor.h"
 
-void compaction(char* table_name){
+
+void initialize_compaction_in_this_table(char* table_name) {
+	pthread_t compaction_thread;
+	if (pthread_create(&compaction_thread, NULL, (void*) compact_this_table, table_name)) {
+		log_e("No se pudo inicializar el hilo compactacion en la tabla %s",table_name);
+	}
+}
+
+void compact_this_table(char* table_name){
+	pthread_detach(pthread_self());
 	char* initial_table_dir = get_table_directory();
 	char* table_directory = create_new_directory(initial_table_dir,table_name);
 	table_metadata_t* table_metadata = read_table_metadata(table_directory);
-	partition_t* tmpc =get_all_blocks_from_all_tmps(table_name);
-	//Creo el tmpc
-	create_fs_archive(table_name,tmpc->blocks,tmpc->number_of_blocks,tmpc->size,0,0);
-	t_list* tmpc_tkvs = create_tkv_list(tmpc);
-	t_list* partition_tkvs = create_partition_tkv_list(table_directory,table_metadata);
-	get_tkvs_to_insert(tmpc_tkvs,partition_tkvs);
-	list_destroy_and_destroy_elements(tmpc_tkvs,free_record);
-	//Bloqueo tablas todo
-	char* tmpc_directory = get_tmpc_directory(table_directory);
-	sem_wait(bitmap_semaphore);
-	char* bitmap_dir = get_bitmap_directory();
-	t_bitarray* bitmap = read_bitmap(bitmap_dir);
-	free_partitions(table_directory, bitmap);
-	free_blocks_of_all_tmps(table_directory, bitmap);
-	destroy_all_tmps(table_directory);
-	remove(tmpc_directory);
-	int necessary_blocks= length_needed_to_add_tkvs_in_partitions(partition_tkvs);
-	necessary_blocks += add_blocks_for_partitions_without_tkvs(partition_tkvs);
-	int* blocks= malloc(sizeof(int)*necessary_blocks);
-	int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
-	t_list* block_list = from_array_to_list(blocks,free_blocks_amount);
-	create_new_partitions(partition_tkvs,block_list,free_blocks_amount,table_name);
-	//Desbloqueo tablas todo
-	write_bitmap(bitmap, bitmap_dir);
-	sem_post(bitmap_semaphore);
-	log_i("Compactacion terminada sobre la tabla %s!", table_name);
-	log_i("Esta estuvo bloqueada un total de %d segundos", 15); //cambiar hardcodeo todo
-	free(tmpc_directory);
-	free(bitmap->bitarray);
-	free(bitmap);
-	free(bitmap_dir);
-	free(tmpc->blocks);
-	free(tmpc);
+	int compaction_time = table_metadata->compaction_time;
 	free(initial_table_dir);
 	free(table_directory);
 	free(table_metadata);
-	free(blocks);
-	list_destroy(partition_tkvs);
-	list_destroy(block_list);
 
+	while(true){ //cambiar el true todo
+		compaction(table_name);
+		usleep(compaction_time * 1000);
+	}
+}
+
+
+void compaction(char* table_name){
+
+	char* initial_table_dir = get_table_directory();
+	char* table_directory = create_new_directory(initial_table_dir,table_name);
+	int tmp_number = 1;
+	char* tmp_name = get_tmp_name(tmp_number);
+	if(exist_in_directory(tmp_name, table_directory)) {
+		table_metadata_t* table_metadata = read_table_metadata(table_directory);
+		partition_t* tmpc =get_all_blocks_from_all_tmps(table_name);
+		//Creo el tmpc
+		create_fs_archive(table_name,tmpc->blocks,tmpc->number_of_blocks,tmpc->size,0,0);
+		t_list* tmpc_tkvs = create_tkv_list(tmpc);
+		t_list* partition_tkvs = create_partition_tkv_list(table_directory,table_metadata);
+		get_tkvs_to_insert(tmpc_tkvs,partition_tkvs);
+		list_destroy_and_destroy_elements(tmpc_tkvs,free_record);
+		//Bloqueo tablas todo
+		char* tmpc_directory = get_tmpc_directory(table_directory);
+		sem_wait(bitmap_semaphore);
+		char* bitmap_dir = get_bitmap_directory();
+		t_bitarray* bitmap = read_bitmap(bitmap_dir);
+		free_partitions(table_directory, bitmap);
+		free_blocks_of_all_tmps(table_directory, bitmap);
+		destroy_all_tmps(table_directory);
+		remove(tmpc_directory);
+		int necessary_blocks= length_needed_to_add_tkvs_in_partitions(partition_tkvs);
+		necessary_blocks += add_blocks_for_partitions_without_tkvs(partition_tkvs);
+		int* blocks= malloc(sizeof(int)*necessary_blocks);
+		int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
+		t_list* block_list = from_array_to_list(blocks,free_blocks_amount);
+		create_new_partitions(partition_tkvs,block_list,free_blocks_amount,table_name);
+		//Desbloqueo tablas todo
+		write_bitmap(bitmap, bitmap_dir);
+		sem_post(bitmap_semaphore);
+		log_i("Compactacion terminada sobre la tabla %s!", table_name);
+		log_i("Esta estuvo bloqueada un total de %d segundos", 15); //cambiar hardcodeo todo
+		free(tmpc_directory);
+		free(bitmap->bitarray);
+		free(bitmap);
+		free(bitmap_dir);
+		free(tmpc->blocks);
+		free(tmpc);
+		free(table_metadata);
+		free(blocks);
+		list_destroy(partition_tkvs);
+		list_destroy(block_list);
+	}
+	free(tmp_name);
+	free(initial_table_dir);
+	free(table_directory);
 }
 
 int* from_list_to_array(t_list* list){
@@ -330,10 +360,11 @@ partition_t* get_all_blocks_from_all_tmps (char* table_name){
 }
 
 
-void initialize_dump(){
-	pthread_t config_thread;
-	pthread_create(&config_thread, NULL, (void*) dump_all_tables, NULL);
-
+void initialize_dump() {
+	pthread_t dump_thread;
+	if (pthread_create(&dump_thread, NULL, (void*) dump_all_tables, NULL)) {
+		log_e("No se pudo inicializar el hilo de dump");
+	}
 }
 
 void dump_all_tables(){
