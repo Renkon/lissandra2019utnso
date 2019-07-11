@@ -142,6 +142,7 @@ void remove_memory(int id) {
 	int shcs2 = list_size(g_memories_added_shc);
 
 	if (shcs1 != shcs2) { // SE borro una SHC, fuerzo JOURNALING.
+		log_t("SHC Borrada, fuerzo journaling para las SHC.");
 		journaling(true, NULL, NULL);
 	}
 
