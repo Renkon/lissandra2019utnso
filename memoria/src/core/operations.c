@@ -476,9 +476,13 @@ void journal_callback(void* result, response_t* response){
 		} else {
 			journal_register_t* reg = (journal_register_t*) response->result;
 			if (multiinsert_result == NULL || *multiinsert_result == -1) { // FALLO EL JOURNALING
-				int* resp = malloc(sizeof(int));
-				*resp = -4;
-				set_response(response, resp);
+				if (response->id != -1337) {
+					int* resp = malloc(sizeof(int));
+					*resp = -4;
+					set_response(response, resp);
+				} else {
+					free(response);
+				}
 			} else {
 				if (reg->modified) { // Es INSERT como siempre despues de un
 					int* insert_status = malloc(sizeof(int));
