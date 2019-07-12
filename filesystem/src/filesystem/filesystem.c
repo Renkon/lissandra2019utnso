@@ -124,14 +124,19 @@ record_t* search_key(char* table_directory, int key, char* table_name){
 	is_blocked_wait(table_name);
 	is_blocked_post(table_name);
 	record_t* key_found_in_partition = search_in_partition(table_directory, key);
+	is_blocked_wait(table_name);
+	is_blocked_post(table_name);
+	//Busco la key en la memtable
+	record_t* key_found_in_memtable = search_key_in_memtable(key,table_name);
 	//Comparo las 3 keys y por transitividad saco la que tiene la timestamp mas grande
 	record_t* auxiliar_key = key_with_greater_timestamp(key_found_in_tmp, key_found_in_tmpc);
-
-	record_t* most_current_key = key_with_greater_timestamp(auxiliar_key, key_found_in_partition);
-
+	record_t* auxiliar_key2 = key_with_greater_timestamp(auxiliar_key, key_found_in_memtable);
+	record_t* most_current_key = key_with_greater_timestamp(auxiliar_key2, key_found_in_partition);
 	//Devuelvo lo que encontre, si no esta la key entonces devuelvo una key con timestamp en -1
 	record_t* the_key = copy_key(most_current_key);
 
+	free(key_found_in_memtable->value);
+	free(key_found_in_memtable);
 	free(key_found_in_tmpc->value);
 	free(key_found_in_tmpc);
 	free(key_found_in_tmp->value);
@@ -142,6 +147,45 @@ record_t* search_key(char* table_directory, int key, char* table_name){
 	return the_key;
 
 }
+
+table_t* search_table_in_memtable(char* table_name) {
+	table_t* table_not_found = malloc(sizeof(table_t));
+	table_not_found->name = "Not_found";
+	for (int i = 0; i < list_size(mem_table); i++) {
+		table_t* table = list_get(mem_table, i);
+		if (string_equals_ignore_case(table->name, table_name)) {
+			free(table_not_found);
+			return table;
+		}
+	}
+	return table_not_found;
+}
+
+record_t* search_key_in_memtable(int key, char* table_name){
+	record_t* key_found = malloc(sizeof(record_t));
+	key_found->timestamp = -1;
+	key_found->value = malloc(1);
+	table_t* table = search_table_in_memtable(table_name);
+	if (!string_equals_ignore_case(table->name,"Not_found")){
+
+		for (int i = 0; i < list_size(table->tkvs); i++) {
+			tkv_t* tkv_found = list_get(table->tkvs,i);
+			record_t* record_found = convert_record(tkv_found->tkv);
+
+			if(record_found->key == key && record_found->timestamp > key_found->timestamp){
+				free(key_found->value);
+				free(key_found);
+				key_found = record_found;
+			}
+
+		}
+
+	}
+
+	return key_found;
+
+}
+
 
 record_t* search_in_tmpc(char* table_directory, int key) {
 	record_t* key_found;

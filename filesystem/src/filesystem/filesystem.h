@@ -56,5 +56,7 @@ void live_status_wait(char* table_name);
 void live_status_post(char* table_name);
 int* get_live_status(char* table_name);
 table_state_t* find_in_table_state_list_with_thread(pthread_t thread);
+record_t* search_key_in_memtable(int key, char* table_name);
+table_t* search_table_in_memtable(char* table_name);
 
 #endif /* CREATE_CREATE_UTILS_H_ */

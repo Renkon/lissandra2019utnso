@@ -12,7 +12,7 @@
 void dump_all_tables();
 void dump();
 void free_memtable();
-void dump_table(table_t* table, int* blocks, int size_of_blocks);
+void dump_table(table_t* table, t_list* blocks);
 int search_free_blocks_for_table(t_list* tkvs);
 int tkv_total_length(t_list* tkvs);
 int length_of_all_tkvs_in_memtable();

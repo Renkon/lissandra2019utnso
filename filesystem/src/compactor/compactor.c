@@ -168,7 +168,7 @@ int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_o
 	int blocks_amount = necessary_blocks_for_tkvs(string_tkv_list);
 	//Si blocks amount da 0 significa que no tengo tkvs entonces le pongo un bloque vacio.
 	if(blocks_amount == 0){
-		t_list* blocks_for_the_table = list_take_and_remove(blocks,1); //todo
+		t_list* blocks_for_the_table = list_take_and_remove(blocks,1);
 		int* blocks_array = from_list_to_array(blocks_for_the_table);
 		create_fs_archive(table_name, blocks_array,1,size_of_all_tkvs_from_partition,2,partition->partition);
 		free(blocks_array);
@@ -408,14 +408,14 @@ void dump(){
 	t_bitarray* bitmap = read_bitmap(bitmap_dir);
 	//Busco los bloques libres
 	int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
-
+	t_list* block_list = from_array_to_list(blocks,free_blocks_amount);
 	if(free_blocks_amount == necessary_blocks){
 
 
 		for(int i=0; i<mem_table->elements_count;i++){
 			table_t* table = list_get(mem_table,i);
 
-			dump_table(table,blocks,free_blocks_amount);
+			dump_table(table,block_list);
 			log_i("Dumpeados los datos de la tabla %s",table->name);
 		}
 		write_bitmap(bitmap, bitmap_dir);
@@ -423,10 +423,12 @@ void dump(){
 		log_w("No hay bloques suficientes como para dumpear todas las tablas de la memtable. Dumpeo cancelado");
 	}
 	sem_post(bitmap_semaphore);
+	free(blocks);
 	free_memtable();
 	free(bitmap->bitarray);
 	free(bitmap);
 	free(bitmap_dir);
+	list_destroy(block_list);
 	}
 }
 
@@ -443,15 +445,17 @@ void free_memtable(){
 	//Al final creo de nuevo la memtable
 }
 
-void dump_table(table_t* table, int* blocks, int size_of_blocks) {
+void dump_table(table_t* table, t_list* blocks) {
 	int size_of_all_tkvs_in_table = size_of_all_tkvs(table->tkvs);
 	int blocks_amount = necessary_blocks_for_tkvs(table->tkvs);
-	int* blocks_for_the_table = array_take(blocks, size_of_blocks,blocks_amount);
-	create_fs_archive(table->name,blocks_for_the_table,blocks_amount,size_of_all_tkvs_in_table,1,0);
+	t_list* blocks_for_the_table = list_take_and_remove(blocks,blocks_amount);
+	int* blocks_array = from_list_to_array(blocks_for_the_table);
+	create_fs_archive(table->name,blocks_array,blocks_amount,size_of_all_tkvs_in_table,1,0);
+	free(blocks_array);
 	int block_size = fs_metadata->block_size;
 	int block_index = 0;
 	//Abro el .bin del primer bloque
-	int block_to_open = blocks_for_the_table[block_index];
+	int block_to_open =list_get(blocks_for_the_table,block_index);;
 	FILE* block = open_block(block_to_open);
 
 	for (int i = 0; i < table->tkvs->elements_count; i++) {
@@ -488,7 +492,7 @@ void dump_table(table_t* table, int* blocks, int size_of_blocks) {
 				fclose(block);
 				free(tkv_that_enters);//esto todo
 				block_index++;
-				int block_open = blocks_for_the_table[block_index];
+				int block_open =list_get(blocks_for_the_table,block_index);;
 				block = open_block(block_open);
 				block_size = fs_metadata->block_size;
 			}
@@ -497,12 +501,13 @@ void dump_table(table_t* table, int* blocks, int size_of_blocks) {
 		if (block_size <= 1) {
 			fclose(block);
 			block_index++;
-			block = open_block(blocks_for_the_table[block_index]);
+			int block_open =list_get(blocks_for_the_table,block_index);;
+			block = open_block(block_open);
 			block_size = fs_metadata->block_size;
 		}
 
 	}
-	free(blocks_for_the_table);
+	list_destroy(blocks_for_the_table);
 	fclose(block);
 }
 
