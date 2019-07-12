@@ -94,7 +94,7 @@ void compaction(char* table_name){
 		sem_post(bitmap_semaphore);
 		bloqued_time =last_timestamp-first_timestamp;
 		log_i("Compactacion terminada sobre la tabla %s!", table_name);
-		log_i("Esta estuvo bloqueada un total de %lld milisegundos", bloqued_time); //cambiar hardcodeo todo
+		log_i("Esta estuvo bloqueada un total de %lld milisegundos", bloqued_time);
 		free(tmpc_directory);
 		free(bitmap->bitarray);
 		free(bitmap);
@@ -193,7 +193,7 @@ int length_needed_to_add_tkvs_in_partitions(t_list* partition_tkvs){
 	int total_length =0;
 	for(int i=0; i<list_size(partition_tkvs); i++){
 			tkvs_per_partition_t* partition = list_get(partition_tkvs,i);
-				t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv); //hacer free TODO
+				t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv);
 				total_length+= necessary_blocks_for_tkvs(string_tkv_list);
 				list_destroy_and_destroy_elements(string_tkv_list,free_tkv);
 		}
@@ -202,7 +202,7 @@ int length_needed_to_add_tkvs_in_partitions(t_list* partition_tkvs){
 }
 
 int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_of_blocks,char* table_name) {
-	t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv); //hacer free TODO
+	t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv);
 	int size_of_all_tkvs_from_partition = size_of_all_tkvs(string_tkv_list);
 	int blocks_amount = necessary_blocks_for_tkvs(string_tkv_list);
 	//Si blocks amount da 0 significa que no tengo tkvs entonces le pongo un bloque vacio.
@@ -370,7 +370,7 @@ tkv_t* add_records_from_block(int block, int index, int incomplete_tkv_size,t_li
 			break;
 		}
 
-		record_t* record = convert_record(readed_key); //Free? todo
+		record_t* record = convert_record(readed_key);
 		list_add(tkvs, record);
 	}
 
@@ -530,7 +530,7 @@ void dump_table(table_t* table, t_list* blocks) {
 				string_append(&tkv_that_enters, "\n");
 				write_tkv(tkv_that_enters,block);
 				fclose(block);
-				free(tkv_that_enters);//esto todo
+				free(tkv_that_enters);
 				block_index++;
 				int block_open =list_get(blocks_for_the_table,block_index);;
 				block = open_block(block_open);

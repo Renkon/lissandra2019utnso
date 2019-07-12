@@ -112,7 +112,9 @@ void add_shc_memory(int id) {
 	list_add(g_memories_added_shc, memory);
 	log_i("Se agrego la memoria %i al criterio STRONG HASH CONSISTENCY", id);
 
-	// TODO: forzar journaling en memorias del SHC.
+	log_t("Se fuerza un journaling por nueva memoria SHC");
+
+	journaling(true, NULL, NULL);
 }
 
 void add_ec_memory(int id) {

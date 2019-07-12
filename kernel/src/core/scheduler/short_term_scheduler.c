@@ -125,7 +125,7 @@ void exec_next_statement(int processor) {
 		event->consistency = -1;
 		event->timestamp_start = get_timestamp();
 		event->timestamp_end = event->timestamp_start;
-		event->memory = 0; // TODO: obtener en q memoria se ejecutaria esto
+		event->memory = 0;
 		event->event_type = statement->operation == SELECT ? SELECT_EVENT : INSERT_EVENT;
 		pcb->last_execution_stats = event;
 	}
