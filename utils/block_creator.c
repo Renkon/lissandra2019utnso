@@ -53,16 +53,11 @@ int main(void) {
 	for(int i =0; i<(metadata->blocks)/8;i++){
 		bitmap[i] = 0;
 	}
-	//bitmap[metadata->blocks]=0;
-	printf("%s",directorio_bitarray);
 	size_t size = (metadata->blocks)/8;
 	t_bitarray* bitarray = bitarray_create_with_mode(bitmap,size,LSB_FIRST);
 	FILE* arch2 = fopen(directorio_bitarray, "wb");
 	fwrite(&bitarray->mode, 1, sizeof(bit_numbering_t), arch2);
 	fwrite(&bitarray->size, 1, sizeof(size_t), arch2);
-	//printf("%s",bitarray->bitarray);
-	printf("%d",sizeof(bit_numbering_t));
-	printf("%d",sizeof(size_t));
 	fwrite(bitarray->bitarray,bitarray->size,1, arch2);
 
 	fclose(arch2);
