@@ -121,7 +121,7 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 int tkv_size() {
 	//Es la cantidad de digitos del numero maximo del uint_16 + la cantidad de digitos de la timestamp
 	//+ la cantidad maxima de caracteres de un valor + 3 que es 2 porque tiene 2 ; y uno por el  \0
-	return digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + g_config_keys_size + 3;
+	return digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + g_config.max_value_size + 3;
 }
 
 void tkv_append(tkv_t* tkv,char* end){
@@ -216,6 +216,19 @@ void convert_to_record(record_t* record, tkv_t* tkv) {
 	free(tkv_split[1]);
 	free(tkv_split[2]);
 	free(tkv_split);
+}
+
+record_t* copy_key2(record_t* key_to_copy){
+	record_t* copied_key = malloc(sizeof(record_t));
+	copied_key->timestamp = key_to_copy->timestamp;
+	if (copied_key->timestamp != -1) {
+		copied_key->value = malloc(strlen(key_to_copy->value) + 1);
+		copied_key->key = key_to_copy->key;
+		strcpy(copied_key->value, key_to_copy->value);
+		copied_key->fs_archive_where_it_was_found = strdup(key_to_copy->fs_archive_where_it_was_found);
+	}
+
+	return copied_key;
 }
 
 record_t* copy_key(record_t* key_to_copy){

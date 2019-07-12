@@ -31,6 +31,7 @@ void destroy_response(response_t* response, socket_operation_t operation) {
 		case SELECT_OUT:
 			free(((record_t*) response->result)->table_name);
 			free(((record_t*) response->result)->value);
+			free(((record_t*) response->result)->fs_archive_where_it_was_found);
 			free(response->result);
 		break;
 		case DESCRIBE_OUT:

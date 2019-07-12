@@ -18,6 +18,7 @@ char* read_first_tkv_in_block(int block);
 tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_size);
 void convert_to_record(record_t* record,tkv_t* tkv);
 record_t* copy_key(record_t* key_to_copy);
+record_t* copy_key2(record_t* key_to_copy);
 record_t* key_with_greater_timestamp(record_t* key_1, record_t* key_2);
 void tkv_append(tkv_t* tkv,char* end);
 
