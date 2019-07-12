@@ -5,8 +5,8 @@ void init_memory_list() {
 	g_memories_added_shc = list_create();
 	g_memories_added_ec = list_create();
 	ec_next = -1;
+	g_journal_result = malloc(sizeof(int));
 
-	sem_init(&g_inner_journal_semaphore, 0, 0);
 	sem_init(&g_journal_semaphore, 0, 1);
 	sem_init(&g_journal_sum, 0, 1);
 }
@@ -112,9 +112,10 @@ void add_shc_memory(int id) {
 	list_add(g_memories_added_shc, memory);
 	log_i("Se agrego la memoria %i al criterio STRONG HASH CONSISTENCY", id);
 
-	log_t("Se fuerza un journaling por nueva memoria SHC");
-
-	journaling(true, NULL, NULL);
+	if (list_size(g_memories_added_shc) > 1) {
+		log_t("Se fuerza un journaling por nueva memoria SHC");
+		journaling(true, NULL, NULL);
+	}
 }
 
 void add_ec_memory(int id) {
@@ -202,38 +203,38 @@ bool is_memory_alive(void* memory) {
 	return ((memory_t*) memory)->alive;
 }
 
-void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb) {
-	int* journal_result = malloc(sizeof(int));
-	*journal_result = 0;
+void _local_journal_callback(void* result, response_t* response) {
+	sem_wait(&g_journal_sum);
+	g_journal_actual++;
+	sem_post(&g_journal_sum);
+	int* int_res = (int*) result;
 
-	void _local_journal_callback(void* result, response_t* response) {
-		sem_wait(&g_journal_sum);
-		g_journal_actual++;
-		sem_post(&g_journal_sum);
-		int* int_res = (int*) result;
-
-		if (result == NULL) {
-			log_e("Hubo una memoria a la cual no se pudo solicitar el journaling. Un journal ha fallado");
-			*journal_result = -1;
-		} else if (*int_res == -1) {
-			log_e("Hubo una memoria que no pudo realizar el journaling. Un journal ha fallado");
-			*journal_result = -1;
-		} else {
-			log_t("Se journaleo una memoria.");
-		}
-
-		if (g_journal_actual == g_journal_expected) {
-			log_t("Journaling recibio respuesta de todas las memorias asignadas a criterio");
-			if (callback != NULL)
-				callback(journal_result, pcb);
-			else
-				free(journal_result);
-			sem_post(&g_inner_journal_semaphore);
-		}
+	if (result == NULL) {
+		log_e("Hubo una memoria a la cual no se pudo solicitar el journaling. Un journal ha fallado");
+		*g_journal_result = -1;
+	} else if (*int_res == -1) {
+		log_e("Hubo una memoria que no pudo realizar el journaling. Un journal ha fallado");
+		*g_journal_result = -1;
+	} else {
+		log_t("Se journaleo una memoria.");
 	}
 
-	g_journal_actual = 0;
+	if (g_journal_actual == g_journal_expected) {
+		log_t("Journaling recibio respuesta de todas las memorias asignadas a criterio");
+		if (g_journal_callback != NULL)
+			g_journal_callback(g_journal_result, g_journal_pcb);
+
+		sem_post(&g_journal_semaphore);
+	}
+}
+
+void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb) {
 	sem_wait(&g_journal_semaphore);
+	g_journal_pcb = pcb;
+	g_journal_callback = callback;
+	*g_journal_result = 0;
+
+	g_journal_actual = 0;
 	bool should_wait = true;
 
 	if (only_shc) {
@@ -242,13 +243,13 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 		if (g_journal_expected == 0) {
 			log_w("No hay memorias SHC para journalear.");
 			should_wait = false;
-			*journal_result = -3;
+			*g_journal_result = -3;
 		} else {
 			for (int i = 0; i < list_size(g_memories_added_shc); i++) {
 				memory_t* memory = (memory_t*) list_get(g_memories_added_shc, i);
 
 				do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
-						0, NULL, _local_journal_callback, true, NULL, pcb);
+						0, NULL, _local_journal_callback, true, NULL, g_journal_pcb);
 			}
 		}
 	} else {
@@ -258,27 +259,23 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 		if (g_journal_expected == 0) {
 			log_w("No hay memorias asignadas a consistencias para journalear.");
 			should_wait = false;
-			*journal_result = -3;
+			*g_journal_result = -3;
 		} else {
 			for (int i = 0; i < list_size(memories_with_consistency); i++) {
 				memory_t* memory = (memory_t*) list_get(memories_with_consistency, i);
 
 				do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
-						0, NULL, _local_journal_callback, true, NULL, pcb);
+						0, NULL, _local_journal_callback, true, NULL, g_journal_pcb);
 			}
 		}
 		list_destroy(memories_with_consistency);
 	}
 
-	if (should_wait) {
-		sem_wait(&g_inner_journal_semaphore);
+	if (!should_wait) {
+		if (g_journal_callback != NULL)
+			g_journal_callback(g_journal_result, g_journal_pcb);
+
 		sem_post(&g_journal_semaphore);
-	} else {
-		sem_post(&g_journal_semaphore);
-		if (callback != NULL)
-			callback(journal_result, pcb);
-		else
-			free(journal_result);
 	}
 
 }

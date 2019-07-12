@@ -454,7 +454,6 @@ void on_journal(void* result, response_t* response) {
 		log_i("Se realizo el journaling de todas las memorias asignadas a un criterio.", *status);
 	}
 
-	free(status);
 	post_exec_statement(pcb, current_statement);
 }
 

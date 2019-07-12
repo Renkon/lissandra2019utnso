@@ -18,9 +18,12 @@ t_list* g_memories_added_ec;
 
 t_list* g_memories;
 
+int* g_journal_result;
+void (*g_journal_callback)(void*, response_t*);
+pcb_t* g_journal_pcb;
+
 int ec_next;
 sem_t g_journal_semaphore;
-sem_t g_inner_journal_semaphore;
 sem_t g_journal_sum;
 
 int g_journal_expected;
@@ -38,6 +41,8 @@ void add_shc_memory(int id);
 void add_ec_memory(int id);
 
 void remove_memory(int id);
+
+void _local_journal_callback(void* result, response_t* response);
 
 memory_t* get_memory_by_id(t_list* mem_list, int id);
 void remove_memory_from_consistency(t_list* mems, int id);
