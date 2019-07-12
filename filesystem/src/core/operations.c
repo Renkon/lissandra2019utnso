@@ -19,6 +19,7 @@ void process_select(select_input_t* input, response_t* response) {
 			log_w("La clave %d no existe en la tabla %s. Operacion SELECT cancelada", input->key, table_name_upper);
 			key_found->key = -1;
 			key_found->value = strdup("-1");
+			key_found->fs_archive_where_it_was_found = strdup("Tu, tu, tu, tu, ERES MI MEJOR AMIGO!");
 
 		} else {
 			//SI la timstamp es distinta de -1 entonces si la encontre y la muestro!
@@ -34,6 +35,7 @@ void process_select(select_input_t* input, response_t* response) {
 		key_found->key = -2;
 		key_found->timestamp = -2;
 		key_found->value = strdup("-2");
+		key_found->fs_archive_where_it_was_found = strdup("Este es un show sobre nada... como termina?");
 	}
 
 	key_found->table_name = table_name_upper;
