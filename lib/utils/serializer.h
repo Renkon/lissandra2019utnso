@@ -18,6 +18,8 @@ elements_network_t elements_select_in_info(void* input);
 elements_network_t elements_select_out_info(void* input);
 elements_network_t elements_insert_in_info(void* input);
 elements_network_t elements_insert_out_info(void* input);
+elements_network_t elements_multiinsert_in_info(void* input);
+elements_network_t elements_multiinsert_out_info(void* input);
 elements_network_t elements_create_in_info(void* input);
 elements_network_t elements_create_out_info(void* input);
 elements_network_t elements_describe_in_info(void* input);

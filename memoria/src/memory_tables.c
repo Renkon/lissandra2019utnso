@@ -7,6 +7,7 @@
 
 #include "memory_tables.h"
 
+
 segment_t* get_segment_by_name(t_list* list, char* table_name) {
 	 int i = 0;
 	 segment_t* segment_found;
@@ -77,8 +78,6 @@ page_t* get_page_by_index(segment_t* segment, int index) {
 	 	}
 	}
 
-	//free(page_found);
-
 	return NULL;
 }
 
@@ -123,8 +122,6 @@ t_list* get_pages_by_modified(bool modified){
 		}
 	}
 
-	//list_destroy_and_destroy_elements(page_list,(void*)destroy_page);
-
 	return modified_pages_list;
 }
 
@@ -135,6 +132,13 @@ void destroy_page(page_t* page){
 void destroy_segment(segment_t* segment){
 	free(segment->name);
 	list_destroy_and_destroy_elements(segment->page,(void*)destroy_page);
+	free(segment);
+}
+
+void destroy_insert(insert_input_t* insert){
+	free(insert->table_name);
+	free(insert->value);
+	free(insert);
 }
 
 int get_segment_position_by_name(char* segment_name){
@@ -159,7 +163,7 @@ void remove_segment(segment_t* segment){
 
 	for(int i = 0; i < list_size(indexes); i++){
 		index = list_get(indexes,i);
-		strcpy(main_memory[index],"null");
+		strcpy(g_main_memory+index,"null");
 	}
 
 	list_destroy(indexes);
@@ -212,5 +216,27 @@ void remove_pages_modified(){
 		segment = list_get(g_segment_list,i);
 
 		list_remove_and_destroy_by_condition(segment->page,(bool*)page_modified,(void*)destroy_page);
+	}
+}
+
+segment_t* get_segment_by_index_global(int index){
+	for (int i = 0; i < list_size(g_segment_list); i++){
+		segment_t* segment = list_get(g_segment_list, i);
+
+		for (int j = 0; j < list_size(segment->page); j++){
+			page_t* page = list_get(segment->page, j);
+
+			if (page->index == index){
+				return segment;
+			}
+		}
+	}
+	return NULL;
+}
+
+void delete_all_segments(){
+	for(int i = list_size(g_segment_list) - 1; i >= 0; i--){
+		segment_t* segment = list_get(g_segment_list,i);
+		remove_segment(segment);
 	}
 }

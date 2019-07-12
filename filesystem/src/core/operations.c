@@ -98,6 +98,25 @@ void process_insert(insert_input_t* input, response_t* response) {
 		set_response(response, insert_status);
 }
 
+void process_multiinsert(t_list* inputs, response_t* response) {
+	int* multiinsert_result = malloc(sizeof(int));
+	*multiinsert_result = 0;
+
+	for (int i = 0; i < list_size(inputs); i++) {
+		response_t* inner_response = generate_response_object();
+		process_insert((insert_input_t*) list_get(inputs, i), inner_response);
+		int* result = (int*) inner_response->result;
+		if (*result < 0) {
+			log_w("Operacion %i de multi-insert fallo con respuesta %i", (i + 1), *result);
+			*multiinsert_result = -1;
+		}
+		destroy_response(inner_response, INSERT_OUT);
+	}
+
+	// Response nunca sera null, porque siempre vendra de la memoria.
+	set_response(response, multiinsert_result);
+}
+
 void process_create(create_input_t* input, response_t* response) {
 	log_i("fs create args: %s %i %i %ld", input->table_name, input->consistency,input->partitions, input->compaction_time);
 	usleep(g_config.delay * 1000);

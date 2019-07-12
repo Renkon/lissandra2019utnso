@@ -131,7 +131,7 @@ t_list*  create_tkv_list(partition_t* partition){
 			}
 			index = 1;
 			//Una vez  reconstruido el tkv lo agrego
-			record_t* record = convert_record(key_found->tkv);//Free? todo
+			record_t* record = convert_record(key_found->tkv);
 			list_add(tkvs, record);
 
 		}

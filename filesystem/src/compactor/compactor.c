@@ -2,11 +2,18 @@
 
 
 void iniitalize_compaction_in_all_tables(){
+	signal(SIGINT, handle_sigint);
+
 	for (int i = 0; i < list_size(table_state_list); i++) {
 		table_state_t* table_to_compact = list_get(table_state_list, i);
 		table_to_compact->compaction_thread =initialize_compaction();
 		sem_post(&thread_semaphore);
 	}
+}
+
+void handle_sigint() {
+	dump();
+	exit(0);
 }
 
 pthread_t  initialize_compaction() {
@@ -115,7 +122,7 @@ void start_compaction(char* table_directory,table_metadata_t* table_metadata,par
 		sem_post(bitmap_semaphore);
 		bloqued_time =last_timestamp-first_timestamp;
 		log_i("Compactacion terminada sobre la tabla %s!", table_name);
-		log_i("Esta estuvo bloqueada un total de %lld milisegundos", bloqued_time);
+		log_i("Y estuvo bloqueada un total de %lld milisegundos", bloqued_time);
 		list_destroy(block_list);
 		free(blocks_to_write);
 		list_destroy(partition_tkvs);
@@ -124,7 +131,6 @@ void start_compaction(char* table_directory,table_metadata_t* table_metadata,par
 		is_blocked_post(table_name);// desbloqueo
 		list_destroy_and_destroy_elements(partition_tkvs,free_tkvs_per_partition);
 		log_w("No hay bloques suficientes como para hacer la compactacion de la tabla %s. Compactacion cancelada.", table_name);
-
 	}
 	free(bitmap->bitarray);
 	free(bitmap);
@@ -215,7 +221,7 @@ int length_needed_to_add_tkvs_in_partitions(t_list* partition_tkvs){
 	int total_length =0;
 	for(int i=0; i<list_size(partition_tkvs); i++){
 			tkvs_per_partition_t* partition = list_get(partition_tkvs,i);
-				t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv); //hacer free TODO
+				t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv);
 				total_length+= necessary_blocks_for_tkvs(string_tkv_list);
 				list_destroy_and_destroy_elements(string_tkv_list,free_tkv);
 		}
@@ -224,7 +230,7 @@ int length_needed_to_add_tkvs_in_partitions(t_list* partition_tkvs){
 }
 
 int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_of_blocks,char* table_name) {
-	t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv); //hacer free TODO
+	t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv);
 	int size_of_all_tkvs_from_partition = size_of_all_tkvs(string_tkv_list);
 	int blocks_amount = necessary_blocks_for_tkvs(string_tkv_list);
 	//Si blocks amount da 0 significa que no tengo tkvs entonces le pongo un bloque vacio.
@@ -392,7 +398,7 @@ tkv_t* add_records_from_block(int block, int index, int incomplete_tkv_size,t_li
 			break;
 		}
 
-		record_t* record = convert_record(readed_key); //Free? todo
+		record_t* record = convert_record(readed_key);
 		list_add(tkvs, record);
 	}
 
@@ -456,7 +462,6 @@ void dump_all_tables(){
 }
 
 void dump(){
-
 	if(mem_table->elements_count>0){
 	//Saco cuantos bloques necesito para dumpear todas las tablas los cuales se calculan como:
 	//tamaño de todos los tkvs/ tamaño de un bloque redondeado hacia arriba.
@@ -553,7 +558,7 @@ void dump_table(table_t* table, t_list* blocks) {
 				string_append(&tkv_that_enters, "\n");
 				write_tkv(tkv_that_enters,block);
 				fclose(block);
-				free(tkv_that_enters);//esto todo
+				free(tkv_that_enters);
 				block_index++;
 				int block_open =list_get(blocks_for_the_table,block_index);;
 				block = open_block(block_open);

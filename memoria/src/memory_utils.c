@@ -10,8 +10,8 @@ int memory_insert(long long timestamp, int key, char* value){
 	char* str_key;
 	char* str_tstamp;
 
-	for (int i = 0; i < total_page_count; i++) {
-		if (strcmp(main_memory[i], "null") == 0) {
+	for (int i = 0; i < g_total_page_count; i++) {
+		if (strcmp(g_main_memory+(i*g_total_page_size), "null") == 0) {
 			str_key = string_itoa(key);
 			str_tstamp = string_from_format("%lld", timestamp);
 			str_tstamp = realloc(str_tstamp, strlen(str_tstamp) + strlen(str_key) + strlen(value) + 3);
@@ -21,11 +21,11 @@ int memory_insert(long long timestamp, int key, char* value){
 			strcat(str_tstamp, ";");
 			strcat(str_tstamp, value);
 
-			strcpy(main_memory[i], str_tstamp);
+			strcpy(g_main_memory+(i*g_total_page_size), str_tstamp);
 
 			free(str_key);
 			free(str_tstamp);
-			return i;
+			return (i*g_total_page_size);
 		}
 	}
 
@@ -33,9 +33,9 @@ int memory_insert(long long timestamp, int key, char* value){
 }
 
 bool memory_full() {
-	for (int i = 0; i < total_page_count; i++) {
-		if (strcmp(main_memory[i], "null") == 0) {
-			return i >= total_page_count;
+	for (int i = 0; i < g_total_page_count; i++) {
+		if (strcmp(g_main_memory+(i*g_total_page_size), "null") == 0) {
+			return false;
 		}
 	}
 
@@ -44,7 +44,7 @@ bool memory_full() {
 
 
 char* main_memory_values(int index,memory_var_t type){
-	char** our_array = string_split(main_memory[index], ";");
+	char** our_array = string_split(g_main_memory+index, ";");
 	char* value = our_array[type];
 	switch( type ){
 	case 0:
@@ -80,7 +80,10 @@ void modify_memory_by_index(int index, int key , char* value){
 	strcat(str_tstamp, str_key);
 	strcat(str_tstamp, ";");
 	strcat(str_tstamp, value);
-	strcpy(main_memory[index], str_tstamp);
+	strcpy(g_main_memory+index, str_tstamp);
+
+	free(str_key);
+	free(str_tstamp);
 }
 
 bool order_by_timestamp(int first_i,int second_i){
@@ -97,71 +100,85 @@ bool order_by_timestamp(int first_i,int second_i){
 
 }
 
-void eliminate_page_instance_by_index(segment_t* segment, int index){
-	page_t* page = get_page_by_index(segment, index);
-	int index_in_memory = page->index;
+void eliminate_page_instance_by_index(int index, char* table_name){
+	segment_t* found_segment = get_segment_by_index_global(index);
 
-	strcpy(main_memory[index_in_memory],"null");
+	strcpy(g_main_memory+index,"null");
 
-	int position = get_position_by_index(segment->page,index);
+	int position = get_position_by_index(found_segment->page,index);
 
 	if(position != -1){
-		list_remove_and_destroy_element(segment->page,position,(void*) destroy_page);
+		list_remove_and_destroy_element(found_segment->page,position,(void*) destroy_page);
+
+		if (list_size(found_segment->page) == 0 && !string_equals_ignore_case(table_name,found_segment->name)){
+			remove_segment(found_segment);
+		}
+
 	}else{
-		log_w("NO se encontro la pagina, abortando");//nunca deberia pasar esto xd
+		log_e("No se encontro la pagina, abortando");
 	}
 
 }
 
 t_list* list_add_multi_lists(t_list* pages_indexes){
 	t_list* new_list = list_create();
-	insert_input_t* insert = malloc(sizeof(insert_input_t));
+	char* timestamp;
+	char* key;
+	for(int i = 0 ; i < pages_indexes->elements_count ; i++){
+		insert_input_t* insert = malloc(sizeof(insert_input_t));
+		timestamp = main_memory_values(list_get(pages_indexes,i),TIMESTAMP);
+		key = main_memory_values(list_get(pages_indexes,i),KEY);
 
-	for(int i = 0;i < list_size(pages_indexes); i++){
-		insert->timestamp = string_to_long_long(main_memory_values(list_get(pages_indexes,i),TIMESTAMP));
-		insert->key = string_to_uint16(main_memory_values(list_get(pages_indexes,i),KEY));
+		insert->timestamp = string_to_long_long(timestamp);
+		insert->key = string_to_uint16(key);
 		insert->value = main_memory_values(list_get(pages_indexes,i),VALUE);
-		insert->table_name = get_table_name_by_index(list_get(pages_indexes,i));
+		insert->table_name = strdup(get_table_name_by_index(list_get(pages_indexes,i)));
+
 
 		list_add(new_list,insert);
+		free(timestamp);
+		free(key);
 	}
-
-	free(insert->table_name);
-	free(insert->value);
-	free(insert);
 
 	return new_list;
 }
 
-void journaling(){
+void journaling(response_t* response){
+	int sem_val;
+	sem_getvalue(&g_mem_op_semaphore, &sem_val);
+	if (sem_val > 0)
+		sem_wait(&g_mem_op_semaphore);
+
 	t_list* journal = get_pages_by_modified(true);
 	t_list* indexes = list_map(journal,(void*)page_get_index);
 
-	t_list* journal_list = list_add_multi_lists(journal_list);
+	t_list* journal_list = list_add_multi_lists(indexes);
 
-	int position;
-
-	for(int i = 0; i < list_size(journal_list); i++){
-		//insert_input_t* sending_journal = list_get(journal_list,i);
-		//elements_network_t elem_info = elements_create_in_info(sending_journal);
-		//do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, CREATE_IN, sending_journal, elem_info.elements, elem_info.elements_size, insert_callback, true, cleanup_insert_input, NULL);
-
-	}
-
-	remove_pages_modified();
-
-	for(int j = 0; j < list_size(journal); j++){
-		position = list_get(indexes,j);
-		strcpy(main_memory[position],"null");
-	}
+	elements_network_t elem_info = elements_multiinsert_in_info(journal_list);
+	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, MULTIINSERT_IN, journal_list, elem_info.elements, elem_info.elements_size, journal_callback, true, cleanup_journal_input, response);
 
 	list_destroy(journal);
 	list_destroy(indexes);
 
 }
 
-page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* value){
+void init_auto_journal() {
+	pthread_t journal_thread;
+	if (pthread_create(&journal_thread, NULL, (void*) journal_continuously, NULL)) {
+		log_e("No se pudo inicializar el hilo de journaling");
+	}
+}
 
+void journal_continuously() {
+	pthread_detach(pthread_self());
+
+	while (true) {
+		usleep(g_config.journal_delay * 1000);
+		journaling(NULL);
+	}
+}
+
+page_t* replace_algorithm(response_t* response,long long timestamp,int key, char* value, journal_invocation_t invocation, char* table_name){
 	int index;
 	page_t* found_page;
 	int replace;
@@ -175,21 +192,106 @@ page_t* replace_algorithm(segment_t* segment,long long timestamp,int key, char* 
 
 		replace = list_get(indexes_sorted,0);
 
-		eliminate_page_instance_by_index(segment,replace);
+		eliminate_page_instance_by_index(replace, table_name);
 
 		index = memory_insert(timestamp, key, value);
-		found_page = create_page(index, true);
+
+		if (invocation == J_SELECT){
+			found_page = create_page(index, false);
+		} else if (invocation == J_INSERT){
+			found_page = create_page(index, true);
+		}
 
 		list_destroy(not_modified_pages);
 		list_destroy(indexes);
 		list_destroy(indexes_sorted);
-
+		sem_post_neg(&g_mem_op_semaphore);
 		return found_page;
 
 	}else{
+		list_destroy(not_modified_pages);
 		log_i("Memoria llena, iniciando journaling...");
-		journaling();
-		replace_algorithm(segment, timestamp, key, value);
-		//return null;
+		journal_register_t* reg = malloc(sizeof(journal_register_t));
+		reg->key = key;
+		reg->timestamp = timestamp;
+		reg->table_name = strdup(table_name);
+		reg->value = strdup(value);
+
+		if (invocation == J_INSERT)
+			reg->modified = true;
+		else if (invocation == J_SELECT)
+			reg->modified = false;
+
+		if (response == NULL) {
+			response = malloc(sizeof(response_t));
+			response->id = -1337;
+		}
+
+		response->result = reg;
+
+		journaling(response);
+
+		return NULL;
 	}
+}
+
+void init_value_checker() {
+	pthread_t value_thread;
+
+	if (pthread_create(&value_thread, NULL, (void*) check_value, NULL)) {
+		log_e("No se pudo inicializar el hilo de gossiping");
+	}
+}
+
+void check_value() {
+	pthread_detach(pthread_self());
+	while (true) {
+		get_value_from_filesystem();
+		usleep(g_config.value_delay * 1000);
+	}
+}
+
+void get_value_from_filesystem() {
+	do_simple_request(MEMORY, g_config.filesystem_ip, g_config.filesystem_port, VALUE_IN, NULL, 0, NULL, get_value_callback, true, NULL, NULL);
+}
+
+void get_value_callback(void* result, response_t* response) {
+	if (result == NULL) {
+		log_w("El filesystem no respondio la solicitud del TAMAÑO_VALUE");
+		if (g_value_size == -1) {
+			log_e("No se pudo obtener el TAMAÑO_VALUE del filesystem, me cerrare.");
+			exit(1);
+		}
+	} else {
+		int* value = (int*) result;
+		log_t("Request del VALUE al fs devolvio: %i", *value);
+
+		if (*value != g_value_size) {
+			bool memory_initialized = g_value_size != -1;
+
+			log_t("Se cambio el tamaño maximo de los registros");
+			g_value_size = *value;
+			g_total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + g_value_size + 3;
+			g_total_page_count = g_config.memory_size/g_total_page_size;
+
+			if (memory_initialized)
+				journaling(response);
+			else
+				init_main_memory();
+		}
+	}
+}
+
+void init_main_memory(){
+	g_main_memory = (char*) malloc(g_config.memory_size);
+	for(int i = 0; i < g_total_page_count; i++){
+		strcpy(g_main_memory+(i*g_total_page_size),"null");
+	}
+}
+
+void sem_post_neg(sem_t* sem) {
+	int value;
+	sem_getvalue(sem, &value);
+	if (value <= 0)
+		sem_post(sem);
 }

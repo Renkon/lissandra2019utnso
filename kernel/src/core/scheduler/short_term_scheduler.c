@@ -4,15 +4,23 @@ void short_term_schedule() {
 	pcb_t* pcb;
 	sem_t* semaphore_init;
 
-	t_list* __pcbs_to_ready = list_create();
+	sem_init(&g_sts_semaphore, 0, 0);
+	sem_init(&g_inner_scheduler_semaphore, 0, 1);
+
+	__pcbs_to_ready = list_create();
+
+	for (int i = 0; i < list_size(g_scheduler_queues.exec); i++)
+		list_add(__pcbs_to_ready, NULL);
 
 	pthread_detach(pthread_self());
 
 	// Este bloque se ejecuta continuamente, y es la mente maestra del planificador
 	while (true) {
+		sem_wait(&g_sts_semaphore);
 		usleep(g_config.execution_delay * 1000);
 
 		for (int i = 0; i < list_size(g_scheduler_queues.exec); i++) {
+			sem_wait(&g_inner_scheduler_semaphore);
 			if ((pcb = (pcb_t*) list_get(g_scheduler_queues.exec, i)) == NULL) {
 				// No hay proceso en este slot de lo que esta en ejecucion
 				// Procedemos a obtener el primer elemento y lo dejamos en ready
@@ -24,46 +32,37 @@ void short_term_schedule() {
 					pcb->state = EXEC;
 					pcb->quantum = 0;
 
-					log_t("Proceso %i pasado a Exec", pcb->process_id);
+					log_d("Proceso %i pasado a Exec en hilo %i", pcb->process_id, i);
+					pcb->__recently_exec = true;
+					sem_post_neg(&g_sts_semaphore);
 				}
-			} else {
-				// Revisamos si termino de ejecutar
-				if (pcb->program_counter >= list_size(pcb->statements)) {
-					list_remove(g_scheduler_queues.exec, i);
-					list_add(g_scheduler_queues.exit, pcb);
-					list_add_in_index(g_scheduler_queues.exec, i, NULL);
-					pcb->state = EXIT;
+			} else if (pcb->__recently_exec) {
+				semaphore_init = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_init, i);
+				pcb->processor = i;
+				sem_post(semaphore_init);
+				// Aca el planificador ejecuta
+				pcb->quantum++;
+				pcb->__recently_exec = false;
+			}
+			sem_post(&g_inner_scheduler_semaphore);
+		}
 
-					log_t("Proceso %i finalizo su ejecucion", pcb->process_id);
-				} else if (pcb->quantum >= g_config.quantum) {
-					// Termino su ciclo de quantum
-					list_remove(g_scheduler_queues.exec, i);
-					list_add(g_scheduler_queues.ready, pcb);
-					list_add(__pcbs_to_ready, pcb);
-					pcb->state = READY;
-					pcb->__recently_ready = true;
-					list_add_in_index(g_scheduler_queues.exec, i, NULL);
-
-					log_t("Proceso %i vuelve a cola de listos", pcb->process_id);
-				} else {
-					semaphore_init = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_init, i);
-					pcb->processor = i;
-					sem_post(semaphore_init);
-					// Aca el planificador ejecuta
-					pcb->quantum++;
-				}
+		for (int i = 0; i < list_size(__pcbs_to_ready); i++) {
+			pcb_t* pcb = (pcb_t*) list_get(__pcbs_to_ready, i);
+			if (pcb != NULL && pcb->__recently_ready) {
+				pcb->__recently_ready = false;
+				list_replace(__pcbs_to_ready, i, NULL);
+				sem_post_neg(&g_sts_semaphore);
 			}
 		}
 
-		for (int i = 0; i < list_size(__pcbs_to_ready); i++)
-			((pcb_t*) list_get(__pcbs_to_ready, i))->__recently_ready = false;
-		list_clean(__pcbs_to_ready);
 	}
 }
 
 void planifier_execute(void* arg) {
 	pthread_detach(pthread_self());
 
+	pcb_t* pcb;
 	int exec_id = *((int*) arg);
 	sem_t* semaphore_init = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_init, exec_id);
 	sem_t* semaphore_exec = (sem_t*) list_get(g_scheduler_queues.exec_semaphores, exec_id);
@@ -72,7 +71,46 @@ void planifier_execute(void* arg) {
 		sem_wait(semaphore_init);
 		exec_next_statement(exec_id);
 		sem_wait(semaphore_exec);
+
+		// Revisamos si termino de ejecutar
+		pcb = (pcb_t*) list_get(g_scheduler_queues.exec, exec_id);
+		if (pcb->program_counter >= list_size(pcb->statements)) {
+			list_remove(g_scheduler_queues.exec, exec_id);
+			list_add(g_scheduler_queues.exit, pcb);
+			list_add_in_index(g_scheduler_queues.exec, exec_id, NULL);
+			pcb->state = EXIT;
+
+			log_d("Proceso %i finalizo su ejecucion", pcb->process_id);
+			list_replace(__pcbs_to_ready, exec_id, NULL);
+			sem_post(&g_lts_semaphore);
+			sem_post_neg(&g_sts_semaphore);
+		} else if (pcb->quantum >= g_config.quantum) {
+			// Termino su ciclo de quantum
+			list_remove(g_scheduler_queues.exec, exec_id);
+			list_add(g_scheduler_queues.ready, pcb);
+			list_replace(__pcbs_to_ready, exec_id, pcb);
+			pcb->state = READY;
+			pcb->__recently_ready = true;
+			list_add_in_index(g_scheduler_queues.exec, exec_id, NULL);
+
+			log_d("Proceso %i vuelve a cola de listos", pcb->process_id);
+			sem_post_neg(&g_sts_semaphore);
+		} else {
+			semaphore_init = (sem_t*) list_get(g_scheduler_queues.exec_semaphores_init, exec_id);
+			pcb->processor = exec_id;
+			usleep(g_config.execution_delay * 1000);
+			sem_post(semaphore_init);
+			// Aca el planificador ejecuta
+			pcb->quantum++;
+		}
 	}
+}
+
+void sem_post_neg(sem_t* semaphore) {
+	int sem;
+	sem_getvalue(semaphore, &sem);
+	if (sem <= 0)
+		sem_post(semaphore);
 }
 
 void exec_next_statement(int processor) {
@@ -84,8 +122,10 @@ void exec_next_statement(int processor) {
 	if (statement->operation <= INSERT) {
 		// Si es select o insert nos interesa persistir informacion de la consulta
 		event = malloc(sizeof(stats_t));
+		event->consistency = -1;
 		event->timestamp_start = get_timestamp();
-		event->memory = 0; // TODO: obtener en q memoria se ejecutaria esto
+		event->timestamp_end = event->timestamp_start;
+		event->memory = 0;
 		event->event_type = statement->operation == SELECT ? SELECT_EVENT : INSERT_EVENT;
 		pcb->last_execution_stats = event;
 	}
@@ -99,12 +139,11 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 	elements_network_t element_info;
 	void (*callback)(void*, response_t*);
 
-	//pcb_operation_t* pcb_operation = malloc(sizeof(pcb_operation_t));
-	//char* demo_str = string_duplicate("soy un kernel");
-	//do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, SELECT_IN, demo_str, 14, select_callback);
-	//select_input_t* input = statement->select_input;
-	// Esto deberia ir en el callback
-	// Aca deberiamos tener el PCB
+	if (statement->operation == JOURNAL) {
+		journaling(false, on_journal, pcb);
+		return;
+	}
+
 	switch (statement->operation) {
 		case SELECT:
 			network_operation = SELECT_IN;
@@ -135,11 +174,6 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 			input = statement->drop_input;
 			element_info = elements_drop_in_info(statement->drop_input);
 			callback = on_drop;
-		break;
-		case JOURNAL:
-			network_operation = JOURNAL_IN;
-			element_info = elements_journal_in_info(NULL);
-			callback = on_journal;
 		break;
 		default:
 		break;
@@ -174,7 +208,68 @@ void exec_remote(pcb_t* pcb, statement_t* statement) {
 		pcb->program_counter = list_size(pcb->statements);
 		sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
 	} else {
-		do_simple_request(KERNEL, g_config.memory_ip, g_config.memory_port, network_operation, input,
+		memory_t* assigned_memory;
+		if (statement->operation == SELECT || statement->operation == INSERT) {
+			// Tengo que revisar el criterio
+			char* table_name = statement->operation == SELECT ? statement->select_input->table_name : statement->insert_input->table_name;
+			uint16_t key = statement->operation == SELECT ? statement->select_input->key : statement->insert_input->key;
+			consistency_t consistency = get_consistency_from_table(table_name);
+
+			if (consistency == -1) {
+				free(element_info.elements_size);
+				log_e("Supuestamente la tabla estaba en metadata, pero ya se borro, por lo tanto no puedo hacer la operacion");
+				log_e("Hubo un error al ejecutar un statement. Se cancela la ejecucion del proceso con PID %i", pcb->process_id);
+				pcb->errors = true;
+				pcb->program_counter = list_size(pcb->statements);
+				sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
+				return;
+			}
+
+			switch (consistency) {
+				case STRONG_CONSISTENCY:
+					assigned_memory = get_any_sc_memory();
+				break;
+				case STRONG_HASH_CONSISTENCY:
+					assigned_memory = get_any_shc_memory(key);
+				break;
+				case EVENTUAL_CONSISTENCY:
+					assigned_memory = get_any_ec_memory();
+				break;
+			}
+
+			if (assigned_memory == NULL) {
+				free(element_info.elements_size);
+				log_e("Hubo un error al ejecutar un statement. Se cancela la ejecucion del proceso con PID %i", pcb->process_id);
+
+				pcb->last_execution_stats->timestamp_end = get_timestamp();
+				pcb->last_execution_stats->memory = -1;
+				pcb->last_execution_stats->consistency = consistency;
+				log_t("Se ingresa un evento a las estadisticas.");
+				list_add(g_stats_events, pcb->last_execution_stats);
+				clear_old_stats();
+
+				pcb->errors = true;
+				pcb->program_counter = list_size(pcb->statements);
+				sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
+				return;
+			}
+
+			pcb->last_execution_stats->memory = assigned_memory->id;
+			pcb->last_execution_stats->consistency = consistency;
+		} else { // Agarro una memoria al azar, a lo nisman
+			assigned_memory = get_any_memory();
+			if (assigned_memory == NULL) {
+				free(element_info.elements_size);
+				log_e("Hubo un error al ejecutar un statement. Se cancela la ejecucion del proceso con PID %i", pcb->process_id);
+				pcb->errors = true;
+				pcb->program_counter = list_size(pcb->statements);
+				sem_post((sem_t*) list_get(g_scheduler_queues.exec_semaphores, pcb->processor));
+				return;
+			}
+		}
+
+		statement->assigned_memory = assigned_memory;
+		do_simple_request(KERNEL, assigned_memory->ip, assigned_memory->port, network_operation, input,
 				element_info.elements, element_info.elements_size, callback, true, NULL, pcb);
 
 		sem_wait(statement->semaphore);
@@ -192,16 +287,21 @@ void on_select(void* result, response_t* response) {
 
 	if (record == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El SELECT ha fallado");
+		current_statement->assigned_memory->alive = false;
+		current_statement->assigned_memory->timestamp = get_timestamp();
+		remove_memory(current_statement->assigned_memory->id);
+		pcb->errors = true;
+	} else if (record->timestamp == -4) {
+		log_e("La memoria asignada no pudo realizar un journaling para seleccionar un valor. El SELECT ha fallado");
 		pcb->errors = true;
 	} else if (record->timestamp == -3) {
-		log_e("Hubo un error de red al querer ir a buscar un valor. El SELECT ha fallado");
+		log_e("Hubo un error de red al querer ir a buscar un valor al FS. El SELECT ha fallado");
 		pcb->errors = true;
 	} else if (record->timestamp == -2) {
 		log_e("La tabla %s no existe. El SELECT ha fallado", record->table_name);
 		pcb->errors = true;
 	} else if (record->timestamp == -1) {
-		log_e("La key solicitada no se encuentra en la tabla %s. El SELECT ha fallado", record->table_name);
-		pcb->errors = true;
+		log_i("SELECT FROM %s no tiene valor", record->table_name);
 	} else {
 		log_i("SELECT %i FROM %s: %s", record->key, record->table_name, record->value);
 	}
@@ -220,14 +320,21 @@ void on_insert(void* result, response_t* response) {
 	// Esto me da asco, pero bueno, perdoname diosito x2.
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
+	insert_input_t* input = current_statement->insert_input;
 
-	// TODO: logica del insert aca
-	// Debajo deberia ir lo del insert
 	if (status == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+		current_statement->assigned_memory->alive = false;
+		current_statement->assigned_memory->timestamp = get_timestamp();
+		remove_memory(current_statement->assigned_memory->id);
 		pcb->errors = true;
+	} else if (*status == -4) {
+		log_e("La memoria no pudo realizar el insert dado que tenia la memoria llena y fallo el journaling. EL INSERT ha fallado");
+		pcb->errors = true;
+	} else if (*status == -1) {
+		log_w("El tamaño del valor (%s) del registro insertado es mayor al permitido. EL INSERT ha fallado", input->value);
 	} else {
-		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+		log_i("Se inserto en %s:%i. Valor: %s", input->table_name, input->key, input->value);
 	}
 
 	pcb->last_execution_stats->timestamp_end = get_timestamp();
@@ -248,6 +355,9 @@ void on_create(void* result, response_t* response) {
 	input = current_statement->create_input;
 	if (status == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El CREATE ha fallado");
+		current_statement->assigned_memory->alive = false;
+		current_statement->assigned_memory->timestamp = get_timestamp();
+		remove_memory(current_statement->assigned_memory->id);
 		pcb->errors = true;
 	} else if (*status == -3) {
 		log_e("Hubo un error de red al querer crear la tabla %s. El CREATE ha fallado", input->table_name);
@@ -275,6 +385,9 @@ void on_describe(void* result, response_t* response) {
 
 	if (metadata_list == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El DESCRIBE ha fallado");
+		current_statement->assigned_memory->alive = false;
+		current_statement->assigned_memory->timestamp = get_timestamp();
+		remove_memory(current_statement->assigned_memory->id);
 		pcb->errors = true;
 	} else {
 		if (list_size(metadata_list) == 0) {
@@ -304,10 +417,11 @@ void on_drop(void* result, response_t* response) {
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
-	// TODO: logica del drop aca
-	// Debajo deberia ir lo del drop
 	if (status == NULL) {
 		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El DROP ha fallado");
+		current_statement->assigned_memory->alive = false;
+		current_statement->assigned_memory->timestamp = get_timestamp();
+		remove_memory(current_statement->assigned_memory->id);
 		pcb->errors = true;
 	} else if (*status == -2) {
 		log_e("Hubo un error de red al querer droppear la tabla %s. El DROP ha fallado", current_statement->drop_input->table_name);
@@ -330,13 +444,14 @@ void on_journal(void* result, response_t* response) {
 	pcb_t* pcb = (pcb_t*) response;
 	statement_t* current_statement = (statement_t*) list_get(pcb->statements, pcb->program_counter);
 
-	// TODO: logica del journal aca
-	// Debajo deberia ir lo del journal
-	if (status == NULL) {
-		log_e("Hubo un error de red al querer comunicarme con la memoria asignada. El INSERT ha fallado");
+	if (*status == -3) {
+		log_e("No hay memorias asignadas como para realizar JOURNAL.");
+		pcb->errors = true;
+	} else if (*status == -1) {
+		log_e("Al menos una memoria fallo al intentar hacer el journaling. El JOURNAL ha fallado");
 		pcb->errors = true;
 	} else {
-		log_i("Recibi un %i pero la verdad no se que hacer con el. TODO: mostrar mensaje como la gente", *status);
+		log_i("Se realizo el journaling de todas las memorias asignadas a un criterio.", *status);
 	}
 
 	post_exec_statement(pcb, current_statement);

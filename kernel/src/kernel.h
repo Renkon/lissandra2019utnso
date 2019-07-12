@@ -11,6 +11,8 @@
 #include "core/operations.h"
 #include "core/scheduler/scheduler.h"
 #include "core/statistics/metrics.h"
+#include "core/gossiping/gossiping.h"
+#include "core/memories/memories.h"
 
 typedef struct {
 	char* memory_ip;
@@ -21,6 +23,7 @@ typedef struct {
 	int execution_delay;
 	int lts_delay;
 	int metrics_display;
+	int gossip_refresh;
 } knconfig_t;
 
 knconfig_t g_config;

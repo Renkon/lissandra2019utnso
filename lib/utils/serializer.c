@@ -53,6 +53,36 @@ elements_network_t elements_insert_out_info(void* input) {
 	return element_info;
 }
 
+elements_network_t elements_multiinsert_in_info(void* input) {
+	t_list* inserts = (t_list*) input;
+	insert_input_t* insert;
+	elements_network_t element_info = init_elements_info(4 * list_size(inserts));
+	int* iterator = element_info.elements_size;
+
+	for (int i = 0; i < list_size(inserts); i++) {
+		insert = (insert_input_t*) list_get(inserts, i);
+		*iterator = strlen(insert->table_name) + 1;
+		iterator++;
+		*iterator = sizeof(uint16_t);
+		iterator++;
+		*iterator = strlen(insert->value) + 1;
+		iterator++;
+		*iterator = sizeof(long long);
+		iterator++;
+	}
+
+	return element_info;
+}
+
+elements_network_t elements_multiinsert_out_info(void* input) {
+	elements_network_t element_info = init_elements_info(1);
+	int* iterator = element_info.elements_size;
+
+	*iterator = sizeof(int);
+
+	return element_info;
+}
+
 elements_network_t elements_create_in_info(void* input) {
 	create_input_t* create_input = (create_input_t*) input;
 	elements_network_t element_info = init_elements_info(4);
@@ -219,6 +249,9 @@ elements_network_t get_out_element_info(socket_operation_t operation, void* inpu
 		case GOSSIP_OUT:
 			return elements_gossip_info(input);
 		break;
+		case MULTIINSERT_OUT:
+			return elements_multiinsert_out_info(input);
+		break;
 		default:
 			return init_elements_info(0);
 		break;
@@ -230,6 +263,8 @@ void serialize_content(void* to, socket_operation_t operation, void* from) {
 	record_t* record_select;
 	insert_input_t* insert;
 	int* insert_response;
+	int* multiinsert_response;
+	t_list* inserts;
 	create_input_t* create;
 	int* create_response;
 	describe_input_t* describe;
@@ -297,6 +332,35 @@ void serialize_content(void* to, socket_operation_t operation, void* from) {
 
 			elem_length = sizeof(int);
 			memcpy(to_ptr, insert_response, elem_length);
+		break;
+		case MULTIINSERT_IN:
+			inserts = (t_list*) from;
+
+			for (int i = 0; i < list_size(inserts); i++) {
+				insert = (insert_input_t*) list_get(inserts, i);
+
+				elem_length = strlen(insert->table_name) + 1;
+				memcpy(to_ptr + offset, insert->table_name, elem_length);
+				offset += elem_length;
+
+				elem_length = sizeof(uint16_t);
+				memcpy(to_ptr + offset, &(insert->key), elem_length);
+				offset += elem_length;
+
+				elem_length = strlen(insert->value) + 1;
+				memcpy(to_ptr + offset, insert->value, elem_length);
+				offset += elem_length;
+
+				elem_length = sizeof(long long);
+				memcpy(to_ptr + offset, &(insert->timestamp), elem_length);
+				offset += elem_length;
+			}
+		break;
+		case MULTIINSERT_OUT:
+			multiinsert_response = (int*) from;
+
+			elem_length = sizeof(int);
+			memcpy(to_ptr, multiinsert_response, elem_length);
 		break;
 		case CREATE_IN:
 			create = (create_input_t*) from;
@@ -412,6 +476,8 @@ void* deserialize_content(void* from, socket_operation_t operation, int elements
 	record_t* record_select;
 	insert_input_t* insert;
 	int* insert_response;
+	t_list* inserts;
+	int* multiinsert_response;
 	create_input_t* create;
 	int* create_response;
 	describe_input_t* describe;
@@ -475,6 +541,34 @@ void* deserialize_content(void* from, socket_operation_t operation, int elements
 			insert_response = malloc(sizeof(int));
 			memcpy(insert_response, from, elements_size[0]);
 			return insert_response;
+		break;
+		case MULTIINSERT_IN:
+			inserts = list_create();
+			for (int i = 0; i < elements; i = i + 4) {
+				insert = malloc(sizeof(insert_input_t));
+
+				length = elements_size[i];
+				insert->table_name = malloc(length);
+				memcpy(insert->table_name, from + offset, length);
+				offset += length;
+				length = elements_size[i + 1];
+				insert->key = *((uint16_t*)(from + offset));
+				offset += length;
+				length = elements_size[i + 2];
+				insert->value = malloc(length);
+				memcpy(insert->value, from + offset, length);
+				offset += length;
+				length = elements_size[i + 3];
+				insert->timestamp = *((long long*)(from + offset));
+				offset += length;
+				list_add(inserts, insert);
+			}
+			return inserts;
+		break;
+		case MULTIINSERT_OUT:
+			multiinsert_response = malloc(sizeof(int));
+			memcpy(multiinsert_response, from, elements_size[0]);
+			return multiinsert_response;
 		break;
 		case CREATE_IN:
 			create = malloc(sizeof(create_input_t));
@@ -583,6 +677,7 @@ void* deserialize_content(void* from, socket_operation_t operation, int elements
 
 void free_deserialized_content(void* content, socket_operation_t operation) {
 	t_list* describe_list;
+	t_list* inserts;
 	t_list* memories;
 
 	if (content == NULL)
@@ -604,6 +699,18 @@ void free_deserialized_content(void* content, socket_operation_t operation) {
 			free(content);
 		break;
 		case INSERT_OUT:
+			free(content);
+		break;
+		case MULTIINSERT_IN:
+			inserts = (t_list*) content;
+			for (int i = 0; i < list_size(inserts); i++) {
+				free(((insert_input_t*) list_get(inserts, i))->table_name);
+				free(((insert_input_t*) list_get(inserts, i))->value);
+				free(list_get(inserts, i));
+			}
+			list_destroy(inserts);
+		break;
+		case MULTIINSERT_OUT:
 			free(content);
 		break;
 		case CREATE_IN:

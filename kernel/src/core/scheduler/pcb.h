@@ -20,6 +20,7 @@ typedef struct {
 	t_list* statements;
 	bool errors;
 	bool __recently_ready;
+	bool __recently_exec;
 	int processor;
 	stats_t* last_execution_stats;
 } pcb_t;

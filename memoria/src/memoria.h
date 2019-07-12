@@ -34,6 +34,7 @@ typedef struct {
 	int journal_delay;
 	int gossip_delay;
 	int memory_number;
+	int value_delay;
 } memconfig_t;
 
 memconfig_t g_config;
@@ -41,15 +42,15 @@ extern char* g_config_keys[];
 extern int g_config_keys_size;
 
 void init_server_callbacks();
-void create_dummy();
+void init_global_segment_list();
 
 //GLOBAL STATMENTS
 t_list* g_segment_list;
-char** main_memory;
-int total_page_count;
-int total_page_size;
+char* g_main_memory;
+int g_total_page_count;
+int g_total_page_size;
+int g_value_size;
 
 callbacks_t* get_callbacks();
-void init_main_memory();
 
 #endif /* MEMORIA_H_ */
