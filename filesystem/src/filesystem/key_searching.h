@@ -9,13 +9,14 @@
 #include <limits.h>
 #include "utils/dates.h"
 #include "string.h"
+#include "commons/string.h"
 
 table_metadata_t* read_table_metadata(char* table_directory);
 partition_t* read_fs_archive(char* partition_string);
 record_t* search_key_in_partition(char* partition_path, int key);
 int tkv_size();
 char* read_first_tkv_in_block(int block);
-tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_size);
+tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_size, tkv_t* previous_key_founded);
 void convert_to_record(record_t* record,tkv_t* tkv);
 record_t* copy_key(record_t* key_to_copy);
 record_t* copy_key2(record_t* key_to_copy);

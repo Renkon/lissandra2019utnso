@@ -40,7 +40,7 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 	int incomplete_tkv_size = 0;
 
 	for (int i = 0; i < partition->number_of_blocks; i++) {
-		key_found = search_key_in_block(partition->blocks[i], string_key, index, incomplete_tkv_size);
+		key_found = search_key_in_block(partition->blocks[i], string_key, index, incomplete_tkv_size,correct_key_found);
 		index = 0;
 
 		//Me fijo si encontro la key
@@ -142,7 +142,7 @@ char* read_first_tkv_in_block(int block) {
 	return readed_key;
 }
 
-tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_size) {
+tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_size, tkv_t* previous_key_founded) {
 	char* block_directory = create_block_directory(block);
 	tkv_t* key_found_in_block = malloc(sizeof(tkv_t));
 	key_found_in_block->tkv = malloc(tkv_size());
@@ -169,6 +169,11 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 		if (readed_key[0] && string_ends_with(readed_key, "\n")) {
 			//Si tiene \n entonces copio este string sin el \n y prengo el flag de incompleto
 			char* substr = string_substring_until(readed_key, strlen(readed_key) - 1);
+
+			if(!string_equals_ignore_case(key_found_in_block->tkv,"-1;-1;-1")){
+				free(previous_key_founded->tkv);
+				previous_key_founded->tkv = strdup(key_found_in_block->tkv);
+			}
 			strcpy(key_found_in_block->tkv, substr);
 			key_found_in_block->incomplete = true;
 			free(substr);
