@@ -2,11 +2,18 @@
 
 
 void iniitalize_compaction_in_all_tables(){
+	signal(SIGINT, handle_sigint);
+
 	for (int i = 0; i < list_size(table_state_list); i++) {
 		table_state_t* table_to_compact = list_get(table_state_list, i);
 		table_to_compact->compaction_thread =initialize_compaction();
 		sem_post(&thread_semaphore);
 	}
+}
+
+void handle_sigint() {
+	dump();
+	exit(0);
 }
 
 pthread_t  initialize_compaction() {
@@ -427,7 +434,6 @@ void dump_all_tables(){
 }
 
 void dump(){
-
 	if(mem_table->elements_count>0){
 	//Saco cuantos bloques necesito para dumpear todas las tablas los cuales se calculan como:
 	//tamaño de todos los tkvs/ tamaño de un bloque redondeado hacia arriba.

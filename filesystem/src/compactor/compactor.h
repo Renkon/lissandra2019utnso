@@ -2,6 +2,7 @@
 #define COMPACTOR_COMPACTOR_H_
 
 #include <stdio.h>
+#include <signal.h>
 #include "../lissandra/lissandra.h"
 #include <commons/collections/list.h>
 #include "../filesystem/filesystem.h"
@@ -10,6 +11,7 @@
 #include "../tkvs_utils.h"
 
 void dump_all_tables();
+void handle_sigint();
 void dump();
 void free_memtable();
 void dump_table(table_t* table, t_list* blocks);
