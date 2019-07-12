@@ -2,25 +2,31 @@
 
 
 void iniitalize_compaction_in_all_tables(){
-
 	for (int i = 0; i < list_size(table_state_list); i++) {
 		table_state_t* table_to_compact = list_get(table_state_list, i);
 		table_to_compact->compaction_thread =initialize_compaction();
+		sem_post(&thread_semaphore);
 	}
 }
 
 pthread_t  initialize_compaction() {
 	pthread_t compaction_thread;
 	if (pthread_create(&compaction_thread, NULL, (void*) compact_this_table, NULL)) {
-		log_e("No se pudo inicializar el hilo compactacion en la tabla %s");
+		log_e("No se pudo inicializar el hilo compactacion en la tabla");
 	}
 	return compaction_thread;
 }
 
 void compact_this_table(){
 	pthread_detach(pthread_self());
+	sem_wait(&thread_semaphore);
 	table_state_t* table_to_compact = find_in_table_state_list_with_thread(pthread_self());
-	char* table_name = table_to_compact->name;
+
+	if(table_to_compact == NULL){
+		log_w("Ya se borro la tabla a compactar");
+		return;
+	}
+	char* table_name = strdup(table_to_compact->name);
 	char* initial_table_dir = get_table_directory();
 	char* table_directory = create_new_directory(initial_table_dir,table_name);
 	table_metadata_t* table_metadata = read_table_metadata(table_directory);
@@ -28,13 +34,14 @@ void compact_this_table(){
 	free(initial_table_dir);
 	free(table_directory);
 	free(table_metadata);
-
-	while(get_live_status(table_name) == 1){
+	log_t("Hilo de compactacion de la tabla %s iniciado",table_name);
+	while(get_live_status(pthread_self()) == 1){
 		compaction(table_name);
 		usleep(compaction_time * 1000);
 	}
-	log_i("Hilo de compactacion de la tabla %s finalizado",table_name);
-	destroy_in_table_state_list(table_name);
+	log_t("Hilo de compactacion de la tabla %s finalizado",table_name);
+	free(table_name);
+	destroy_in_table_state_list(pthread_self());
 }
 
 
@@ -51,6 +58,7 @@ void compaction(char* table_name){
 		partition_t* tmpc =get_all_blocks_from_all_tmps(table_name);
 		//Creo el tmpc
 		create_fs_archive(table_name,tmpc->blocks,tmpc->number_of_blocks,tmpc->size,0,0);
+		log_t("Se creo el archivo A1.tmpc en la tabla %s",table_name);
 		t_list* tmpc_tkvs = create_tkv_list(tmpc);
 		t_list* partition_tkvs = create_partition_tkv_list(table_directory,table_metadata);
 		get_tkvs_to_insert(tmpc_tkvs,partition_tkvs);
@@ -70,10 +78,12 @@ void compaction(char* table_name){
 		int* blocks= malloc(sizeof(int)*necessary_blocks);
 		int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
 		t_list* block_list = from_array_to_list(blocks,free_blocks_amount);
+		char* blocks_to_write = get_block_string(block_list);
 		create_new_partitions(partition_tkvs,block_list,free_blocks_amount,table_name);
 		is_blocked_post(table_name);// desbloqueo
 		last_timestamp = get_timestamp();
 		write_bitmap(bitmap, bitmap_dir);
+		log_t("Se escribieron los siguientes bloques para la compactacion: %s",blocks_to_write);
 		sem_post(bitmap_semaphore);
 		bloqued_time =last_timestamp-first_timestamp;
 		log_i("Compactacion terminada sobre la tabla %s!", table_name);
@@ -88,10 +98,32 @@ void compaction(char* table_name){
 		free(blocks);
 		list_destroy(partition_tkvs);
 		list_destroy(block_list);
+		free(blocks_to_write);
 	}
 	free(tmp_name);
 	free(initial_table_dir);
 	free(table_directory);
+}
+
+char* get_block_string(t_list* block_list){
+	char* block_string = NULL;
+	for (int i = 0; i < list_size(block_list); i++) {
+		int block = list_get(block_list, i);
+		if (block_string == NULL) {
+			block_string = malloc(digits_in_a_number(block) + 1);
+			sprintf(block_string, "%d", block);
+		} else {
+			char* next_block = malloc(digits_in_a_number(block) + 3);
+			sprintf(next_block, ", %d", block);
+			string_append(&block_string, next_block);
+			free(next_block);
+		}
+
+	}
+	if(block_string == NULL){
+		block_string = strdup("Ninguno");
+	}
+	return block_string;
 }
 
 int* from_list_to_array(t_list* list){
@@ -416,6 +448,7 @@ void dump(){
 			table_t* table = list_get(mem_table,i);
 
 			dump_table(table,block_list);
+
 			log_i("Dumpeados los datos de la tabla %s",table->name);
 		}
 		write_bitmap(bitmap, bitmap_dir);
@@ -446,6 +479,7 @@ void free_memtable(){
 }
 
 void dump_table(table_t* table, t_list* blocks) {
+	char* blocks_to_write = get_block_string(blocks);
 	int size_of_all_tkvs_in_table = size_of_all_tkvs(table->tkvs);
 	int blocks_amount = necessary_blocks_for_tkvs(table->tkvs);
 	t_list* blocks_for_the_table = list_take_and_remove(blocks,blocks_amount);
@@ -509,6 +543,8 @@ void dump_table(table_t* table, t_list* blocks) {
 	}
 	list_destroy(blocks_for_the_table);
 	fclose(block);
+	log_t("Se escribieron los siguientes bloques para el dumpeo de la tabla %s: %s",table->name,blocks_to_write);
+	free(blocks_to_write);
 }
 
 

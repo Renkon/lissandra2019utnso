@@ -31,5 +31,6 @@ int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_o
 void compact_this_table();
 void iniitalize_compaction_in_all_tables();
 pthread_t  initialize_compaction();
+char* get_block_string(t_list* block_list);
 
 #endif /* COMPACTOR_COMPACTOR_H_ */

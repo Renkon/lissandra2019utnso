@@ -61,6 +61,7 @@ void process_insert(insert_input_t* input, response_t* response) {
 		if (value_exceeds_maximun_size(input->value)) {
 			log_w("El valor de la key a insertar excede el tamaño maximo soportado. Operacion INSERT cancelada", table_name_upper);
 			free(table_name_upper);
+			free(table_directory);
 			*insert_status = -1;
 		} else {
 			if (input->timestamp == -1) {
@@ -111,22 +112,27 @@ void process_create(create_input_t* input, response_t* response) {
 	//Quiero saber si hay tantos bloques libres como particiones asi que busco cuantos bloques libres hay
 	//Poner semaforo todo
 	int free_blocks_amount = assign_free_blocks(bitmap, blocks, input->partitions);
-
 	if (free_blocks_amount == input->partitions) {
+
 		//Si habia n bloques libres me toca saber si ya existe la tabla a crear o no
 		if (create_table_folder(table_name_upper) == 0) {
+			t_list* block_list = from_array_to_list(blocks,free_blocks_amount);
+			char* blocks_to_write = get_block_string(block_list);
 			//SI no existe la tabla entonces procedo con el CREATE normlamente
-			log_i("Se creo el directorio de la tabla %s ", table_name_upper);
+			log_t("Se creo el directorio de la tabla %s ", table_name_upper);
 
 			create_table_metadata(input->consistency, input->partitions,input->compaction_time, table_name_upper);
-			log_i("Se creo la metadata de la tabla %s ", table_name_upper);
+			log_t("Se creo la metadata de la tabla %s ", table_name_upper);
 
 			create_partitions(input->partitions, table_name_upper, blocks);
 			//Guardo el bitmap
 			write_bitmap(bitmap, bitmap_dir);
-			log_i("Se crearon %d particiones para la tabla %s ",input->partitions, table_name_upper);
-
-			log_i("Tabla %s creada exitosamente! ", table_name_upper);
+			add_table_to_table_state_list(table_name_upper);
+			log_t("Se crearon %d particiones para la tabla %s ",input->partitions, table_name_upper);
+			log_t("Se reservaron los siguientes bloques para la tabla %s: %s",table_name_upper,blocks_to_write);
+			log_t("Tabla %s creada exitosamente! ", table_name_upper);
+			list_destroy(block_list);
+			free(blocks_to_write);
 			*create_status = 0;
 		} else {
 			log_w("La tabla %s ya esta en el sistema. Operacion CREATE cancelada.",table_name_upper);
@@ -139,7 +145,6 @@ void process_create(create_input_t* input, response_t* response) {
 		*create_status = -2;
 	}
 	sem_post(bitmap_semaphore);
-	add_table_to_table_state_list(table_name_upper);
 	free(table_name_upper);
 	free(bitmap->bitarray);
 	free(bitmap);
@@ -151,8 +156,7 @@ void process_create(create_input_t* input, response_t* response) {
 }
 
 void process_describe(describe_input_t* input, response_t* response) {
-	compaction("CHAMPIONS_ROTOS");
-	/*log_i("fs describe args: %s", input->table_name);
+	log_i("fs describe args: %s", input->table_name);
 	usleep(g_config.delay * 1000);
 
 	char* table_dir = get_table_directory();
@@ -211,7 +215,7 @@ void process_describe(describe_input_t* input, response_t* response) {
 		list_destroy(metadata_list);
 	} else {
 		set_response(response, metadata_list);
-	}*/
+	}
 }
 
 void process_drop(drop_input_t* input, response_t* response) {

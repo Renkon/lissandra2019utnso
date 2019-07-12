@@ -8,7 +8,7 @@
 #include "../lib/utils/operation_types.h"
 #include "../lissandra/lissandra.h"
 #include "../lissandra/table_state_utils.h"
-#include <commons/bitarray.h>
+#include "commons/bitarray.h"
 #include "../directorys.h"
 #include "../fs_lists.h"
 #include "shared_types/shared_types.h"
@@ -54,9 +54,9 @@ void is_blocked_wait(char* table_name);
 void is_blocked_post(char* table_name);
 void live_status_wait(char* table_name);
 void live_status_post(char* table_name);
-int* get_live_status(char* table_name);
+int get_live_status(pthread_t thread);
 table_state_t* find_in_table_state_list_with_thread(pthread_t thread);
 record_t* search_key_in_memtable(int key, char* table_name);
 table_t* search_table_in_memtable(char* table_name);
-
+void destroy_in_table_state_list(pthread_t thread);
 #endif /* CREATE_CREATE_UTILS_H_ */

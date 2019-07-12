@@ -77,7 +77,7 @@ table_metadata_t* create_metadata(consistency_t consistency, int partitions, lon
 int assign_free_blocks(t_bitarray* bitmap, int* blocks, int partitions_amount) {
 	int blocks_amount = 0;
 	//Me fijo que la cantidad de particiones que me pedis sea menor a la cantidad de bloques totales
-	if (partitions_amount <= bitmap->size) {
+	if (partitions_amount <= (bitmap->size*8)) {
 		//Voy a buscar bloques tantas veces como particiones vaya a tener mi tabla
 		for (int i = 0; i < partitions_amount; i++) {
 			int block = find_free_block(bitmap);
@@ -96,16 +96,13 @@ int assign_free_blocks(t_bitarray* bitmap, int* blocks, int partitions_amount) {
 }
 
 int find_free_block(t_bitarray* bitmap) {
-	int i = 0;
-	//Busco por todorl el bitmap hasta encontrar un 0
-
-	while (i < bitmap->size) {
-		if (bitarray_test_bit(bitmap, i) == 0) {
+	//Busco por todo el bitmap hasta encontrar un 0
+	for(int i=0;i < (bitmap->size)*8;i++) {
+		if (bitarray_test_bit(bitmap,i) == 0) {
 			//Si lo encuentro seteo ese lugar en 1 y lo devuelvo
 			bitarray_set_bit(bitmap, i);
 			return i;
 		}
-		i++;
 	}
 	//Si no lo encuentro solo devuelvo -1
 	return -1;
@@ -149,16 +146,15 @@ record_t* search_key(char* table_directory, int key, char* table_name){
 }
 
 table_t* search_table_in_memtable(char* table_name) {
-	table_t* table_not_found = malloc(sizeof(table_t));
-	table_not_found->name = "Not_found";
+
 	for (int i = 0; i < list_size(mem_table); i++) {
 		table_t* table = list_get(mem_table, i);
 		if (string_equals_ignore_case(table->name, table_name)) {
-			free(table_not_found);
+
 			return table;
 		}
 	}
-	return table_not_found;
+	return NULL;
 }
 
 record_t* search_key_in_memtable(int key, char* table_name){
@@ -166,7 +162,7 @@ record_t* search_key_in_memtable(int key, char* table_name){
 	key_found->timestamp = -1;
 	key_found->value = malloc(1);
 	table_t* table = search_table_in_memtable(table_name);
-	if (!string_equals_ignore_case(table->name,"Not_found")){
+	if (table!=NULL){
 
 		for (int i = 0; i < list_size(table->tkvs); i++) {
 			tkv_t* tkv_found = list_get(table->tkvs,i);
@@ -297,15 +293,19 @@ void free_partitions(char* table_directory, t_bitarray* bitmap) {
 
 void free_blocks_of_fs_archive(char* archive_directory, t_bitarray* bitmap) {
 	partition_t* partition = read_fs_archive(archive_directory);
-
+	t_list* block_list = from_array_to_list(partition->blocks,partition->number_of_blocks);
+	char* blocks_to_write = get_block_string(block_list);
 	for(int i = 0; i < partition->number_of_blocks; i++){
 		free_block(partition->blocks[i]);
 		//LIbero el espacio en el bitarray asi lo puedo usar en una nueva tabla
 		bitarray_clean_bit(bitmap, (partition->blocks[i] - 1));
 
 	}
+	log_t("Se liberaron los siguientes bloques: %s",blocks_to_write);
 	free(partition->blocks);
 	free(partition);
+	list_destroy(block_list);
+	free(blocks_to_write);
 }
 
 void free_block(int block) {
@@ -366,48 +366,43 @@ void add_table_to_table_state_list(char* table_name){
 	table_state->name = strdup(upper_read);
 	list_add(table_state_list, table_state);
 	table_state->compaction_thread =initialize_compaction();
+	sem_post(&thread_semaphore);
 	free(upper_read);
 }
 
 table_state_t* find_in_table_state_list(char* table_name) {
-	table_state_t* table_find_failed = malloc(sizeof(table_state_t));
-	table_find_failed->name = "failed";
 
 	for (int i = 0; i < list_size(table_state_list); i++) {
 		table_state_t* table_found = list_get(table_state_list, i);
 		char* table_found_name = table_found->name;
 		if (string_equals_ignore_case(table_found_name, table_name)) {
-			free(table_find_failed);
 			return table_found;
 		}
 	}
-log_w("No se encontro la tabla %s", table_name);
-return table_find_failed;
+	log_w("No se encontro la tabla %s buscando por nombre", table_name);
+	return NULL;
 }
 
 table_state_t* find_in_table_state_list_with_thread(pthread_t thread){
-	table_state_t* table_find_failed = malloc(sizeof(table_state_t));
-	table_find_failed->name = "failed";
 
 	for (int i = 0; i < list_size(table_state_list); i++) {
 		table_state_t* table_found = list_get(table_state_list, i);
 		pthread_t table_found_thread = table_found->compaction_thread;
 		if (table_found_thread == thread) {
-			free(table_find_failed);
 			return table_found;
 		}
 	}
-log_w("No se encontro la tabla con ese thread");
-return table_find_failed;
+	log_w("No se encontro la tabla con ese thread");
+	return NULL;
 }
 
 
-void destroy_in_table_state_list(char* table_name) {
+void destroy_in_table_state_list(pthread_t thread) {
 
 	for (int i = 0; i < list_size(table_state_list); i++) {
 		table_state_t* table_found = list_get(table_state_list, i);
 		char* table_found_name = table_found->name;
-		if (string_equals_ignore_case(table_found_name, table_name)) {
+		if (thread == table_found->compaction_thread) {
 			free(table_found ->is_blocked_mutex);
 			free(table_found ->live_status_mutex);
 			free(table_found ->name);
@@ -422,34 +417,66 @@ void destroy_in_table_state_list(char* table_name) {
 
 void is_blocked_wait(char* table_name){
 	table_state_t* the_table = find_in_table_state_list(table_name);
+	if(the_table==NULL){
+
+		log_w("Intentando acceder a semaforo de tabla inexistente.");
+		return;
+	}
 	sem_wait(the_table->is_blocked_mutex);
 }
 
 
 void is_blocked_post(char* table_name){
 	table_state_t* the_table = find_in_table_state_list(table_name);
+	if(the_table==NULL){
+
+		log_w("Intentando acceder a semaforo de tabla inexistente.");
+		return;
+	}
 	sem_post(the_table->is_blocked_mutex);
 }
 
 void live_status_wait(char* table_name){
 	table_state_t* the_table = find_in_table_state_list(table_name);
+	if(the_table==NULL){
+
+		log_w("Intentando acceder a semaforo de tabla inexistente.");
+		return;
+	}
+	free(the_table->name);
+	the_table->name =strdup("Pipo pipo pipo pi piiiii pipo pipo piiiiii pipo pipi contigo pipo! APROBAME EL TP DE OPERATIVOS POR  FAVOR TENGO ESPOSA E HIJOS AAAAAAAAAAAH");
 	sem_wait(the_table->live_status_mutex);
 }
 
 void live_status_post(char* table_name){
 	table_state_t* the_table = find_in_table_state_list(table_name);
+	if(the_table==NULL){
+
+		log_w("Intentando acceder a semaforo de tabla inexistente.");
+		return;
+	}
 	sem_post(the_table->live_status_mutex);
 }
 
-int* get_live_status(char* table_name){
-	table_state_t* the_table = find_in_table_state_list(table_name);
-	int* semaphore;
+int get_live_status(pthread_t thread){
+	table_state_t* the_table = find_in_table_state_list_with_thread(thread);
+	if(the_table==NULL){
+
+		log_w("Intentando acceder a estado de tabla inexistente.");
+		return -1337;
+	}
+	int semaphore;
 	 sem_getvalue(the_table->live_status_mutex,&semaphore);
 	 return semaphore;
 }
 
 void eliminate_table_form_table_state_list(char* table_name){
 	table_state_t* the_table = find_in_table_state_list(table_name);
+	if(the_table==NULL){
+
+		log_w("Intentando acceder a una tabla inexistente.");
+		return;
+	}
 	free(the_table->is_blocked_mutex);
 	free(the_table->live_status_mutex);
 	free(the_table->name);

@@ -221,6 +221,11 @@ void create_fs_archive(char* table_name,int* blocks,int block_amount,int tkv_siz
 		free(tmp_name);
 		tmp_name = get_tmp_name(tmp_number);
 	}
+	if(archive_flag == 1){
+		log_t("Se creo el archivo %s en la tabla %s",tmp_name,table_name);
+
+	}
+
 	char* 	archive_dir = get_tmp_directory(table_directory, tmp_number);
 	if(archive_flag == 0 ){
 		free(	archive_dir);
