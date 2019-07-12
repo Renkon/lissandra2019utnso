@@ -32,5 +32,6 @@ int remove_directory(char *path);
 metadata_t* read_fs_metadata();
 FILE* open_block(int block);
 void write_tkv(char* tkv,FILE* block);
+void create_fs_archive(char* table_name,int* blocks,int block_amount,int tkv_size,int archive_flag, int partition_number);
 
 #endif /* DIRECTORYS_H_ */

@@ -5,12 +5,14 @@ void process_select(select_input_t* input, response_t* response) {
 	usleep(g_config.delay * 1000);
 	record_t* key_found = NULL;
 	char* table_name_upper = to_uppercase(input->table_name);
+	is_blocked_wait(table_name_upper);
+	is_blocked_post(table_name_upper);
 	char* initial_table_dir = get_table_directory();
 	//Primero me fijo si existe la tabla
 	if (exist_in_directory(input->table_name, initial_table_dir)) {
 
 		char* table_directory = create_new_directory(initial_table_dir,table_name_upper);
-		key_found = search_key(table_directory, input->key);
+		key_found = search_key(table_directory, input->key,table_name_upper);
 
 		if (key_found->timestamp == -1) {
 			//Si la key encotnrada me da una timstamp en -1 entonces significa que no la encontro
@@ -51,12 +53,15 @@ void process_insert(insert_input_t* input, response_t* response) {
 	usleep(g_config.delay * 1000);
 	int* insert_status = malloc(sizeof(int));
 	char* table_name_upper = to_uppercase(input->table_name);
+	is_blocked_wait(table_name_upper);
+	is_blocked_post(table_name_upper);
 	char* table_directory = get_table_directory();
 	//Me fijo si existe la tabla
 	if (exist_in_directory(input->table_name, table_directory)) {
 		if (value_exceeds_maximun_size(input->value)) {
 			log_w("El valor de la key a insertar excede el tamaño maximo soportado. Operacion INSERT cancelada", table_name_upper);
 			free(table_name_upper);
+			free(table_directory);
 			*insert_status = -1;
 		} else {
 			if (input->timestamp == -1) {
@@ -118,28 +123,35 @@ void process_create(create_input_t* input, response_t* response) {
 	int* create_status = malloc(sizeof(int));
 	char* table_name_upper = to_uppercase(input->table_name);
 	char* bitmap_dir = get_bitmap_directory();
+	sem_wait(bitmap_semaphore);
 	t_bitarray* bitmap = read_bitmap(bitmap_dir);
 	//Creo un array  de tantos bloques como particiones pida
 	int blocks[(input->partitions)];
 
 	//Quiero saber si hay tantos bloques libres como particiones asi que busco cuantos bloques libres hay
+	//Poner semaforo todo
 	int free_blocks_amount = assign_free_blocks(bitmap, blocks, input->partitions);
-
 	if (free_blocks_amount == input->partitions) {
+
 		//Si habia n bloques libres me toca saber si ya existe la tabla a crear o no
 		if (create_table_folder(table_name_upper) == 0) {
+			t_list* block_list = from_array_to_list(blocks,free_blocks_amount);
+			char* blocks_to_write = get_block_string(block_list);
 			//SI no existe la tabla entonces procedo con el CREATE normlamente
-			log_i("Se creo el directorio de la tabla %s ", table_name_upper);
+			log_t("Se creo el directorio de la tabla %s ", table_name_upper);
 
 			create_table_metadata(input->consistency, input->partitions,input->compaction_time, table_name_upper);
-			log_i("Se creo la metadata de la tabla %s ", table_name_upper);
+			log_t("Se creo la metadata de la tabla %s ", table_name_upper);
 
 			create_partitions(input->partitions, table_name_upper, blocks);
 			//Guardo el bitmap
 			write_bitmap(bitmap, bitmap_dir);
-			log_i("Se crearon %d particiones para la tabla %s ",input->partitions, table_name_upper);
-			//Crear hilo para que la tabla haga su propio dumpeo TODO
-			log_i("Tabla %s creada exitosamente! ", table_name_upper);
+			add_table_to_table_state_list(table_name_upper);
+			log_t("Se crearon %d particiones para la tabla %s ",input->partitions, table_name_upper);
+			log_t("Se reservaron los siguientes bloques para la tabla %s: %s",table_name_upper,blocks_to_write);
+			log_t("Tabla %s creada exitosamente! ", table_name_upper);
+			list_destroy(block_list);
+			free(blocks_to_write);
 			*create_status = 0;
 		} else {
 			log_w("La tabla %s ya esta en el sistema. Operacion CREATE cancelada.",table_name_upper);
@@ -151,12 +163,11 @@ void process_create(create_input_t* input, response_t* response) {
 		log_w("No hay bloques suficientes como para crear la tabla con %d particiones. Operacion CREATE cancelada",input->partitions);
 		*create_status = -2;
 	}
-
+	sem_post(bitmap_semaphore);
 	free(table_name_upper);
 	free(bitmap->bitarray);
 	free(bitmap);
 	free(bitmap_dir);
-
 	if (response == NULL)
 		free(create_status);
 	else
@@ -166,6 +177,7 @@ void process_create(create_input_t* input, response_t* response) {
 void process_describe(describe_input_t* input, response_t* response) {
 	log_i("fs describe args: %s", input->table_name);
 	usleep(g_config.delay * 1000);
+
 	char* table_dir = get_table_directory();
 	//Si me mandan null muestro la metadata de todas las tablas
 	t_list* metadata_list = list_create();
@@ -184,6 +196,10 @@ void process_describe(describe_input_t* input, response_t* response) {
 			free(table_directory);
 			list_add(metadata_list, table_metadata);
 			free(table_name);
+		}
+
+		if(list_size(table_list)==0){
+			log_i("No hay tablas actualmente en el filesystem.");
 		}
 
 		list_destroy(table_list);
@@ -228,9 +244,11 @@ void process_drop(drop_input_t* input, response_t* response) {
 	char* table_dir = get_table_directory();
 	char* bitmap_directory = get_bitmap_directory();
 	char* table_name_upper = to_uppercase(input->table_name);
-
+	is_blocked_wait(table_name_upper);
+	is_blocked_post(table_name_upper);
 	if (exist_in_directory(input->table_name, table_dir)) {
 		char* table_directory = create_new_directory(table_dir, table_name_upper);
+		sem_wait(bitmap_semaphore);
 		t_bitarray* bitmap = read_bitmap(bitmap_directory);
 		//LIbero los bloques de las particiones
 		free_partitions(table_directory, bitmap);
@@ -240,6 +258,8 @@ void process_drop(drop_input_t* input, response_t* response) {
 		remove_directory(table_directory);
 		//Guardo el bitmap
 		write_bitmap(bitmap, bitmap_directory);
+		sem_post(bitmap_semaphore);
+		live_status_wait(table_name_upper);
 		log_i("La tabla %s se borro satisfactoriamente.", table_name_upper);
 		free(bitmap->bitarray);
 		free(bitmap);

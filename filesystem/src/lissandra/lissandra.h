@@ -10,6 +10,7 @@
 #include "../core/operations.h"
 #include "../filesystem/filesystem.h"
 #include "utils/response.h"
+#include "table_state_utils.h"
 
 typedef struct {
 	int port;
@@ -22,8 +23,11 @@ typedef struct {
 fsconfig_t g_config;
 extern char* g_config_keys[];
 extern int g_config_keys_size;
-extern t_list* mem_table;
+t_list* mem_table;
+t_list* table_state_list;
 metadata_t* fs_metadata;
+sem_t* bitmap_semaphore;
+sem_t thread_semaphore;
 
 callbacks_t* get_callbacks();
 void init_server_callbacks();

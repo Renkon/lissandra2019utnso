@@ -7,13 +7,30 @@
 #include "../filesystem/filesystem.h"
 #include "utils/numbers.h"
 #include "utils/int_arrays.h"
+#include "../tkvs_utils.h"
 
 void dump_all_tables();
 void dump();
 void free_memtable();
-void dump_table(table_t* table, int* blocks, int size_of_blocks);
+void dump_table(table_t* table, t_list* blocks);
 int search_free_blocks_for_table(t_list* tkvs);
 int tkv_total_length(t_list* tkvs);
 int length_of_all_tkvs_in_memtable();
-void create_table_tmp(char* table_name,int* blocks,int block_amount,int tkv_size);
+void compaction(char* table_name);
+partition_t* get_all_blocks_from_all_tmps (char* table_name);
+tkv_t* add_records_from_block(int block, int index, int incomplete_tkv_size,t_list* tkvs);
+void get_tkvs_to_insert(t_list* tmpc_tkvs, t_list* partition_tkvs);
+void add_record_to_partition_list (record_t* record,tkvs_per_partition_t* partition);
+void create_new_partitions(t_list* partition_tkvs,t_list* blocks, int size_of_blocks,char*  table_name);
+tkv_t* convert_to_tkv(record_t* record);
+int add_blocks_for_partitions_without_tkvs(t_list* partition_tkvs);
+void destroy_all_tmps(char* table_directory);
+int*from_list_to_array(t_list* list);
+t_list* from_array_to_list (int* array, int size);
+int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_of_blocks,char* table_name);
+void compact_this_table();
+void iniitalize_compaction_in_all_tables();
+pthread_t  initialize_compaction();
+char* get_block_string(t_list* block_list);
+
 #endif /* COMPACTOR_COMPACTOR_H_ */

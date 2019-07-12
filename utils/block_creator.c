@@ -9,11 +9,11 @@ typedef struct  {
 int main(void) {
 	metadata_t* metadata = malloc(sizeof(metadata_t));
 
-	metadata->block_size = 64;
+	metadata->block_size = 12; //parametrizar de aca
 	metadata->blocks = 5192;
 	metadata->magic_number = "LISSANDRA";
-
-	char* config_file ="/home/utnso/Documentos/tp-2019-1c-Papito-code-en-Assembler/filesystem/filesystem.cfg";
+	//ESTO CAMBIA DEPENDIENDO LA PERSONA
+	char* config_file ="/home/utnso/git/tp-2019-1c-Papito-code-en-Assembler/filesystem/filesystem.cfg";//hasta aca
 	t_config* config = config_create(config_file);
 	char* punto_montaje = config_get_string_value(config, "PUNTO_MONTAJE");
 	char* directorio_metadata =string_new();
@@ -50,15 +50,20 @@ int main(void) {
 	}
 
 	char* bitmap = malloc(metadata->blocks);
-	for(int i =0; i<metadata->blocks;i++){
+	for(int i =0; i<(metadata->blocks)/8;i++){
 		bitmap[i] = 0;
 	}
-
-	t_bitarray* bitarray = bitarray_create(bitmap,metadata->blocks);
+	//bitmap[metadata->blocks]=0;
+	printf("%s",directorio_bitarray);
+	size_t size = (metadata->blocks)/8;
+	t_bitarray* bitarray = bitarray_create_with_mode(bitmap,size,LSB_FIRST);
 	FILE* arch2 = fopen(directorio_bitarray, "wb");
-	fwrite(&bitarray->mode, 1, sizeof(bitarray->mode), arch2);
-	fwrite(&bitarray->size, 1, sizeof(bitarray->size), arch2);
-	fwrite(bitarray->bitarray, 1, sizeof(bitarray->size), arch2);
+	fwrite(&bitarray->mode, 1, sizeof(bit_numbering_t), arch2);
+	fwrite(&bitarray->size, 1, sizeof(size_t), arch2);
+	//printf("%s",bitarray->bitarray);
+	printf("%d",sizeof(bit_numbering_t));
+	printf("%d",sizeof(size_t));
+	fwrite(bitarray->bitarray,bitarray->size,1, arch2);
 
 	fclose(arch2);
 
