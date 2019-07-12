@@ -32,5 +32,5 @@ void compact_this_table();
 void iniitalize_compaction_in_all_tables();
 pthread_t  initialize_compaction();
 char* get_block_string(t_list* block_list);
-
+void start_compaction(char* table_directory,table_metadata_t* table_metadata,partition_t* tmpc, char* tmpc_directory, char* table_name, int tmp_destroy_flag);
 #endif /* COMPACTOR_COMPACTOR_H_ */
