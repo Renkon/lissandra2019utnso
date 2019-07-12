@@ -24,7 +24,7 @@ void process_select(select_input_t* input, response_t* response) {
 		} else {
 			//SI la timstamp es distinta de -1 entonces si la encontre y la muestro!
 			log_i("Clave %d encontrada en la tabla %s! su valor es: %s", input->key, table_name_upper, key_found->value);
-			log_i("Y la encontre en el archivo %s",key_found->fs_archive_where_it_was_found);
+			log_i("Y la encontre en %s",key_found->fs_archive_where_it_was_found);
 		}
 		free(table_directory);
 	} else {

@@ -456,7 +456,7 @@ void initialize_dump() {
 
 void dump_all_tables(){
 	pthread_detach(pthread_self());
-
+	log_t("Hilo de dump iniciado.");
 	while(true){
 		dump();
 		usleep(g_config.dump_time * 1000);
