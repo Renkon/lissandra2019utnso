@@ -28,6 +28,7 @@ t_list* table_state_list;
 metadata_t* fs_metadata;
 sem_t* bitmap_semaphore;
 sem_t thread_semaphore;
+sem_t dump_semaphore;
 
 callbacks_t* get_callbacks();
 void init_server_callbacks();

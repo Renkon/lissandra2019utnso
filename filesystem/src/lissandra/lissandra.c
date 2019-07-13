@@ -5,8 +5,7 @@ char* g_config_keys[] = { "PUERTO_ESCUCHA", "PUNTO_MONTAJE", "RETARDO", "TAMAÑO
 int g_config_keys_size = 5;
 
 int main(void) {
-	if (!init_logger("filesystem.log", "Filesystem", true, LOG_LEVEL_TRACE))
-		return 1;
+	if (!init_logger("filesystem.log", "Filesystem", true, LOG_LEVEL_TRACE))return 1;
 	mem_table = list_create();
 	get_tmpc_name = "A1.tmpc";
 	init_config(FSCFG, initialize_fs_config, update_fs_config, g_config_keys, g_config_keys_size);
@@ -14,6 +13,7 @@ int main(void) {
 	bitmap_semaphore = malloc(sizeof(sem_t));
 	sem_init(bitmap_semaphore, 0,1);
 	sem_init(&thread_semaphore, 0,0);
+	sem_init(&dump_semaphore, 0,1);
 	initialize_dump();
 	table_state_list= create_table_state_list();
 	iniitalize_compaction_in_all_tables();

@@ -28,13 +28,13 @@ endif
 all: memoria
 
 dependents:
-	-cd /home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug && $(MAKE) all
+	-cd /home/utnso/git/tp-2019-1c-Papito-code-en-Assembler/lib/Debug && $(MAKE) all
 
 # Tool invocations
-memoria: $(OBJS) $(USER_OBJS) /home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug/liblib.a
+memoria: $(OBJS) $(USER_OBJS) /home/utnso/git/tp-2019-1c-Papito-code-en-Assembler/lib/Debug/liblib.a
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug" -o "memoria" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/utnso/git/tp-2019-1c-Papito-code-en-Assembler/lib/Debug" -o "memoria" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -44,6 +44,6 @@ clean:
 	-@echo ' '
 
 .PHONY: all clean dependents
-/home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug/liblib.a:
+/home/utnso/git/tp-2019-1c-Papito-code-en-Assembler/lib/Debug/liblib.a:
 
 -include ../makefile.targets
