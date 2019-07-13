@@ -21,7 +21,7 @@ main()
     mkdir -p "${mountPoint}/Tables"
 
     echo "Carpetas creadas.. ejecutando binario"
-    ./block_creator/Debug/block_creator "${blocks}" "${blockSize}" "${magicNumber}" "${mountPoint}"
+    ./out/block_creator "${blocks}" "${blockSize}" "${magicNumber}" "${mountPoint}"
     echo "Se ejecuto el script y se deberia haber creado la carpeta"    
     echo "Si ven que fallo el binario, seguramente es porque no lo buildearon!!!!"
 }
