@@ -14,9 +14,9 @@ int main(void) {
 	bitmap_semaphore = malloc(sizeof(sem_t));
 	sem_init(bitmap_semaphore, 0,1);
 	sem_init(&thread_semaphore, 0,0);
-	initialize_dump();
+	//initialize_dump();
 	table_state_list= create_table_state_list();
-	iniitalize_compaction_in_all_tables();
+	//iniitalize_compaction_in_all_tables();
 	init_server_callbacks();
 	init_server(g_config.port, FILESYSTEM);
 	setup_response_id_generator();
