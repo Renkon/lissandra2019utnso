@@ -179,7 +179,6 @@ void process_create(create_input_t* input, response_t* response) {
 }
 
 void process_describe(describe_input_t* input, response_t* response) {
-	compaction("PEPE");
 	log_i("fs describe args: %s", input->table_name);
 	usleep(g_config.delay * 1000);
 
