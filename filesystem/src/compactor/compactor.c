@@ -467,7 +467,7 @@ void dump(){
 	if(mem_table->elements_count>0){
 	//Saco cuantos bloques necesito para dumpear todas las tablas los cuales se calculan como:
 	//tamaño de todos los tkvs/ tamaño de un bloque redondeado hacia arriba.
-	int necessary_blocks = blocks_needed_for_memtable() + 40;
+	int necessary_blocks = blocks_needed_for_memtable();
 	//Creo un array de tantos bloques como los que necesito
 	int* blocks= malloc(sizeof(int)*necessary_blocks);
 	char* bitmap_dir = get_bitmap_directory();

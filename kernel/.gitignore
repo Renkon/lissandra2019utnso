@@ -1,2 +1,4 @@
-/Debug/
+/Debug/**/*.d
+/Debug/**/*.o
+/Debug/kernel
 *.log
