@@ -267,7 +267,7 @@ int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_o
 			int what_the_pionter_moved = 0;
 			//Como voy a mover el puntero del string tengo que saber cuanto se va moviendo para despes dejarlo en 0
 			// Y podes hacerle free en paz.
-			while (true) {
+			while (block_index < list_size(blocks_for_the_table)) {
 				//Me fijo si el string entra en el bloque
 				int free_space_in_block2 = block_size - strlen(readed_tkv->tkv);
 				if (free_space_in_block2 >= 0) {
@@ -276,7 +276,6 @@ int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_o
 					strcpy(tkv_to_write,readed_tkv->tkv);
 					write_tkv(tkv_to_write, block);
 					block_size-=strlen(readed_tkv->tkv);
-					readed_tkv->tkv-= what_the_pionter_moved;
 					free(tkv_to_write);
 					break;
 				}
@@ -293,6 +292,8 @@ int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_o
 				block = open_block(block_open);
 				block_size = fs_metadata->block_size;
 			}
+
+			readed_tkv->tkv-= what_the_pionter_moved;
 		}
 		//Si mi bloque se lleno o quedo con 1 solo carcter entonces lo cierro y paso al siguiente
 		if (block_size <= 1) {
@@ -466,7 +467,7 @@ void dump(){
 	if(mem_table->elements_count>0){
 	//Saco cuantos bloques necesito para dumpear todas las tablas los cuales se calculan como:
 	//tamaño de todos los tkvs/ tamaño de un bloque redondeado hacia arriba.
-	int necessary_blocks = blocks_needed_for_memtable();
+	int necessary_blocks = blocks_needed_for_memtable() + 40;
 	//Creo un array de tantos bloques como los que necesito
 	int* blocks= malloc(sizeof(int)*necessary_blocks);
 	char* bitmap_dir = get_bitmap_directory();
@@ -548,7 +549,6 @@ void dump_table(table_t* table, t_list* blocks) {
 					strcpy(tkv_to_write,readed_tkv->tkv);
 					write_tkv(tkv_to_write, block);
 					block_size-=strlen(readed_tkv->tkv);
-					readed_tkv->tkv-= what_the_pionter_moved;
 					free(tkv_to_write);
 					break;
 				}
@@ -565,6 +565,7 @@ void dump_table(table_t* table, t_list* blocks) {
 				block = open_block(block_open);
 				block_size = fs_metadata->block_size;
 			}
+			readed_tkv->tkv-= what_the_pionter_moved;
 		}
 		//Si mi bloque se lleno o quedo con 1 solo carcter entonces lo cierro y paso al siguiente
 		if (block_size <= 1) {
