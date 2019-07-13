@@ -179,7 +179,8 @@ void process_create(create_input_t* input, response_t* response) {
 }
 
 void process_describe(describe_input_t* input, response_t* response) {
-	log_i("fs describe args: %s", input->table_name);
+	compaction("PEPE");
+	/*log_i("fs describe args: %s", input->table_name);
 	usleep(g_config.delay * 1000);
 
 	char* table_dir = get_table_directory();
@@ -238,7 +239,7 @@ void process_describe(describe_input_t* input, response_t* response) {
 		list_destroy(metadata_list);
 	} else {
 		set_response(response, metadata_list);
-	}
+	}*/
 }
 
 void process_drop(drop_input_t* input, response_t* response) {
