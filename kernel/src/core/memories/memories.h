@@ -20,7 +20,6 @@ t_list* g_memories;
 
 int* g_journal_result;
 void (*g_journal_callback)(void*, response_t*);
-pcb_t* g_journal_pcb;
 
 int ec_next;
 sem_t g_journal_semaphore;

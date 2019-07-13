@@ -174,6 +174,9 @@ record_t* search_key_in_memtable(int key, char* table_name){
 				free(key_found->value);
 				free(key_found);
 				key_found = record_found;
+			} else {
+				free(record_found->value);
+				free(record_found);
 			}
 
 		}
@@ -225,8 +228,8 @@ record_t* search_in_all_tmps(char* table_directory, int key) {
 
 		if(key_found->timestamp > key_found_in_tmp->timestamp){
 			free(key_found_in_tmp->value);
-			free(key_found_in_tmp);
 			free(key_found_in_tmp->fs_archive_where_it_was_found);
+			free(key_found_in_tmp);
 			//Si la key que encontre tienen mas timestamp que la key que habia encontrado antes o la default
 			//Entonces la guardo porque es la mas actual
 			key_found_in_tmp = copy_key(key_found);
