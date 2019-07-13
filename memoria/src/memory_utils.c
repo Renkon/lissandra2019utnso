@@ -269,7 +269,7 @@ void get_value_callback(void* result, response_t* response) {
 		if (*value != g_value_size) {
 			bool memory_initialized = g_value_size != -1;
 
-			if ((*value + 21) < g_config.memory_size) {
+			if ((*value + 21) > g_config.memory_size) {
 				log_e("No entra ni un registro en la memoria! Value muy bajo");
 				exit(1);
 			}
