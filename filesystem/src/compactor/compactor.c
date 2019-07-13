@@ -64,8 +64,7 @@ void compaction(char* table_name) {
 		if (exist_in_directory(get_tmpc_name, table_directory)) {
 			partition_t* tmpc = read_fs_archive(tmpc_directory);
 			log_t("Se leyo A1.tmpc de la tabla %s. Iniciando compactacion del mismo.",table_name);
-			start_compaction(table_directory, table_metadata, tmpc,
-					tmpc_directory, table_name, 0);
+			start_compaction(table_directory, table_metadata, tmpc,tmpc_directory, table_name, 0);
 
 		} else {
 			if (exist_in_directory(tmp_name, table_directory)) {
@@ -106,38 +105,22 @@ void start_compaction(char* table_directory,table_metadata_t* table_metadata,par
 		free_blocks_of_all_tmps(table_directory, bitmap);
 		destroy_all_tmps(table_directory);
 	}
-	int necessary_blocks= length_needed_to_add_tkvs_in_partitions(partition_tkvs);
-	necessary_blocks += add_blocks_for_partitions_without_tkvs(partition_tkvs);
-	int* blocks= malloc(sizeof(int)*necessary_blocks);
-	int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
-	if(free_blocks_amount == necessary_blocks){
-		remove(tmpc_directory);
-		t_list* block_list = from_array_to_list(blocks,free_blocks_amount);
-		char* blocks_to_write = get_block_string(block_list);
-		create_new_partitions(partition_tkvs,block_list,free_blocks_amount,table_name);
-		is_blocked_post(table_name);// desbloqueo
-		last_timestamp = get_timestamp();
-		write_bitmap(bitmap, bitmap_dir);
-		log_t("Se escribieron los siguientes bloques para la compactacion: %s",blocks_to_write);
-		sem_post(bitmap_semaphore);
-		bloqued_time =last_timestamp-first_timestamp;
-		log_i("Compactacion terminada sobre la tabla %s!", table_name);
-		log_i("Y estuvo bloqueada un total de %lld milisegundos", bloqued_time);
-		list_destroy(block_list);
-		free(blocks_to_write);
-		list_destroy(partition_tkvs);
-	}else{
-		sem_post(bitmap_semaphore);
-		is_blocked_post(table_name);// desbloqueo
-		list_destroy_and_destroy_elements(partition_tkvs,free_tkvs_per_partition);
-		log_w("No hay bloques suficientes como para hacer la compactacion de la tabla %s. Compactacion cancelada.", table_name);
-	}
+	write_bitmap(bitmap, bitmap_dir);
+	sem_post(bitmap_semaphore);
+	remove(tmpc_directory);
+	create_new_partitions(partition_tkvs,table_name);
+	is_blocked_post(table_name);// desbloqueo
+	last_timestamp = get_timestamp();
+	bloqued_time =last_timestamp-first_timestamp;
+	log_i("Compactacion terminada sobre la tabla %s!", table_name);
+	log_i("Y estuvo bloqueada un total de %lld milisegundos", bloqued_time);
+	list_destroy(partition_tkvs);
 	free(bitmap->bitarray);
 	free(bitmap);
 	free(bitmap_dir);
 	free(tmpc->blocks);
 	free(tmpc);
-	free(blocks);
+
 }
 
 char* get_block_string(t_list* block_list){
@@ -229,30 +212,21 @@ int length_needed_to_add_tkvs_in_partitions(t_list* partition_tkvs){
 	return total_length;
 }
 
-int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_of_blocks,char* table_name) {
-	t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv);
-	int size_of_all_tkvs_from_partition = size_of_all_tkvs(string_tkv_list);
-	int blocks_amount = necessary_blocks_for_tkvs(string_tkv_list);
-	//Si blocks amount da 0 significa que no tengo tkvs entonces le pongo un bloque vacio.
-	if(blocks_amount == 0){
-		t_list* blocks_for_the_table = list_take_and_remove(blocks,1);
-		int* blocks_array = from_list_to_array(blocks_for_the_table);
-		create_fs_archive(table_name, blocks_array,1,size_of_all_tkvs_from_partition,2,partition->partition);
-		free(blocks_array);
-		list_destroy(blocks_for_the_table);
-		list_destroy_and_destroy_elements(string_tkv_list,free_tkv);
-		return size_of_blocks-1;
-
-	}
-	t_list* blocks_for_the_table = list_take_and_remove(blocks,blocks_amount);
-	int* blocks_array = from_list_to_array(blocks_for_the_table);
-	create_fs_archive(table_name,blocks_array,blocks_amount,size_of_all_tkvs_from_partition,2,partition->partition);
-	list_destroy_and_destroy_elements(string_tkv_list,free_tkv);
+void create_partition(tkvs_per_partition_t* partition,char* table_name) {
+	t_list* blocks = list_create();
+	char* bitmap_dir = get_bitmap_directory();
+	int* the_block = malloc(sizeof(int));
+	sem_wait(bitmap_semaphore);
+	t_bitarray* bitmap = read_bitmap(bitmap_dir);
+	the_block = find_free_block(bitmap)+1;
+	write_bitmap(bitmap, bitmap_dir);
+	sem_post(bitmap_semaphore);
+	log_t("Se escribio el bloque %d para la compactacion de la tabla %s",the_block,table_name);
+	free(bitmap->bitarray);
+	free(bitmap);
+	list_add(blocks,the_block);
 	int block_size = fs_metadata->block_size;
-	int block_index = 0;
-	//Abro el .bin del primer bloque
-	int block_to_open = list_get(blocks_for_the_table,block_index);
-	FILE* block = open_block(block_to_open);
+	FILE* block = open_block(the_block);
 
 	for (int i = 0; i < list_size(partition->tkvs); i++) {
 		record_t* tkv = list_get(partition->tkvs, i);
@@ -288,34 +262,50 @@ int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_o
 				write_tkv(tkv_that_enters,block);
 				free(tkv_that_enters);
 				fclose(block);
-				block_index++;
-				int block_open = list_get(blocks_for_the_table,block_index);
-				block = open_block(block_open);
+				sem_wait(bitmap_semaphore);
+				t_bitarray* bitmap = read_bitmap(bitmap_dir);
+				the_block = find_free_block(bitmap)+1;
+				write_bitmap(bitmap, bitmap_dir);
+				sem_post(bitmap_semaphore);
+				log_t("Se escribio el bloque %d para la compactacion de la tabla %s",the_block,table_name);
+				free(bitmap->bitarray);
+				free(bitmap);
+				list_add(blocks,the_block);
+				block = open_block(the_block);
 				block_size = fs_metadata->block_size;
 			}
 		}
 		//Si mi bloque se lleno o quedo con 1 solo carcter entonces lo cierro y paso al siguiente
 		if (block_size <= 1) {
 			fclose(block);
-			block_index++;
-			int block_open = list_get(blocks_for_the_table,block_index);
-			block = open_block(block_open);
+			sem_wait(bitmap_semaphore);
+			t_bitarray* bitmap = read_bitmap(bitmap_dir);
+			the_block = find_free_block(bitmap)+1;
+			write_bitmap(bitmap, bitmap_dir);
+			sem_post(bitmap_semaphore);
+			log_t("Se escribio el bloque %d para la compactacion de la tabla %s",the_block,table_name);
+			free(bitmap->bitarray);
+			free(bitmap);
+			list_add(blocks,the_block);
+			block = open_block(the_block);
 			block_size = fs_metadata->block_size;
 		}
 		free_tkv(readed_tkv);
 	}
-	list_destroy(blocks_for_the_table);
 	fclose(block);
+	int* blocks_array = from_list_to_array(blocks);
+	int size_of_all_tkvs_in_table = size_of_all_tkvs(partition->tkvs);
+	create_fs_archive(table_name,blocks_array,list_size(blocks),size_of_all_tkvs_in_table,2,partition->partition);
+	list_destroy(blocks);
 	free(blocks_array);
-	return size_of_blocks - blocks_amount;
+	free(bitmap_dir);
 }
 
-void create_new_partitions(t_list* partition_tkvs,t_list* blocks, int size_of_blocks,char*  table_name){
-	int blocks_length = size_of_blocks;
+void create_new_partitions(t_list* partition_tkvs,char*  table_name){
 	for(int i=0; i<list_size(partition_tkvs);i++){
 		//ver_bloques(blocks,blocks_length);
 		tkvs_per_partition_t* partition = list_get(partition_tkvs,i);
-		blocks_length = create_partition(partition,blocks,blocks_length,table_name);
+		create_partition(partition,table_name);
 		free_tkvs_per_partition(partition);
 	}
 
@@ -454,49 +444,22 @@ void initialize_dump() {
 
 void dump_all_tables(){
 	pthread_detach(pthread_self());
-
+	log_t("Iniciado el hilo de dump");
 	while(true){
 		dump();
 		usleep(g_config.dump_time * 1000);
 	}
 }
 
-void dump(){
-	if(mem_table->elements_count>0){
-	//Saco cuantos bloques necesito para dumpear todas las tablas los cuales se calculan como:
-	//tamaño de todos los tkvs/ tamaño de un bloque redondeado hacia arriba.
-	int necessary_blocks = blocks_needed_for_memtable();
-	//Creo un array de tantos bloques como los que necesito
-	int* blocks= malloc(sizeof(int)*necessary_blocks);
-	char* bitmap_dir = get_bitmap_directory();
-	//Leo el bitmap
-	sem_wait(bitmap_semaphore);
-	t_bitarray* bitmap = read_bitmap(bitmap_dir);
-	//Busco los bloques libres
-	int free_blocks_amount = assign_free_blocks(bitmap, blocks, necessary_blocks);
-	t_list* block_list = from_array_to_list(blocks,free_blocks_amount);
-	if(free_blocks_amount == necessary_blocks){
-
-
-		for(int i=0; i<mem_table->elements_count;i++){
-			table_t* table = list_get(mem_table,i);
-
-			dump_table(table,block_list);
-
-			log_i("Dumpeados los datos de la tabla %s",table->name);
+void dump() {
+	if (mem_table->elements_count > 0) {
+		for (int i = 0; i < mem_table->elements_count; i++) {
+			table_t* table = list_get(mem_table, i);
+			dump_table(table);
+			log_i("Dumpeados los datos de la tabla %s", table->name);
 		}
-		write_bitmap(bitmap, bitmap_dir);
-	}else{
-		log_w("No hay bloques suficientes como para dumpear todas las tablas de la memtable. Dumpeo cancelado y datos borrados");
 	}
-	sem_post(bitmap_semaphore);
-	free(blocks);
 	free_memtable();
-	free(bitmap->bitarray);
-	free(bitmap);
-	free(bitmap_dir);
-	list_destroy(block_list);
-	}
 }
 
 
@@ -512,20 +475,22 @@ void free_memtable(){
 	//Al final creo de nuevo la memtable
 }
 
-void dump_table(table_t* table, t_list* blocks) {
-	char* blocks_to_write = get_block_string(blocks);
-	int size_of_all_tkvs_in_table = size_of_all_tkvs(table->tkvs);
-	int blocks_amount = necessary_blocks_for_tkvs(table->tkvs);
-	t_list* blocks_for_the_table = list_take_and_remove(blocks,blocks_amount);
-	int* blocks_array = from_list_to_array(blocks_for_the_table);
-	create_fs_archive(table->name,blocks_array,blocks_amount,size_of_all_tkvs_in_table,1,0);
-	free(blocks_array);
+void dump_table(table_t* table){
+	t_list* blocks = list_create();
+	char* bitmap_dir = get_bitmap_directory();
+	int the_block;
+	sem_wait(bitmap_semaphore);
+	t_bitarray* bitmap = read_bitmap(bitmap_dir);
+	the_block = find_free_block(bitmap)+1;
+	write_bitmap(bitmap, bitmap_dir);
+	sem_post(bitmap_semaphore);
+	log_t("Se escribio el bloque %d para la compactacion de la tabla %s",the_block,table->name);
+	free(bitmap->bitarray);
+	free(bitmap);
+	list_add(blocks,the_block);
 	int block_size = fs_metadata->block_size;
-	int block_index = 0;
 	//Abro el .bin del primer bloque
-	int block_to_open =list_get(blocks_for_the_table,block_index);;
-	FILE* block = open_block(block_to_open);
-
+	FILE* block = open_block(the_block);
 	for (int i = 0; i < table->tkvs->elements_count; i++) {
 		tkv_t* readed_tkv = list_get(table->tkvs, i);
 		int free_space_in_block = block_size - strlen(readed_tkv->tkv);
@@ -559,26 +524,44 @@ void dump_table(table_t* table, t_list* blocks) {
 				write_tkv(tkv_that_enters,block);
 				fclose(block);
 				free(tkv_that_enters);
-				block_index++;
-				int block_open =list_get(blocks_for_the_table,block_index);;
-				block = open_block(block_open);
+				sem_wait(bitmap_semaphore);
+				t_bitarray* bitmap = read_bitmap(bitmap_dir);
+				the_block = find_free_block(bitmap)+1;
+				write_bitmap(bitmap, bitmap_dir);
+				sem_post(bitmap_semaphore);
+				log_t("Se escribio el bloque %d para la compactacion de la tabla %s",the_block,table->name);
+				free(bitmap->bitarray);
+				free(bitmap);
+				list_add(blocks,the_block);
+				block = open_block(the_block);
 				block_size = fs_metadata->block_size;
 			}
 		}
 		//Si mi bloque se lleno o quedo con 1 solo carcter entonces lo cierro y paso al siguiente
 		if (block_size <= 1) {
 			fclose(block);
-			block_index++;
-			int block_open =list_get(blocks_for_the_table,block_index);;
-			block = open_block(block_open);
+			sem_wait(bitmap_semaphore);
+			t_bitarray* bitmap = read_bitmap(bitmap_dir);
+			the_block = find_free_block(bitmap)+1;
+			write_bitmap(bitmap, bitmap_dir);
+			sem_post(bitmap_semaphore);
+			log_t("Se escribio el bloque %d para el dumpeo de la tabla %s",the_block,table->name);
+			free(bitmap->bitarray);
+			free(bitmap);
+			list_add(blocks,the_block);
+			block = open_block(the_block);
 			block_size = fs_metadata->block_size;
 		}
 
 	}
-	list_destroy(blocks_for_the_table);
 	fclose(block);
-	log_t("Se escribieron los siguientes bloques para el dumpeo de la tabla %s: %s",table->name,blocks_to_write);
-	free(blocks_to_write);
+	int* blocks_array = from_list_to_array(blocks);
+	int size_of_all_tkvs_in_table = size_of_all_tkvs(table->tkvs);
+	create_fs_archive(table->name,blocks_array,list_size(blocks),size_of_all_tkvs_in_table,1,0);
+	list_destroy(blocks);
+	free(bitmap_dir);
+	free(blocks_array);
+
 }
 
 

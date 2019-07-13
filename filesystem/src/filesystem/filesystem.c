@@ -95,6 +95,8 @@ int assign_free_blocks(t_bitarray* bitmap, int* blocks, int partitions_amount) {
 	return blocks_amount;
 }
 
+
+
 int find_free_block(t_bitarray* bitmap) {
 	//Busco por todo el bitmap hasta encontrar un 0
 	for(int i=0;i < (bitmap->size)*8;i++) {
