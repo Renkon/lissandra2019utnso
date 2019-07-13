@@ -269,6 +269,11 @@ void get_value_callback(void* result, response_t* response) {
 		if (*value != g_value_size) {
 			bool memory_initialized = g_value_size != -1;
 
+			if ((*value + 21) < g_config.memory_size) {
+				log_e("No entra ni un registro en la memoria! Value muy bajo");
+				exit(1);
+			}
+
 			log_t("Se cambio el tamaño maximo de los registros");
 			g_value_size = *value;
 			g_total_page_size = digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + g_value_size + 3;
