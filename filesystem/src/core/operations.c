@@ -48,7 +48,6 @@ void process_select(select_input_t* input, response_t* response) {
 		free(key_found->fs_archive_where_it_was_found);
 		free(key_found);
 	} else {
-		free(key_found->fs_archive_where_it_was_found);
 		set_response(response, key_found);
 	}
 }

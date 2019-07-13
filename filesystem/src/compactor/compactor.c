@@ -245,8 +245,6 @@ int create_partition(tkvs_per_partition_t* partition, t_list* blocks, int size_o
 
 	}
 	t_list* blocks_for_the_table = list_take_and_remove(blocks,blocks_amount);
-	log_t(" LA LISTA TIENE ESTA CANTIDAD %d",blocks_for_the_table->elements_count);
-	log_t(" PERO YO NECESITO %d",blocks_amount);
 	int* blocks_array = from_list_to_array(blocks_for_the_table);
 	create_fs_archive(table_name,blocks_array,blocks_amount,size_of_all_tkvs_from_partition,2,partition->partition);
 	list_destroy_and_destroy_elements(string_tkv_list,free_tkv);
@@ -376,12 +374,13 @@ tkv_t* add_records_from_block(int block, int index, int incomplete_tkv_size,t_li
 
 	//SI mando index en 1 me salteo el primer read
 	//Porque asi leo la parte del tkv anterior que ya lei
+	int pointer= 0;
 	if (index == 1) {
 		fread(readed_key, 1, incomplete_tkv_size, arch);
+		pointer+= incomplete_tkv_size;
 	}
 
 	int i = 0;
-	int pointer= 0;
 	while (!feof(arch)) {
 		size_t lecture = fread(readed_key, 1, tkv_size(), arch);
 		pointer+= strlen(readed_key)+1;
