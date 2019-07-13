@@ -8,11 +8,7 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include src/lissandra/subdir.mk
--include src/filesystem/subdir.mk
--include src/core/subdir.mk
--include src/compactor/subdir.mk
--include src/subdir.mk
+-include utils/subdir.mk
 -include subdir.mk
 -include objects.mk
 
@@ -27,25 +23,21 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: filesystem
-
-dependents:
-	-cd /home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug && $(MAKE) clean all
+all: liblib.a
 
 # Tool invocations
-filesystem: $(OBJS) $(USER_OBJS) /home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug/liblib.a
+liblib.a: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
-	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug" -o "filesystem" $(OBJS) $(USER_OBJS) $(LIBS)
+	@echo 'Invoking: GCC Archiver'
+	ar -r  "liblib.a" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(EXECUTABLES)$(OBJS)$(C_DEPS) filesystem
+	-$(RM) $(ARCHIVES)$(OBJS)$(C_DEPS) liblib.a
 	-@echo ' '
 
 .PHONY: all clean dependents
-/home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug/liblib.a:
 
 -include ../makefile.targets
