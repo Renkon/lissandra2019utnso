@@ -140,7 +140,7 @@ char* read_first_tkv_in_block(int block) {
 	char* block_directory = create_block_directory(block);
 	FILE* arch = fopen(block_directory, "rb");
 	char* readed_key = malloc(tkv_size());
-	fread(readed_key, 1, tkv_size(), arch);
+	fread(readed_key, tkv_size(), 1, arch);
 	fclose(arch);
 	free(block_directory);
 	return readed_key;
@@ -162,13 +162,13 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 	//SI mando index en 1 me salteo el primer read
 	//Porque asi leo la parte del tkv anterior que ya lei
 	if (index == 1) {
-		fread(readed_key, 1, incomplete_tkv_size, arch);
+		fread(readed_key, incomplete_tkv_size, 1, arch);
 		pointer += incomplete_tkv_size;
 	}
 
 	int i = 0;
 	while (!feof(arch)) {
-		size_t lecture = fread(readed_key, 1, tkv_size(), arch);
+		size_t lecture = fread(readed_key, tkv_size(), 1, arch);
 		pointer+= strlen(readed_key)+1;
 		fseek(arch,pointer,SEEK_SET);
 		if (readed_key[0] && string_ends_with(readed_key, "\n")) {
