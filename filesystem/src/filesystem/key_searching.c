@@ -153,15 +153,16 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 	FILE* arch = fopen(block_directory, "rb");
 
 	char* readed_key = calloc(1, tkv_size());
+	int pointer= 0;
 
 	//SI mando index en 1 me salteo el primer read
 	//Porque asi leo la parte del tkv anterior que ya lei
 	if (index == 1) {
 		fread(readed_key, 1, incomplete_tkv_size, arch);
+		pointer += incomplete_tkv_size;
 	}
 
 	int i = 0;
-	int pointer= 0;
 	while (!feof(arch)) {
 		size_t lecture = fread(readed_key, 1, tkv_size(), arch);
 		pointer+= strlen(readed_key)+1;
