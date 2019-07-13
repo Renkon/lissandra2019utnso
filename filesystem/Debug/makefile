@@ -30,13 +30,13 @@ endif
 all: filesystem
 
 dependents:
-	-cd /home/utnso/git/tp-2019-1c-Papito-code-en-Assembler/lib/Debug && $(MAKE) all
+	-cd /home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug && $(MAKE) clean all
 
 # Tool invocations
-filesystem: $(OBJS) $(USER_OBJS) /home/utnso/git/tp-2019-1c-Papito-code-en-Assembler/lib/Debug/liblib.a
+filesystem: $(OBJS) $(USER_OBJS) /home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug/liblib.a
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/git/tp-2019-1c-Papito-code-en-Assembler/lib/Debug" -o "filesystem" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug" -o "filesystem" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -46,6 +46,6 @@ clean:
 	-@echo ' '
 
 .PHONY: all clean dependents
-/home/utnso/git/tp-2019-1c-Papito-code-en-Assembler/lib/Debug/liblib.a:
+/home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug/liblib.a:
 
 -include ../makefile.targets

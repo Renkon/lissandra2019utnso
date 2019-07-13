@@ -2,3 +2,4 @@
 /Debug/**/*.o
 /Debug/kernel
 *.log
+/Debug/
