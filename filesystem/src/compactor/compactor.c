@@ -539,7 +539,7 @@ void dump_table(table_t* table, t_list* blocks) {
 			int what_the_pionter_moved = 0;
 			//Como voy a mover el puntero del string tengo que saber cuanto se va moviendo para despes dejarlo en 0
 			// Y podes hacerle free en paz.
-			while (true) {
+			while (i < list_size(blocks_for_the_table)) {
 				//Me fijo si el string entra en el bloque
 				int free_space_in_block2 = block_size - strlen(readed_tkv->tkv);
 				if (free_space_in_block2 >= 0) {
