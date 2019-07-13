@@ -111,6 +111,7 @@ int find_free_block(t_bitarray* bitmap) {
 }
 
 record_t* search_key(char* table_directory, int key, char* table_name){
+	select_wait(table_name);
 	is_blocked_wait(table_name);
 	is_blocked_post(table_name);
 	//Busco la key en el unico archivo tmp que puede haber
@@ -129,6 +130,7 @@ record_t* search_key(char* table_directory, int key, char* table_name){
 	sem_wait(&dump_semaphore);
 	record_t* key_found_in_memtable = search_key_in_memtable(key,table_name);
 	sem_post(&dump_semaphore);
+	select_post(table_name);
 	//Comparo las 3 keys y por transitividad saco la que tiene la timestamp mas grande
 	record_t* auxiliar_key = key_with_greater_timestamp(key_found_in_tmp, key_found_in_tmpc);
 	record_t* auxiliar_key2 = key_with_greater_timestamp(auxiliar_key, key_found_in_memtable);
@@ -380,6 +382,8 @@ void add_table_to_table_state_list(char* table_name){
 	sem_init(table_state->is_blocked_mutex, 0,1);
 	table_state->live_status_mutex = malloc(sizeof(sem_t));
 	sem_init(table_state->live_status_mutex, 0,1);
+	table_state->select_mutex = malloc(sizeof(sem_t));
+	sem_init(table_state->select_mutex, 0,1);
 	char* upper_read = to_uppercase(table_name);
 	table_state->name = strdup(upper_read);
 	list_add(table_state_list, table_state);
@@ -424,12 +428,34 @@ void destroy_in_table_state_list(pthread_t thread) {
 			free(table_found ->is_blocked_mutex);
 			free(table_found ->live_status_mutex);
 			free(table_found ->name);
+			free(table_found->select_mutex);
 			free(table_found);
 			list_remove(table_state_list,i);
 			return;
 		}
 	}
 
+}
+
+void select_wait(char* table_name){
+	table_state_t* the_table = find_in_table_state_list(table_name);
+	if(the_table==NULL){
+
+		log_w("Intentando acceder a semaforo de tabla inexistente.");
+		return;
+	}
+	sem_wait(the_table->select_mutex);
+}
+
+
+void select_post(char* table_name){
+	table_state_t* the_table = find_in_table_state_list(table_name);
+	if(the_table==NULL){
+
+		log_w("Intentando acceder a semaforo de tabla inexistente.");
+		return;
+	}
+	sem_post(the_table->select_mutex);
 }
 
 

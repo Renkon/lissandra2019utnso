@@ -43,7 +43,9 @@ void compact_this_table(){
 	free(table_metadata);
 	log_t("Hilo de compactacion de la tabla %s iniciado",table_name);
 	while(get_live_status(pthread_self()) == 1){
+		select_wait(table_name);
 		compaction(table_name);
+		select_post(table_name);
 		usleep(compaction_time * 1000);
 	}
 	log_t("Hilo de compactacion de la tabla %s finalizado",table_name);

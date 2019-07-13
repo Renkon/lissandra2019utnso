@@ -16,6 +16,8 @@ t_list* create_table_state_list(){
 					sem_init(table_state->is_blocked_mutex, 0,1);
 					table_state->live_status_mutex = malloc(sizeof(sem_t));
 					sem_init(table_state->live_status_mutex, 0,1);
+					table_state->live_status_mutex = malloc(sizeof(sem_t));
+					sem_init(table_state->select_mutex, 0,1);
 					char* upper_read = to_uppercase(dir->d_name);
 					table_state->name = upper_read;
 					list_add(table_list, table_state);
