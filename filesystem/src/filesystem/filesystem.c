@@ -226,11 +226,11 @@ record_t* search_in_all_tmps(char* table_directory, int key) {
 		if(key_found->timestamp > key_found_in_tmp->timestamp){
 			free(key_found_in_tmp->value);
 			free(key_found_in_tmp);
+			free(key_found_in_tmp->fs_archive_where_it_was_found);
 			//Si la key que encontre tienen mas timestamp que la key que habia encontrado antes o la default
 			//Entonces la guardo porque es la mas actual
 			key_found_in_tmp = copy_key(key_found);
-			free(key_found_in_tmp->fs_archive_where_it_was_found);
-			key_found_in_tmp->fs_archive_where_it_was_found = strdup(tmp_name); //cambie esto todo
+			key_found_in_tmp->fs_archive_where_it_was_found = strdup(tmp_name);
 		}
 
 		tmp_number++;
