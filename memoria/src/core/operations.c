@@ -38,6 +38,7 @@ void process_select(select_input_t* input, response_t* response) {
 					record->table_name = strdup(found_segment->name);
 					record->value = strdup(return_value);
 					record->timestamp = string_to_long_long(return_timestamp);
+					record->fs_archive_where_it_was_found = strdup("Nada");
 					set_response(response, record);
 				}
 
@@ -317,11 +318,13 @@ void select_callback(void* result, response_t* response) {
 			new_record->key = record->key;
 			new_record->timestamp = record->timestamp;
 			new_record->value = strdup(record->value);
+			new_record->fs_archive_where_it_was_found = strdup("Nada");
 		} else {
 			new_record->table_name = strdup("ERROR");
 			new_record->key = -3;
 			new_record->timestamp = -3;
 			new_record->value = strdup("-3");
+			new_record->fs_archive_where_it_was_found = strdup("Nada");
 		}
 		set_response(response, new_record);
 	}
@@ -509,6 +512,7 @@ void journal_callback(void* result, response_t* response){
 					record->table_name = strdup(reg->table_name);
 					record->value = strdup(reg->value);
 					record->timestamp = reg->timestamp;
+					record->fs_archive_where_it_was_found = strdup("Nada");
 
 					segment_t* found_segment = create_segment(record->table_name);
 					int index = memory_insert(record->timestamp, record->key, record->value);
@@ -521,6 +525,7 @@ void journal_callback(void* result, response_t* response){
 						set_response(response, record);
 					} else{
 						free(response);
+						free(record->fs_archive_where_it_was_found);
 						free(record->table_name);
 						free(record->value);
 						free(record);

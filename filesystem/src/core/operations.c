@@ -19,10 +19,12 @@ void process_select(select_input_t* input, response_t* response) {
 			log_w("La clave %d no existe en la tabla %s. Operacion SELECT cancelada", input->key, table_name_upper);
 			key_found->key = -1;
 			key_found->value = strdup("-1");
+			key_found->fs_archive_where_it_was_found = strdup("Tu, tu, tu, tu, ERES MI MEJOR AMIGO!");
 
 		} else {
 			//SI la timstamp es distinta de -1 entonces si la encontre y la muestro!
 			log_i("Clave %d encontrada en la tabla %s! su valor es: %s", input->key, table_name_upper, key_found->value);
+			log_i("Y la encontre en %s",key_found->fs_archive_where_it_was_found);
 		}
 		free(table_directory);
 	} else {
@@ -33,6 +35,7 @@ void process_select(select_input_t* input, response_t* response) {
 		key_found->key = -2;
 		key_found->timestamp = -2;
 		key_found->value = strdup("-2");
+		key_found->fs_archive_where_it_was_found = strdup("Este es un show sobre nada... como termina?");
 	}
 
 	key_found->table_name = table_name_upper;
@@ -42,6 +45,7 @@ void process_select(select_input_t* input, response_t* response) {
 	if (response == NULL) {
 		free(key_found->table_name);
 		free(key_found->value);
+		free(key_found->fs_archive_where_it_was_found);
 		free(key_found);
 	} else {
 		set_response(response, key_found);
@@ -175,8 +179,7 @@ void process_create(create_input_t* input, response_t* response) {
 }
 
 void process_describe(describe_input_t* input, response_t* response) {
-	compaction("PIPO");
-	/*log_i("fs describe args: %s", input->table_name);
+	log_i("fs describe args: %s", input->table_name);
 	usleep(g_config.delay * 1000);
 
 	char* table_dir = get_table_directory();
@@ -235,7 +238,7 @@ void process_describe(describe_input_t* input, response_t* response) {
 		list_destroy(metadata_list);
 	} else {
 		set_response(response, metadata_list);
-	}*/
+	}
 }
 
 void process_drop(drop_input_t* input, response_t* response) {

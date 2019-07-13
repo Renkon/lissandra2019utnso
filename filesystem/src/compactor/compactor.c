@@ -215,7 +215,7 @@ int length_needed_to_add_tkvs_in_partitions(t_list* partition_tkvs){
 void create_partition(tkvs_per_partition_t* partition,char* table_name) {
 	t_list* blocks = list_create();
 	char* bitmap_dir = get_bitmap_directory();
-	int* the_block = malloc(sizeof(int));
+	int  the_block;
 	sem_wait(bitmap_semaphore);
 	t_bitarray* bitmap = read_bitmap(bitmap_dir);
 	the_block = find_free_block(bitmap)+1;
@@ -250,7 +250,6 @@ void create_partition(tkvs_per_partition_t* partition,char* table_name) {
 					strcpy(tkv_to_write,readed_tkv->tkv);
 					write_tkv(tkv_to_write, block);
 					block_size-=strlen(readed_tkv->tkv);
-					readed_tkv->tkv-= what_the_pionter_moved;
 					free(tkv_to_write);
 					break;
 				}
@@ -274,6 +273,8 @@ void create_partition(tkvs_per_partition_t* partition,char* table_name) {
 				block = open_block(the_block);
 				block_size = fs_metadata->block_size;
 			}
+
+			readed_tkv->tkv-= what_the_pionter_moved;
 		}
 		//Si mi bloque se lleno o quedo con 1 solo carcter entonces lo cierro y paso al siguiente
 		if (block_size <= 1) {
@@ -294,9 +295,11 @@ void create_partition(tkvs_per_partition_t* partition,char* table_name) {
 	}
 	fclose(block);
 	int* blocks_array = from_list_to_array(blocks);
-	int size_of_all_tkvs_in_table = size_of_all_tkvs(partition->tkvs);
-	create_fs_archive(table_name,blocks_array,list_size(blocks),size_of_all_tkvs_in_table,2,partition->partition);
+	t_list* string_tkv_list = list_map(partition->tkvs,convert_to_tkv);
+	int size_of_all_tkvs_from_partition = size_of_all_tkvs(string_tkv_list);
+	create_fs_archive(table_name,blocks_array,list_size(blocks),size_of_all_tkvs_from_partition,2,partition->partition);
 	list_destroy(blocks);
+	list_destroy_and_destroy_elements(string_tkv_list,free_tkv);
 	free(blocks_array);
 	free(bitmap_dir);
 }
@@ -364,12 +367,13 @@ tkv_t* add_records_from_block(int block, int index, int incomplete_tkv_size,t_li
 
 	//SI mando index en 1 me salteo el primer read
 	//Porque asi leo la parte del tkv anterior que ya lei
+	int pointer= 0;
 	if (index == 1) {
 		fread(readed_key, 1, incomplete_tkv_size, arch);
+		pointer+= incomplete_tkv_size;
 	}
 
 	int i = 0;
-	int pointer= 0;
 	while (!feof(arch)) {
 		size_t lecture = fread(readed_key, 1, tkv_size(), arch);
 		pointer+= strlen(readed_key)+1;
@@ -512,7 +516,6 @@ void dump_table(table_t* table){
 					strcpy(tkv_to_write,readed_tkv->tkv);
 					write_tkv(tkv_to_write, block);
 					block_size-=strlen(readed_tkv->tkv);
-					readed_tkv->tkv-= what_the_pionter_moved;
 					free(tkv_to_write);
 					break;
 				}
@@ -536,6 +539,7 @@ void dump_table(table_t* table){
 				block = open_block(the_block);
 				block_size = fs_metadata->block_size;
 			}
+			readed_tkv->tkv-= what_the_pionter_moved;
 		}
 		//Si mi bloque se lleno o quedo con 1 solo carcter entonces lo cierro y paso al siguiente
 		if (block_size <= 1) {

@@ -8,6 +8,7 @@ typedef struct {
 	long long timestamp;
 	int key;
 	char* value;
+	char* fs_archive_where_it_was_found;
 }__attribute__((packed)) record_t;
 
 typedef struct {

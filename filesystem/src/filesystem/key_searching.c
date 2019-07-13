@@ -35,12 +35,14 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 	correct_key_found ->tkv = malloc(strlen("-1;-1;-1")+1);
 	strcpy(correct_key_found->tkv,"-1;-1;-1");
 	partition_t* partition = read_fs_archive(fs_archive_path);
+	t_list* block_list = from_array_to_list(partition->blocks,partition->number_of_blocks);
 	char* string_key = string_itoa(key);
 	int index = 0;
 	int incomplete_tkv_size = 0;
 
 	for (int i = 0; i < partition->number_of_blocks; i++) {
-		key_found = search_key_in_block(partition->blocks[i], string_key, index, incomplete_tkv_size);
+		int block_to_search = list_get(block_list,i);
+		key_found = search_key_in_block(block_to_search, string_key, index, incomplete_tkv_size,correct_key_found);
 		index = 0;
 
 		//Me fijo si encontro la key
@@ -66,7 +68,8 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 		if (key_found->incomplete) {
 			while (key_found->incomplete) {
 				key_found->incomplete = false;
-				char* continuation = read_first_tkv_in_block(partition->blocks[i + 1]);
+				int another_block_to_search = list_get(block_list,i+1);
+				char* continuation = read_first_tkv_in_block(another_block_to_search);
 				incomplete_tkv_size = strlen(continuation)+1;
 				//Busco la siguiente parte y la concateno
 				tkv_append(key_found,continuation);
@@ -108,6 +111,7 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 		}
 	}
 	convert_to_record(key_found_in_block, correct_key_found);
+	list_destroy(block_list);
 	free(key_found->tkv);
 	free(key_found);
 	free(correct_key_found->tkv);
@@ -121,7 +125,7 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 int tkv_size() {
 	//Es la cantidad de digitos del numero maximo del uint_16 + la cantidad de digitos de la timestamp
 	//+ la cantidad maxima de caracteres de un valor + 3 que es 2 porque tiene 2 ; y uno por el  \0
-	return digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + g_config_keys_size + 3;
+	return digits_in_a_number(USHRT_MAX) + digits_in_a_number(get_timestamp()) + g_config.max_value_size + 3;
 }
 
 void tkv_append(tkv_t* tkv,char* end){
@@ -142,7 +146,7 @@ char* read_first_tkv_in_block(int block) {
 	return readed_key;
 }
 
-tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_size) {
+tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_size, tkv_t* previous_key_founded) {
 	char* block_directory = create_block_directory(block);
 	tkv_t* key_found_in_block = malloc(sizeof(tkv_t));
 	key_found_in_block->tkv = malloc(tkv_size());
@@ -153,15 +157,16 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 	FILE* arch = fopen(block_directory, "rb");
 
 	char* readed_key = calloc(1, tkv_size());
+	int pointer= 0;
 
 	//SI mando index en 1 me salteo el primer read
 	//Porque asi leo la parte del tkv anterior que ya lei
 	if (index == 1) {
 		fread(readed_key, 1, incomplete_tkv_size, arch);
+		pointer += incomplete_tkv_size;
 	}
 
 	int i = 0;
-	int pointer= 0;
 	while (!feof(arch)) {
 		size_t lecture = fread(readed_key, 1, tkv_size(), arch);
 		pointer+= strlen(readed_key)+1;
@@ -169,6 +174,11 @@ tkv_t* search_key_in_block(int block, char* key, int index, int incomplete_tkv_s
 		if (readed_key[0] && string_ends_with(readed_key, "\n")) {
 			//Si tiene \n entonces copio este string sin el \n y prengo el flag de incompleto
 			char* substr = string_substring_until(readed_key, strlen(readed_key) - 1);
+
+			if(!string_equals_ignore_case(key_found_in_block->tkv,"-1;-1;-1")){
+				free(previous_key_founded->tkv);
+				previous_key_founded->tkv = strdup(key_found_in_block->tkv);
+			}
 			strcpy(key_found_in_block->tkv, substr);
 			key_found_in_block->incomplete = true;
 			free(substr);
@@ -216,6 +226,19 @@ void convert_to_record(record_t* record, tkv_t* tkv) {
 	free(tkv_split[1]);
 	free(tkv_split[2]);
 	free(tkv_split);
+}
+
+record_t* copy_key2(record_t* key_to_copy){
+	record_t* copied_key = malloc(sizeof(record_t));
+	copied_key->timestamp = key_to_copy->timestamp;
+	if (copied_key->timestamp != -1) {
+		copied_key->value = malloc(strlen(key_to_copy->value) + 1);
+		copied_key->key = key_to_copy->key;
+		strcpy(copied_key->value, key_to_copy->value);
+		copied_key->fs_archive_where_it_was_found = strdup(key_to_copy->fs_archive_where_it_was_found);
+	}
+
+	return copied_key;
 }
 
 record_t* copy_key(record_t* key_to_copy){

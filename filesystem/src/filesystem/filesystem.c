@@ -132,15 +132,18 @@ record_t* search_key(char* table_directory, int key, char* table_name){
 	record_t* auxiliar_key2 = key_with_greater_timestamp(auxiliar_key, key_found_in_memtable);
 	record_t* most_current_key = key_with_greater_timestamp(auxiliar_key2, key_found_in_partition);
 	//Devuelvo lo que encontre, si no esta la key entonces devuelvo una key con timestamp en -1
-	record_t* the_key = copy_key(most_current_key);
-
+	record_t* the_key = copy_key2(most_current_key);
 	free(key_found_in_memtable->value);
+	free(key_found_in_memtable->fs_archive_where_it_was_found);
 	free(key_found_in_memtable);
 	free(key_found_in_tmpc->value);
+	free(key_found_in_tmpc->fs_archive_where_it_was_found);
 	free(key_found_in_tmpc);
 	free(key_found_in_tmp->value);
+	free(key_found_in_tmp->fs_archive_where_it_was_found);
 	free(key_found_in_tmp);
 	free(key_found_in_partition->value);
+	free(key_found_in_partition->fs_archive_where_it_was_found);
 	free(key_found_in_partition);
 
 	return the_key;
@@ -152,7 +155,6 @@ table_t* search_table_in_memtable(char* table_name) {
 	for (int i = 0; i < list_size(mem_table); i++) {
 		table_t* table = list_get(mem_table, i);
 		if (string_equals_ignore_case(table->name, table_name)) {
-
 			return table;
 		}
 	}
@@ -174,12 +176,15 @@ record_t* search_key_in_memtable(int key, char* table_name){
 				free(key_found->value);
 				free(key_found);
 				key_found = record_found;
+			} else {
+				free(record_found->value);
+				free(record_found);
 			}
 
 		}
 
 	}
-
+	key_found->fs_archive_where_it_was_found = strdup("MemTable."); //cambie esto todo
 	return key_found;
 
 }
@@ -200,6 +205,7 @@ record_t* search_in_tmpc(char* table_directory, int key) {
 	}
 
 	//Al final devuelvo la key que encontre si es que habia o la key default con timestamp -1 si no estaba
+	key_found->fs_archive_where_it_was_found = strdup("A1.tmpc"); //cambie esto todo
 	return key_found;
 }
 
@@ -209,6 +215,7 @@ record_t* search_in_all_tmps(char* table_directory, int key) {
 	record_t* key_found_in_tmp = malloc(sizeof(record_t));
 	key_found_in_tmp->value = malloc(1);
 	key_found_in_tmp->timestamp = -1;
+	key_found_in_tmp->fs_archive_where_it_was_found = strdup("Nada");
 
 	//ESta key es para meter las keys que encuentro en cada tmp
 	record_t* key_found;
@@ -220,12 +227,15 @@ record_t* search_in_all_tmps(char* table_directory, int key) {
 		char* tmp_dir = get_tmp_directory(table_directory, tmp_number);
 		key_found = search_key_in_fs_archive(tmp_dir, key);
 
+
 		if(key_found->timestamp > key_found_in_tmp->timestamp){
 			free(key_found_in_tmp->value);
+			free(key_found_in_tmp->fs_archive_where_it_was_found);
 			free(key_found_in_tmp);
 			//Si la key que encontre tienen mas timestamp que la key que habia encontrado antes o la default
 			//Entonces la guardo porque es la mas actual
 			key_found_in_tmp = copy_key(key_found);
+			key_found_in_tmp->fs_archive_where_it_was_found = strdup(tmp_name);
 		}
 
 		tmp_number++;
@@ -252,6 +262,10 @@ record_t* search_in_partition(char* table_directory, int key) {
 
 	free(partition_dir);
 	free(table_metadata);
+	char* partition_found = malloc(digits_in_a_number(partition_number)+5);
+	sprintf(partition_found,"%d.bin",partition_number);
+	key_found->fs_archive_where_it_was_found = strdup(partition_found); //cambie esto todo
+	free(partition_found);
 	return key_found;
 }
 

@@ -2,10 +2,10 @@
 
 int necessary_blocks_for_tkvs(t_list* tkvs){
 	int total_length = 0;
+	int length_counter =0;
 
 	for(int i =0;i<tkvs->elements_count;i++){
 		tkv_t* tkv = list_get(tkvs,i);
-		int length_counter =0;
 		length_counter += strlen(tkv->tkv);
 		//Calculo cuantos /n tengo que agregar
 		int extra_bits = strlen(tkv->tkv)/(fs_metadata->block_size-1);
@@ -15,8 +15,9 @@ int necessary_blocks_for_tkvs(t_list* tkvs){
 
 		}
 		length_counter+=extra_bits;
-		total_length += division_rounded_up(length_counter,fs_metadata->block_size);
+
 	}
+	total_length += division_rounded_up(length_counter,fs_metadata->block_size);
 	return total_length;
 }
 
@@ -105,16 +106,17 @@ t_list*  create_tkv_list(partition_t* partition){
 	int index = 0;
 	int incomplete_tkv_size = 0;
 	t_list* tkvs = list_create();
-
+	t_list* block_list = from_array_to_list(partition->blocks,partition->number_of_blocks);
 	for (int i = 0; i < partition->number_of_blocks; i++) {
-		key_found = add_records_from_block(partition->blocks[i], index, incomplete_tkv_size, tkvs);
+		int block_to_search = list_get(block_list,i);
+		key_found = add_records_from_block(block_to_search , index, incomplete_tkv_size, tkvs);
 		index = 0;
 
 		//Me fijo si encontro un tkv incompleto
 		if (key_found->incomplete) {
 			while (key_found->incomplete) {
 				key_found->incomplete = false;
-				int next_block= partition->blocks[i+1];
+				int next_block= list_get(block_list,i+1);
 				char* continuation = read_first_tkv_in_block(next_block);
 				incomplete_tkv_size = strlen(continuation)+1;
 				//Busco la siguiente parte y la concateno
@@ -142,5 +144,6 @@ t_list*  create_tkv_list(partition_t* partition){
 			free(key_found);
 		//}
 	}
+	list_destroy(block_list);
 	return tkvs;
 }

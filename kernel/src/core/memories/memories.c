@@ -82,6 +82,11 @@ void add_sc_memory(int id) {
 		return;
 	}
 
+	if (!memory->alive) {
+		log_e("La memoria %i esta muerta", id);
+		return;
+	}
+
 	if (get_memory_by_id(g_memories_added_sc, id) != NULL) {
 		log_w("La memoria %i ya se encuentra asignada al criterio STRONG CONSISTENCY", id);
 		return;
@@ -104,6 +109,11 @@ void add_shc_memory(int id) {
 		return;
 	}
 
+	if (!memory->alive) {
+		log_e("La memoria %i esta muerta", id);
+		return;
+	}
+
 	if (get_memory_by_id(g_memories_added_shc, id) != NULL) {
 		log_w("La memoria %i ya se encuentra asignada al criterio STRONG HASH CONSISTENCY", id);
 		return;
@@ -123,6 +133,11 @@ void add_ec_memory(int id) {
 
 	if (memory == NULL) {
 		log_e("No se pudo asignar la memoria %i al criterio EC. Esta memoria no es reconocida por el Kernel", id);
+		return;
+	}
+
+	if (!memory->alive) {
+		log_e("La memoria %i esta muerta", id);
 		return;
 	}
 
@@ -222,7 +237,7 @@ void _local_journal_callback(void* result, response_t* response) {
 	if (g_journal_actual == g_journal_expected) {
 		log_t("Journaling recibio respuesta de todas las memorias asignadas a criterio");
 		if (g_journal_callback != NULL)
-			g_journal_callback(g_journal_result, g_journal_pcb);
+			g_journal_callback(g_journal_result, (pcb_t*) response);
 
 		sem_post(&g_journal_semaphore);
 	}
@@ -230,7 +245,6 @@ void _local_journal_callback(void* result, response_t* response) {
 
 void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb) {
 	sem_wait(&g_journal_semaphore);
-	g_journal_pcb = pcb;
 	g_journal_callback = callback;
 	*g_journal_result = 0;
 
@@ -249,7 +263,7 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 				memory_t* memory = (memory_t*) list_get(g_memories_added_shc, i);
 
 				do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
-						0, NULL, _local_journal_callback, true, NULL, g_journal_pcb);
+						0, NULL, _local_journal_callback, true, NULL, pcb);
 			}
 		}
 	} else {
@@ -265,7 +279,7 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 				memory_t* memory = (memory_t*) list_get(memories_with_consistency, i);
 
 				do_simple_request(KERNEL, memory->ip, memory->port, JOURNAL_IN, NULL,
-						0, NULL, _local_journal_callback, true, NULL, g_journal_pcb);
+						0, NULL, _local_journal_callback, true, NULL, pcb);
 			}
 		}
 		list_destroy(memories_with_consistency);
@@ -273,7 +287,7 @@ void journaling(bool only_shc, void (*callback)(void*, response_t*), pcb_t* pcb)
 
 	if (!should_wait) {
 		if (g_journal_callback != NULL)
-			g_journal_callback(g_journal_result, g_journal_pcb);
+			g_journal_callback(g_journal_result, pcb);
 
 		sem_post(&g_journal_semaphore);
 	}
