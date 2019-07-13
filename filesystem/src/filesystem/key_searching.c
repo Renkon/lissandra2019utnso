@@ -35,12 +35,14 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 	correct_key_found ->tkv = malloc(strlen("-1;-1;-1")+1);
 	strcpy(correct_key_found->tkv,"-1;-1;-1");
 	partition_t* partition = read_fs_archive(fs_archive_path);
+	t_list* block_list = from_array_to_list(partition->blocks,partition->number_of_blocks);
 	char* string_key = string_itoa(key);
 	int index = 0;
 	int incomplete_tkv_size = 0;
 
 	for (int i = 0; i < partition->number_of_blocks; i++) {
-		key_found = search_key_in_block(partition->blocks[i], string_key, index, incomplete_tkv_size,correct_key_found);
+		int block_to_search = list_get(block_list,i);
+		key_found = search_key_in_block(block_to_search, string_key, index, incomplete_tkv_size,correct_key_found);
 		index = 0;
 
 		//Me fijo si encontro la key
@@ -66,7 +68,8 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 		if (key_found->incomplete) {
 			while (key_found->incomplete) {
 				key_found->incomplete = false;
-				char* continuation = read_first_tkv_in_block(partition->blocks[i + 1]);
+				int another_block_to_search = list_get(block_list,i+1);
+				char* continuation = read_first_tkv_in_block(another_block_to_search);
 				incomplete_tkv_size = strlen(continuation)+1;
 				//Busco la siguiente parte y la concateno
 				tkv_append(key_found,continuation);
@@ -108,6 +111,7 @@ record_t* search_key_in_fs_archive(char* fs_archive_path, int key) {
 		}
 	}
 	convert_to_record(key_found_in_block, correct_key_found);
+	list_destroy(block_list);
 	free(key_found->tkv);
 	free(key_found);
 	free(correct_key_found->tkv);
