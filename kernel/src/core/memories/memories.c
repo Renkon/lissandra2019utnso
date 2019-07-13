@@ -82,6 +82,11 @@ void add_sc_memory(int id) {
 		return;
 	}
 
+	if (!memory->alive) {
+		log_e("La memoria %i esta muerta", id);
+		return;
+	}
+
 	if (get_memory_by_id(g_memories_added_sc, id) != NULL) {
 		log_w("La memoria %i ya se encuentra asignada al criterio STRONG CONSISTENCY", id);
 		return;
@@ -104,6 +109,11 @@ void add_shc_memory(int id) {
 		return;
 	}
 
+	if (!memory->alive) {
+		log_e("La memoria %i esta muerta", id);
+		return;
+	}
+
 	if (get_memory_by_id(g_memories_added_shc, id) != NULL) {
 		log_w("La memoria %i ya se encuentra asignada al criterio STRONG HASH CONSISTENCY", id);
 		return;
@@ -123,6 +133,11 @@ void add_ec_memory(int id) {
 
 	if (memory == NULL) {
 		log_e("No se pudo asignar la memoria %i al criterio EC. Esta memoria no es reconocida por el Kernel", id);
+		return;
+	}
+
+	if (!memory->alive) {
+		log_e("La memoria %i esta muerta", id);
 		return;
 	}
 
