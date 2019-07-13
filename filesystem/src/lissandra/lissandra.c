@@ -13,6 +13,7 @@ int main(void) {
 	bitmap_semaphore = malloc(sizeof(sem_t));
 	sem_init(bitmap_semaphore, 0,1);
 	sem_init(&thread_semaphore, 0,0);
+	sem_init(&dump_semaphore, 0,1);
 	initialize_dump();
 	table_state_list= create_table_state_list();
 	iniitalize_compaction_in_all_tables();

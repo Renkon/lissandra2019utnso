@@ -126,7 +126,9 @@ record_t* search_key(char* table_directory, int key, char* table_name){
 	is_blocked_wait(table_name);
 	is_blocked_post(table_name);
 	//Busco la key en la memtable
+	sem_wait(&dump_semaphore);
 	record_t* key_found_in_memtable = search_key_in_memtable(key,table_name);
+	sem_post(&dump_semaphore);
 	//Comparo las 3 keys y por transitividad saco la que tiene la timestamp mas grande
 	record_t* auxiliar_key = key_with_greater_timestamp(key_found_in_tmp, key_found_in_tmpc);
 	record_t* auxiliar_key2 = key_with_greater_timestamp(auxiliar_key, key_found_in_memtable);

@@ -456,7 +456,9 @@ void dump_all_tables(){
 }
 
 void dump() {
+	sem_wait(&dump_semaphore);
 	if (mem_table->elements_count > 0) {
+
 		for (int i = 0; i < mem_table->elements_count; i++) {
 			table_t* table = list_get(mem_table, i);
 			dump_table(table);
@@ -464,6 +466,7 @@ void dump() {
 		}
 	}
 	free_memtable();
+	sem_post(&dump_semaphore);
 }
 
 
