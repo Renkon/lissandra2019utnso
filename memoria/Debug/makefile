@@ -28,7 +28,7 @@ endif
 all: memoria
 
 dependents:
-	-cd /home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug && $(MAKE) clean all
+	-cd /home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug && $(MAKE) all
 
 # Tool invocations
 memoria: $(OBJS) $(USER_OBJS) /home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug/liblib.a

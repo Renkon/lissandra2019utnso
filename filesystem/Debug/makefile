@@ -30,7 +30,7 @@ endif
 all: filesystem
 
 dependents:
-	-cd /home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug && $(MAKE) clean all
+	-cd /home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug && $(MAKE) all
 
 # Tool invocations
 filesystem: $(OBJS) $(USER_OBJS) /home/utnso/Repositorios/tp-2019-1c-Papito-code-en-Assembler/lib/Debug/liblib.a
